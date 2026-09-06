@@ -14,7 +14,7 @@ Instead of a centralized database storing all users' data together, SecretSauce 
 
 Instances can be:
 1. **Self-hosted** with a single `podman run` command.
-2. **Centrally provisioned** as a managed service using a decoupled orchestrator.
+2. **Centrally provisioned** as a managed service on dedicated subdomains (`<family>.secretsauce.food`) for a nominal fee using a decoupled orchestrator.
 
 ---
 
@@ -409,7 +409,7 @@ To eliminate ambiguity between runtime import maps and `window.Vue`:
   ```
 - **CSS Delivery:** Plugin manifests specify optional `"style": "ui/dist/style.css"`, which the frontend dynamically links into the document on plugin activation.
 - **Cache Invalidation:** Plugin URLs include the plugin version and content hash: `/api/plugins/{id}/ui.js?v={version}_{hash}`.
-- **Server-Sent Events (SSE):** The frontend maintains an SSE stream (`GET {basePath}/api/events/stream`) to receive live notifications for job progress (`jobs`), projection recomputations, and data changes.
+- **Server-Sent Events (SSE):** The frontend maintains an SSE stream (`GET /api/events/stream`) to receive live notifications for job progress (`jobs`), projection recomputations, and data changes.
 
 ### 6.2 Typed Intent Hubs & Provider Contracts
 
@@ -476,33 +476,63 @@ export interface IntentProvider<TContext = any, TResult = any> {
 
 ---
 
-## 8. Packaging, Deployment & Hosting Security
+## 8. Packaging, Deployment & Subdomain SaaS Architecture
 
 ### 8.1 Single-Container Podman Packaging
 - **Containerfile:** Based on `python:3.12-slim`.
 - **Server:** Uvicorn running FastAPI.
-- **SPA Serving & Routing:**
-  - FastAPI serves API routes under `{BASE_PATH}/api/*`.
-  - For non-API routes, FastAPI serves `index.html` via a dynamic templated route that injects:
-    ```html
-    <script>window.__SECRETSAUCE_BASE_PATH__ = "{{ base_path }}";</script>
-    ```
-  - This ensures deep links (e.g. `/shopping-lists` or `/recipes/123`) survive browser refreshes under any path prefix.
+- **Root-Mounted Uniform SPA Serving:**
+  - Because every instance (self-hosted or hosted on a subdomain) runs at root path `/`, all URL generation, API client calls (`/api/*`), and Vue Router configuration (`createWebHistory('/')`) are uniform and simple.
+  - FastAPI serves API routes under `/api/*` and static assets under `/static/*`.
+  - For non-API routes, FastAPI serves `index.html` with SPA fallback routing so deep links (e.g. `/recipes/123`, `/shopping-lists`) survive browser refreshes.
 - **Cookie Security:**
-  - `COOKIE_SECURE`: Configurable (`true` | `false` | `auto`). Default is `auto`: if incoming request `scheme == "https"`, sets `Secure`; if plain HTTP (local Podman port 8080), omits `Secure` so login works seamlessly.
+  - `COOKIE_SECURE`: Configurable (`true` | `false` | `auto`). Default is `auto`: if incoming request `scheme == "https"`, sets `Secure`; if plain HTTP (local Podman port 8080), omits `Secure` so self-hosted local logins work out of the box.
 
-### 8.2 Hosting Boundaries & Managed SaaS Architecture
+### 8.2 Subdomain SaaS Architecture & True Browser Origin Isolation
 
-#### Browser Isolation & Origin Security
-Because browsers enforce same-origin policy by **domain name**, hosting multiple households under subfolders (`secretsauce.food/familya` and `secretsauce.food/familyb`) shares the same browser origin (`secretsauce.food`). An arbitrary JavaScript plugin running in Family A's instance could make authenticated requests or inspect shared localStorage.
+Moving entirely to dedicated subdomains (`https://<family>.secretsauce.food`) provides complete architectural and security isolation:
 
-To maintain strict security:
-1. **Curated Plugins for Subfolder Hosting:**
-   When running under subfolders on `secretsauce.food/<family>`, instances are restricted to verified, first-party plugins. Custom untrusted user plugins are disabled on the shared domain.
-2. **Subdomains for Full Plugin Malleability:**
-   For users who want to run arbitrary third-party plugins in managed hosting, the orchestrator provisions a dedicated subdomain (`family.secretsauce.food`).
-3. **Cookie Path Scoping:**
-   Session cookies use unique cookie names per household (`ss_session_<family_id>`) in addition to `Path={BASE_PATH}; SameSite=Lax; HttpOnly`.
+```
+                          *.secretsauce.food (Wildcard TLS)
+                                          │
+                               ┌──────────▼──────────┐
+                               │ Reverse Proxy       │
+                               │ (Caddy / Traefik)   │
+                               └──────────┬──────────┘
+                                          │
+             ┌────────────────────────────┴────────────────────────────┐
+             ▼                                                         ▼
+https://alletsee.secretsauce.food                       https://smith.secretsauce.food
+  [Origin: alletsee.secretsauce.food]                     [Origin: smith.secretsauce.food]
+  ┌─────────────────────────────────┐                     ┌─────────────────────────────────┐
+  │ Browser Sandbox A               │                     │ Browser Sandbox B               │
+  │ • Isolated localStorage         │                     │ • Isolated localStorage         │
+  │ • Isolated IndexedDB            │                     │ • Isolated IndexedDB            │
+  │ • Host-Only Session Cookie      │                     │ • Host-Only Session Cookie      │
+  │ • Third-Party Plugins Allowed   │                     │ • Third-Party Plugins Allowed   │
+  └────────────────┬────────────────┘                     └────────────────┬────────────────┘
+                   │ HTTP                                                  │ HTTP
+  ┌────────────────▼────────────────┐                     ┌────────────────▼────────────────┐
+  │ Podman Container: alletsee      │                     │ Podman Container: smith         │
+  │ • Volume: /tenants/alletsee     │                     │ • Volume: /tenants/smith        │
+  │ • SQLite: secretsauce.db (WAL)  │                     │ • SQLite: secretsauce.db (WAL)  │
+  └─────────────────────────────────┘                     └─────────────────────────────────┘
+```
+
+#### Key Security & Architectural Benefits:
+1. **True Origin Partitioning:**
+   Browsers strictly isolate storage (`localStorage`, `sessionStorage`, `IndexedDB`, cache storage) and ServiceWorkers by origin (`protocol + domain + port`). A plugin running inside `smith.secretsauce.food` has zero technical access to data, tokens, or DOM elements belonging to `alletsee.secretsauce.food`.
+2. **Host-Only Cookies:**
+   Session cookies omit the `Domain` attribute (defaulting to host-only) with `Path=/; HttpOnly; SameSite=Lax`. Cookies for `alletsee.secretsauce.food` are never transmitted in requests to `smith.secretsauce.food`.
+3. **Full Plugin Malleability in Hosted SaaS:**
+   Because each family's instance is shielded by a hard browser origin boundary as well as an OS-level container boundary, families in the hosted service can safely install and execute custom plugins without compromising any other tenant.
+4. **Decoupled SaaS Orchestration:**
+   The central SaaS orchestrator only needs to:
+   - Handle Stripe billing and customer sign-up.
+   - Provision a tenant data directory `/tenants/<family>/data` and spawn a dedicated `secretsauce-instance` Podman container.
+   - Direct the reverse proxy (Caddy / Traefik) to map `<family>.secretsauce.food` to that container.
+   - Caddy/Traefik automatically terminates wildcard TLS using Let's Encrypt DNS-01 or HTTP-01 challenges.
+   - The SecretSauce core codebase contains **zero multi-tenant SaaS logic**.
 
 ---
 
