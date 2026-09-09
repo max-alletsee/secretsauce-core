@@ -36,6 +36,13 @@ class Database:
         await conn.execute("PRAGMA synchronous=NORMAL;")
         await conn.execute("PRAGMA busy_timeout=5000;")
 
+    async def __aenter__(self) -> "Database":
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        await self.close()
+
     async def close(self) -> None:
         if self._reader is not None:
             await self._reader.close()

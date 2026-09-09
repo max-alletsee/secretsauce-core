@@ -70,7 +70,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 11: Background Jobs Engine**
   - Files: `secretsauce/jobs.py`
   - Tests: `tests/test_jobs.py`
-- [ ] **Task 12: Plugin Discovery, Manifest Validation & Registry**
+- [x] **Task 12: Plugin Discovery, Manifest Validation & Registry**
   - Files: `secretsauce/plugins/manifest.py`, `secretsauce/plugins/loader.py`, `secretsauce/plugins/registry.py`
   - Tests: `tests/test_plugin_loader.py`
 - [ ] **Task 13: Plugin Context SDK & Token Management**
@@ -127,3 +127,4 @@ When starting a new Pi session to continue development:
 - **Task 9: Transactional Event Log, Outbox Dispatchers & Pruning** - Commit: `d2c37af` (feat(kernel): implement transactional event log and per-plugin outbox dispatchers)
 - **Task 10: Secrets Management & Key Derivation** - Commit: `f026bf5` (feat(kernel): implement secrets management and hkdf key derivation)
 - **Task 11: Background Jobs Engine** - Commit: `9316629` (feat(kernel): implement background jobs engine)
+- **Task 12: Plugin Discovery, Manifest Validation & Registry** - Commit: `9a465ae` (feat(kernel): implement plugin discovery, validation, and registry)

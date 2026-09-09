@@ -813,7 +813,7 @@ git commit -m "feat(kernel): implement background jobs engine"
 - Consumes: Plugin files on disk, `Database`.
 - Produces: `PluginRegistry`, `PluginLoader`.
 
-- [ ] **Step 1: Write failing test for Plugin Discovery and Loading**
+- [x] **Step 1: Write failing test for Plugin Discovery and Loading**
 ```python
 # tests/test_plugin_loader.py
 import pytest
@@ -849,18 +849,18 @@ async def setup(ctx):
     await db.close()
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_plugin_loader.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement PluginRegistry and PluginLoader**
+- [x] **Step 3: Implement PluginRegistry and PluginLoader**
 Implement `secretsauce/plugins/manifest.py`, `secretsauce/plugins/registry.py`, and `secretsauce/plugins/loader.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_plugin_loader.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/plugins/manifest.py secretsauce/plugins/loader.py secretsauce/plugins/registry.py tests/test_plugin_loader.py
 git commit -m "feat(kernel): implement plugin discovery, validation, and registry"
