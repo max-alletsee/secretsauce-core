@@ -93,7 +93,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 18: Schedule & Cook Journal REST API Routes**
   - Files: `secretsauce/api/routes/schedule.py`, `secretsauce/api/routes/journal.py`
   - Tests: `tests/test_schedule_journal_api.py`
-- [ ] **Task 19: Assets & Attributes REST API Routes**
+- [x] **Task 19: Assets & Attributes REST API Routes**
   - Files: `secretsauce/api/routes/assets.py`, `secretsauce/api/routes/attributes.py`
   - Tests: `tests/test_assets_attributes_api.py`
 - [ ] **Task 20: Plugins, Jobs & Server-Sent Events (SSE) Stream**
@@ -134,3 +134,4 @@ When starting a new Pi session to continue development:
 - **Task 16: Household & Member REST API Routes** - Commit: `d3b5638` (feat(kernel): implement household and members rest api routes)
 - **Task 17: Recipe REST API Routes (Search, Languages & Deletion)** - Commit: `d304f52` (feat(kernel): implement recipe rest api routes with fts5 search and language resolution)
 - **Task 18: Schedule & Cook Journal REST API Routes** - Commit: `8c93b04` (feat(kernel): implement schedule and cook journal rest api routes)
+- **Task 19: Assets & Attributes REST API Routes** - Commit: `934e5fb` (feat(kernel): implement assets and attributes rest api routes)

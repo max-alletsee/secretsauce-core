@@ -1215,7 +1215,7 @@ git commit -m "feat(kernel): implement schedule and journal rest api routes"
 - Consumes: `AssetsRepo`, `AttributesRepo`.
 - Produces: FastAPI APIRouter mounted at `/api/assets` and `/api/attributes`.
 
-- [ ] **Step 1: Write failing test**
+- [x] **Step 1: Write failing test**
 ```python
 # tests/test_assets_attributes_api.py
 import pytest
@@ -1236,18 +1236,18 @@ async def test_assets_upload_and_download(tmp_path):
         assert "immutable" in dl_res.headers.get("cache-control", "")
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_assets_attributes_api.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement Assets and Attributes Routes**
+- [x] **Step 3: Implement Assets and Attributes Routes**
 Implement `secretsauce/api/routes/assets.py` and `secretsauce/api/routes/attributes.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_assets_attributes_api.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/api/routes/assets.py secretsauce/api/routes/attributes.py tests/test_assets_attributes_api.py
 git commit -m "feat(kernel): implement assets and attributes rest api routes"

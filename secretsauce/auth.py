@@ -248,6 +248,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
             request.state.actor_member_id = None
 
         response = await call_next(request)
-        if path.startswith("/api"):
+        if path.startswith("/api") and "cache-control" not in response.headers:
             response.headers["Cache-Control"] = "no-store"
         return response

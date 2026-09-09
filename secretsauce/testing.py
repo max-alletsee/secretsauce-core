@@ -4,6 +4,8 @@ import httpx
 from fastapi import FastAPI
 from itsdangerous import URLSafeTimedSerializer
 
+from secretsauce.api.routes.assets import router as assets_router
+from secretsauce.api.routes.attributes import router as attributes_router
 from secretsauce.api.routes.auth import router as auth_router
 from secretsauce.api.routes.household import router as household_router
 from secretsauce.api.routes.journal import router as journal_router
@@ -77,6 +79,8 @@ class Kernel:
         self.app.include_router(recipes_router)
         self.app.include_router(schedule_router)
         self.app.include_router(journal_router)
+        self.app.include_router(assets_router)
+        self.app.include_router(attributes_router)
 
         @self.app.exception_handler(SecretSauceError)
         async def handle_secretsauce_error(request, exc: SecretSauceError):
