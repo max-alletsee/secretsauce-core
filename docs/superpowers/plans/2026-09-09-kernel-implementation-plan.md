@@ -92,7 +92,7 @@ Before writing code, the implementation agent must account for these critical in
 - Consumes: Environment variables, filesystem JSON.
 - Produces: `Config` dataclass/pydantic model, `SecretSauceError` subclasses (`NotFoundError`, `ConflictError`, `ValidationError`, `VetoError`, `SetupRequiredError`, `UnauthorizedError`, `ForbiddenError`, `PayloadTooLargeError`, `PluginRuntimeError`).
 
-- [ ] **Step 1: Write the failing test for Config and Errors**
+- [x] **Step 1: Write the failing test for Config and Errors**
 
 ```python
 # tests/test_config.py
@@ -132,19 +132,19 @@ def test_conflict_error_payload():
     }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `uv run pytest tests/test_config.py tests/test_errors.py`
 Expected: FAIL (modules do not exist)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 Write `pyproject.toml` with `fastapi`, `uvicorn`, `aiosqlite`, `pydantic`, `cryptography`, `itsdangerous`, `httpx`, `pytest`, `pytest-asyncio`.
 Write `secretsauce/config.py` and `secretsauce/errors.py`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `uv run pytest tests/test_config.py tests/test_errors.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add pyproject.toml secretsauce/__init__.py secretsauce/config.py secretsauce/errors.py tests/test_config.py tests/test_errors.py
 git commit -m "feat(kernel): add project config and standard error hierarchy"

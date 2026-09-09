@@ -33,7 +33,7 @@ When starting a new Pi session to continue development:
 ## Phase 1: Kernel Foundation (Stages 1 – 4)
 
 ### Stage 1: Project Setup, Database Engine & Kernel Nouns
-- [ ] **Task 1: Package Scaffolding, Config & Error Hierarchy**
+- [x] **Task 1: Package Scaffolding, Config & Error Hierarchy**
   - Files: `pyproject.toml`, `secretsauce/config.py`, `secretsauce/errors.py`
   - Tests: `tests/test_config.py`, `tests/test_errors.py`
 - [ ] **Task 2: Database Connection Engine & Migration Runner**
@@ -116,4 +116,4 @@ When starting a new Pi session to continue development:
 ---
 
 ## Completed Tasks Log
-*(Entries will be recorded here with commit hashes as tasks are completed.)*
+- **Task 1: Package Scaffolding, Config & Error Hierarchy** - Commit: `e5e9233` (feat(kernel): add project scaffolding, config and error hierarchy)

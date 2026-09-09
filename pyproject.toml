@@ -1,0 +1,31 @@
+[project]
+name = "secretsauce"
+version = "0.1.0"
+description = "SecretSauce core kernel and plugin runtime"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "aiosqlite>=0.20.0",
+    "pydantic>=2.8.0",
+    "cryptography>=43.0.0",
+    "itsdangerous>=2.2.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["tmp", ".git", ".venv"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
