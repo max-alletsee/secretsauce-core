@@ -619,7 +619,7 @@ git commit -m "feat(kernel): implement pre-commit policy hooks with mutation and
 - Consumes: `Database`.
 - Produces: `EventLog`, `EventDispatcher`, `Event` dataclass.
 
-- [ ] **Step 1: Write failing test for Event Log and Dispatcher**
+- [x] **Step 1: Write failing test for Event Log and Dispatcher**
 ```python
 # tests/test_events.py
 import pytest
@@ -652,18 +652,18 @@ async def test_event_logging_and_dispatch(tmp_path):
     await db.close()
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_events.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement EventLog and EventDispatcher**
+- [x] **Step 3: Implement EventLog and EventDispatcher**
 Implement `secretsauce/events.py` following Section 6.7 of the spec.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_events.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/events.py tests/test_events.py
 git commit -m "feat(kernel): implement transactional event log and per-plugin outbox dispatchers"

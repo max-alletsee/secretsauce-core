@@ -59,7 +59,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 8: Synchronous Pre-Commit Policy Hooks**
   - Files: `secretsauce/hooks.py`
   - Tests: `tests/test_hooks.py`
-- [ ] **Task 9: Transactional Event Log, Outbox Dispatchers & Pruning**
+- [x] **Task 9: Transactional Event Log, Outbox Dispatchers & Pruning**
   - Files: `secretsauce/events.py`
   - Tests: `tests/test_events.py`
 
@@ -124,3 +124,4 @@ When starting a new Pi session to continue development:
 - **Task 6: Schedule & Cook Journal Repositories** - Commit: `5c425b3` (feat(kernel): implement schedule and cook journal repositories)
 - **Task 7: Assets & Entity Attributes Repositories** - Commit: `56023f6` (feat(kernel): implement assets and entity attributes repositories)
 - **Task 8: Synchronous Pre-Commit Policy Hooks** - Commit: `b8f8d79` (feat(kernel): implement pre-commit policy hooks with mutation and veto)
+- **Task 9: Transactional Event Log, Outbox Dispatchers & Pruning** - Commit: `d2c37af` (feat(kernel): implement transactional event log and per-plugin outbox dispatchers)
