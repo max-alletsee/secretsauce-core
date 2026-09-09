@@ -31,10 +31,14 @@ class Database:
         await self._configure_connection(self._reader)
 
     async def _configure_connection(self, conn: aiosqlite.Connection) -> None:
-        await conn.execute("PRAGMA journal_mode=WAL;")
-        await conn.execute("PRAGMA foreign_keys=ON;")
-        await conn.execute("PRAGMA synchronous=NORMAL;")
-        await conn.execute("PRAGMA busy_timeout=5000;")
+        async with conn.execute("PRAGMA journal_mode=WAL;"):
+            pass
+        async with conn.execute("PRAGMA foreign_keys=ON;"):
+            pass
+        async with conn.execute("PRAGMA synchronous=NORMAL;"):
+            pass
+        async with conn.execute("PRAGMA busy_timeout=5000;"):
+            pass
 
     async def __aenter__(self) -> "Database":
         await self.connect()
@@ -64,6 +68,16 @@ class Database:
             except Exception:
                 await self._writer.rollback()
                 raise
+
+    async def vacuum_into(self, target_path: Path | str) -> None:
+        """Executes VACUUM INTO target_path on the writer connection outside a transaction."""
+        if self._writer is None:
+            raise RuntimeError("Database is not connected")
+
+        target_posix = Path(target_path).as_posix()
+        async with self._writer_lock:
+            async with self._writer.execute(f"VACUUM INTO '{target_posix}';"):
+                pass
 
     async def write(
         self,

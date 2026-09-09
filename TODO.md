@@ -99,7 +99,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 20: Plugins, Jobs & Server-Sent Events (SSE) Stream**
   - Files: `secretsauce/stream.py`, `secretsauce/api/routes/plugins.py`, `secretsauce/api/routes/jobs.py`
   - Tests: `tests/test_stream_jobs_api.py`
-- [ ] **Task 21: Application Boot Orchestrator, CLI & Garbage Collector**
+- [x] **Task 21: Application Boot Orchestrator, CLI & Garbage Collector**
   - Files: `secretsauce/app.py`, `secretsauce/boot.py`, `secretsauce/gc.py`, `secretsauce/cli.py`, `secretsauce/__main__.py`
   - Tests: `tests/test_app_boot.py`, `tests/test_cli.py`
 
@@ -136,3 +136,4 @@ When starting a new Pi session to continue development:
 - **Task 18: Schedule & Cook Journal REST API Routes** - Commit: `8c93b04` (feat(kernel): implement schedule and cook journal rest api routes)
 - **Task 19: Assets & Attributes REST API Routes** - Commit: `934e5fb` (feat(kernel): implement assets and attributes rest api routes)
 - **Task 20: Plugins, Jobs & Server-Sent Events (SSE) Stream** - Commit: `7d5444a` (feat(kernel): implement sse stream hub and plugin/job api routes)
+- **Task 21: Application Boot Orchestrator, CLI & Garbage Collector** - Commit: `b9c0c38` (feat(kernel): implement application boot factory, hourly gc, export, and cli)

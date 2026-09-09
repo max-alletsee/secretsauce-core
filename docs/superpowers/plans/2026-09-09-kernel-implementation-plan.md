@@ -1319,7 +1319,7 @@ git commit -m "feat(kernel): implement sse stream hub and plugin/job api routes"
 - Consumes: All kernel modules.
 - Produces: `build_app()`, `secretsauce` CLI command, full FastAPI application instance.
 
-- [ ] **Step 1: Write failing test for App Boot and Export**
+- [x] **Step 1: Write failing test for App Boot and Export**
 ```python
 # tests/test_app_boot.py
 import pytest
@@ -1345,18 +1345,18 @@ async def test_boot_and_export(tmp_path):
             assert "config.json" in names
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_app_boot.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement Boot, GC, App Factory and CLI**
+- [x] **Step 3: Implement Boot, GC, App Factory and CLI**
 Implement `secretsauce/boot.py`, `secretsauce/gc.py`, `secretsauce/app.py`, `secretsauce/cli.py`, and `secretsauce/__main__.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_app_boot.py tests/test_cli.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/app.py secretsauce/boot.py secretsauce/gc.py secretsauce/cli.py secretsauce/__main__.py tests/test_app_boot.py tests/test_cli.py
 git commit -m "feat(kernel): implement application boot factory, hourly gc, export, and cli"

@@ -7,6 +7,7 @@ from itsdangerous import URLSafeTimedSerializer
 from secretsauce.api.routes.assets import router as assets_router
 from secretsauce.api.routes.attributes import router as attributes_router
 from secretsauce.api.routes.auth import router as auth_router
+from secretsauce.api.routes.export import router as export_router
 from secretsauce.api.routes.household import router as household_router
 from secretsauce.api.routes.jobs import router as jobs_router
 from secretsauce.api.routes.journal import router as journal_router
@@ -77,10 +78,6 @@ class Kernel:
 
         self.app.add_middleware(AuthMiddleware)
 
-        @self.app.get("/api/health")
-        async def health():
-            return {"status": "ok"}
-
         self.app.include_router(setup_router)
         self.app.include_router(auth_router)
         self.app.include_router(household_router)
@@ -93,6 +90,7 @@ class Kernel:
         self.app.include_router(jobs_router)
         self.app.include_router(plugins_router)
         self.app.include_router(stream_router)
+        self.app.include_router(export_router)
 
         @self.app.exception_handler(SecretSauceError)
         async def handle_secretsauce_error(request, exc: SecretSauceError):
