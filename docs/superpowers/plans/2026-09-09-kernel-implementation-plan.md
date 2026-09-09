@@ -556,7 +556,7 @@ git commit -m "feat(kernel): implement assets and entity attributes repositories
 - Consumes: `Database` transaction context.
 - Produces: `HookRegistry` with `register(hook_name, callback)`, `run_before(hook_name, data)`.
 
-- [ ] **Step 1: Write failing test for Policy Hooks**
+- [x] **Step 1: Write failing test for Policy Hooks**
 ```python
 # tests/test_hooks.py
 import pytest
@@ -588,18 +588,18 @@ async def test_hook_mutate_and_veto():
     assert exc.value.plugin_id == "allergen-plugin"
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_hooks.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement HookRegistry**
+- [x] **Step 3: Implement HookRegistry**
 Implement `secretsauce/hooks.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_hooks.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/hooks.py tests/test_hooks.py
 git commit -m "feat(kernel): implement pre-commit policy hooks with mutation and veto"

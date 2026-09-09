@@ -78,6 +78,7 @@ class VetoError(SecretSauceError):
         plugin_id: str | None = None,
         details: dict[str, Any] | None = None,
     ):
+        self.plugin_id = plugin_id
         merged_details = dict(details) if details else {}
         if plugin_id is not None:
             merged_details["plugin_id"] = plugin_id

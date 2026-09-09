@@ -56,7 +56,7 @@ When starting a new Pi session to continue development:
   - Tests: `tests/test_assets_attributes.py`
 
 ### Stage 2: Hooks & Event System
-- [ ] **Task 8: Synchronous Pre-Commit Policy Hooks**
+- [x] **Task 8: Synchronous Pre-Commit Policy Hooks**
   - Files: `secretsauce/hooks.py`
   - Tests: `tests/test_hooks.py`
 - [ ] **Task 9: Transactional Event Log, Outbox Dispatchers & Pruning**
@@ -123,3 +123,4 @@ When starting a new Pi session to continue development:
 - **Task 5: Recipe Repository (Language Rows, Trigram FTS5 & Safe Deletion)** - Commit: `cbd058f` (feat(kernel): implement recipe repository with trigram fts5 and group language resolution)
 - **Task 6: Schedule & Cook Journal Repositories** - Commit: `5c425b3` (feat(kernel): implement schedule and cook journal repositories)
 - **Task 7: Assets & Entity Attributes Repositories** - Commit: `56023f6` (feat(kernel): implement assets and entity attributes repositories)
+- **Task 8: Synchronous Pre-Commit Policy Hooks** - Commit: `b8f8d79` (feat(kernel): implement pre-commit policy hooks with mutation and veto)
