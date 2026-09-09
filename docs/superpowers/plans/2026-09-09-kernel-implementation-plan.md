@@ -432,7 +432,7 @@ git commit -m "feat(kernel): implement recipe repository with trigram fts5 and g
 - Consumes: `Database`, `RecipesRepo`.
 - Produces: `ScheduleRepo`, `JournalRepo`.
 
-- [ ] **Step 1: Write failing test for Schedule and Journal**
+- [x] **Step 1: Write failing test for Schedule and Journal**
 ```python
 # tests/test_schedule_journal.py
 import pytest
@@ -471,18 +471,18 @@ async def test_schedule_and_journal_flow(tmp_path):
     await db.close()
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_schedule_journal.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement ScheduleRepo and JournalRepo**
+- [x] **Step 3: Implement ScheduleRepo and JournalRepo**
 Implement `secretsauce/nouns/schedule.py` and `secretsauce/nouns/journal.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_schedule_journal.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/nouns/schedule.py secretsauce/nouns/journal.py tests/test_schedule_journal.py
 git commit -m "feat(kernel): implement schedule and cook journal repositories"
