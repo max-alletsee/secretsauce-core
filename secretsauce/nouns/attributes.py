@@ -86,32 +86,48 @@ class AttributesRepo:
         self,
         entity_type: str,
         entity_id: str,
+        plugin_id: str | None = None,
         conn: aiosqlite.Connection | None = None,
     ) -> dict[str, Any]:
-        rows = await self.db.read_all(
+        if plugin_id is not None:
+            sql = """
+            SELECT plugin_id, key, value_numeric, value_text, value_json
+            FROM entity_attributes
+            WHERE entity_type = ? AND entity_id = ? AND plugin_id = ?;
             """
+            params = (entity_type, entity_id, plugin_id)
+        else:
+            sql = """
             SELECT plugin_id, key, value_numeric, value_text, value_json
             FROM entity_attributes
             WHERE entity_type = ? AND entity_id = ?;
-            """,
-            (entity_type, entity_id),
-            conn=conn,
-        )
+            """
+            params = (entity_type, entity_id)
+
+        rows = await self.db.read_all(sql, params, conn=conn)
         res: dict[str, Any] = {}
         for r in rows:
-            qual_key = f"{r['plugin_id']}.{r['key']}"
+            dict_key = r["key"] if plugin_id is not None else f"{r['plugin_id']}.{r['key']}"
             if r["value_numeric"] is not None:
-                res[qual_key] = r["value_numeric"]
+                res[dict_key] = r["value_numeric"]
             elif r["value_text"] is not None:
-                res[qual_key] = r["value_text"]
+                res[dict_key] = r["value_text"]
             elif r["value_json"] is not None:
                 try:
-                    res[qual_key] = json.loads(r["value_json"])
+                    res[dict_key] = json.loads(r["value_json"])
                 except Exception:
-                    res[qual_key] = r["value_json"]
+                    res[dict_key] = r["value_json"]
             else:
-                res[qual_key] = None
+                res[dict_key] = None
         return res
+
+    async def get_all_attributes(
+        self,
+        entity_type: str,
+        entity_id: str,
+        conn: aiosqlite.Connection | None = None,
+    ) -> dict[str, Any]:
+        return await self.get_attributes(entity_type, entity_id, plugin_id=None, conn=conn)
 
     async def drop_plugin_attributes(
         self, plugin_id: str, conn: aiosqlite.Connection | None = None

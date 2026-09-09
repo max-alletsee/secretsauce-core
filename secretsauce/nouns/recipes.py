@@ -528,3 +528,7 @@ class RecipesRepo:
             "limit": limit,
             "offset": offset,
         }
+
+
+RecipeRepo = RecipesRepo
+

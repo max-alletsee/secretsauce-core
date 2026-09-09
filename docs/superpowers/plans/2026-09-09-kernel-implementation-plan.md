@@ -881,7 +881,7 @@ git commit -m "feat(kernel): implement plugin discovery, validation, and registr
 - Consumes: Repositories, `Database`, `HookRegistry`, `EventDispatcher`, `JobManager`.
 - Produces: `PluginContext` instance scoped per plugin.
 
-- [ ] **Step 1: Write failing test for PluginContext**
+- [x] **Step 1: Write failing test for PluginContext**
 ```python
 # tests/test_plugin_context.py
 import pytest
@@ -906,18 +906,18 @@ async def test_plugin_context_capabilities(tmp_path):
     await db.close()
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_plugin_context.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement PluginContext and TokenManager**
+- [x] **Step 3: Implement PluginContext and TokenManager**
 Implement `secretsauce/plugins/context.py` and `secretsauce/api_tokens.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_plugin_context.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/plugins/context.py secretsauce/api_tokens.py tests/test_plugin_context.py
 git commit -m "feat(kernel): implement plugin context sdk and token management"
