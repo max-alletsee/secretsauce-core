@@ -45,7 +45,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 4: Household Members Repository**
   - Files: `secretsauce/nouns/members.py`
   - Tests: `tests/test_members.py`
-- [ ] **Task 5: Recipe Repository (Language Rows, Trigram FTS5 & Safe Deletion)**
+- [x] **Task 5: Recipe Repository (Language Rows, Trigram FTS5 & Safe Deletion)**
   - Files: `secretsauce/nouns/recipes.py`
   - Tests: `tests/test_recipes.py`
 - [ ] **Task 6: Schedule & Cook Journal Repositories**
@@ -120,3 +120,4 @@ When starting a new Pi session to continue development:
 - **Task 2: Database Connection Engine & Migration Runner** - Commit: `1f234e0` (feat(kernel): implement sqlite wal database engine and initial schema migration)
 - **Task 3: Household Configuration Repository** - Commit: `a00ccea` (feat(kernel): add household config repository)
 - **Task 4: Household Members Repository** - Commit: `9ad6b80` (feat(kernel): add household members repository with revision concurrency)
+- **Task 5: Recipe Repository (Language Rows, Trigram FTS5 & Safe Deletion)** - Commit: `cbd058f` (feat(kernel): implement recipe repository with trigram fts5 and group language resolution)

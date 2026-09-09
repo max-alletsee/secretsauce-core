@@ -355,7 +355,7 @@ git commit -m "feat(kernel): add household members repository with revision conc
 - Consumes: `Database`, `HouseholdRepo`.
 - Produces: `RecipesRepo` with `list_recipes(lang, q, tags, attrs, sort, limit, offset)`, `get_recipe(id_or_group_id, lang)`, `create_recipe(data)`, `update_recipe(id, revision, data)`, `delete_recipe_row(id, revision)`, `delete_recipe_group(group_id)`.
 
-- [ ] **Step 1: Write failing test for RecipesRepo**
+- [x] **Step 1: Write failing test for RecipesRepo**
 ```python
 # tests/test_recipes.py
 import pytest
@@ -400,18 +400,18 @@ async def test_recipe_trigram_search_and_group_languages(tmp_path):
     await db.close()
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_recipes.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement RecipesRepo**
+- [x] **Step 3: Implement RecipesRepo**
 Implement `secretsauce/nouns/recipes.py` including `recipes_fts` synchronization in the same transaction, reference re-pointing with `PRAGMA foreign_key_list`, and group resolution by language.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_recipes.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/nouns/recipes.py tests/test_recipes.py
 git commit -m "feat(kernel): implement recipe repository with trigram fts5 and group language resolution"
