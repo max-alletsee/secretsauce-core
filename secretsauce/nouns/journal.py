@@ -84,7 +84,7 @@ class JournalRepo:
         meal_type = data["meal_type"]
         recipe_id = data.get("recipe_id")
         title = data.get("title")
-        status = data["status"]
+        status = data.get("status", "cooked")
         servings_cooked = (
             float(data["servings_cooked"])
             if data.get("servings_cooked") is not None

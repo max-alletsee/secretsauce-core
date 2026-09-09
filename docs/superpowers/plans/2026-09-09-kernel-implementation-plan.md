@@ -1158,7 +1158,7 @@ git commit -m "feat(kernel): implement recipe rest api routes with fts5 search a
 - Consumes: `ScheduleRepo`, `JournalRepo`, `RecipesRepo`.
 - Produces: FastAPI APIRouter mounted at `/api/schedule` and `/api/journal`.
 
-- [ ] **Step 1: Write failing test**
+- [x] **Step 1: Write failing test**
 ```python
 # tests/test_schedule_journal_api.py
 import pytest
@@ -1183,18 +1183,18 @@ async def test_schedule_journal_routes(tmp_path):
         assert len(list_res.json()["items"]) == 1
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_schedule_journal_api.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement Schedule and Journal Routes**
+- [x] **Step 3: Implement Schedule and Journal Routes**
 Implement `secretsauce/api/routes/schedule.py` and `secretsauce/api/routes/journal.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_schedule_journal_api.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/api/routes/schedule.py secretsauce/api/routes/journal.py tests/test_schedule_journal_api.py
 git commit -m "feat(kernel): implement schedule and journal rest api routes"
