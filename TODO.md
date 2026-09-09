@@ -67,7 +67,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 10: Secrets Management & Key Derivation**
   - Files: `secretsauce/secrets.py`
   - Tests: `tests/test_secrets.py`
-- [ ] **Task 11: Background Jobs Engine**
+- [x] **Task 11: Background Jobs Engine**
   - Files: `secretsauce/jobs.py`
   - Tests: `tests/test_jobs.py`
 - [ ] **Task 12: Plugin Discovery, Manifest Validation & Registry**
@@ -126,3 +126,4 @@ When starting a new Pi session to continue development:
 - **Task 8: Synchronous Pre-Commit Policy Hooks** - Commit: `b8f8d79` (feat(kernel): implement pre-commit policy hooks with mutation and veto)
 - **Task 9: Transactional Event Log, Outbox Dispatchers & Pruning** - Commit: `d2c37af` (feat(kernel): implement transactional event log and per-plugin outbox dispatchers)
 - **Task 10: Secrets Management & Key Derivation** - Commit: `f026bf5` (feat(kernel): implement secrets management and hkdf key derivation)
+- **Task 11: Background Jobs Engine** - Commit: `9316629` (feat(kernel): implement background jobs engine)

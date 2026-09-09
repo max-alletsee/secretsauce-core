@@ -749,7 +749,7 @@ git commit -m "feat(kernel): implement secrets management and hkdf key derivatio
 - Consumes: `Database`.
 - Produces: `JobManager`, `JobHandle`.
 
-- [ ] **Step 1: Write failing test for Jobs**
+- [x] **Step 1: Write failing test for Jobs**
 ```python
 # tests/test_jobs.py
 import pytest
@@ -780,18 +780,18 @@ async def test_job_lifecycle(tmp_path):
     await db.close()
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_jobs.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement JobManager**
+- [x] **Step 3: Implement JobManager**
 Implement `secretsauce/jobs.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_jobs.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/jobs.py tests/test_jobs.py
 git commit -m "feat(kernel): implement background jobs engine"
