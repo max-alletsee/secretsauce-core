@@ -64,7 +64,7 @@ When starting a new Pi session to continue development:
   - Tests: `tests/test_events.py`
 
 ### Stage 3: Plugin System & Runtime
-- [ ] **Task 10: Secrets Management & Key Derivation**
+- [x] **Task 10: Secrets Management & Key Derivation**
   - Files: `secretsauce/secrets.py`
   - Tests: `tests/test_secrets.py`
 - [ ] **Task 11: Background Jobs Engine**
@@ -125,3 +125,4 @@ When starting a new Pi session to continue development:
 - **Task 7: Assets & Entity Attributes Repositories** - Commit: `56023f6` (feat(kernel): implement assets and entity attributes repositories)
 - **Task 8: Synchronous Pre-Commit Policy Hooks** - Commit: `b8f8d79` (feat(kernel): implement pre-commit policy hooks with mutation and veto)
 - **Task 9: Transactional Event Log, Outbox Dispatchers & Pruning** - Commit: `d2c37af` (feat(kernel): implement transactional event log and per-plugin outbox dispatchers)
+- **Task 10: Secrets Management & Key Derivation** - Commit: `f026bf5` (feat(kernel): implement secrets management and hkdf key derivation)

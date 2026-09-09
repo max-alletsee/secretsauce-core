@@ -683,7 +683,7 @@ git commit -m "feat(kernel): implement transactional event log and per-plugin ou
 - Consumes: Master key file.
 - Produces: `KeyManager` with `get_session_serializer()`, `encrypt_secret(clear)`, `decrypt_secret(cipher)`, `mask_config(schema, config)`, `unmask_and_encrypt_config(schema, old_config, new_config)`.
 
-- [ ] **Step 1: Write failing test for KeyManager**
+- [x] **Step 1: Write failing test for KeyManager**
 ```python
 # tests/test_secrets.py
 import pytest
@@ -718,18 +718,18 @@ def test_key_derivation_and_secret_masking(tmp_path):
     assert re_stored["model"] == "gemini-flash"
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_secrets.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement KeyManager**
+- [x] **Step 3: Implement KeyManager**
 Implement `secretsauce/secrets.py` using `cryptography.hazmat.primitives.kdf.hkdf.HKDF` and `Fernet`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_secrets.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/secrets.py tests/test_secrets.py
 git commit -m "feat(kernel): implement secrets management and hkdf key derivation"
