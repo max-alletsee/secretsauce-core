@@ -8,8 +8,10 @@ from secretsauce.api.routes.assets import router as assets_router
 from secretsauce.api.routes.attributes import router as attributes_router
 from secretsauce.api.routes.auth import router as auth_router
 from secretsauce.api.routes.household import router as household_router
+from secretsauce.api.routes.jobs import router as jobs_router
 from secretsauce.api.routes.journal import router as journal_router
 from secretsauce.api.routes.members import router as members_router
+from secretsauce.api.routes.plugins import router as plugins_router
 from secretsauce.api.routes.recipes import router as recipes_router
 from secretsauce.api.routes.schedule import router as schedule_router
 from secretsauce.api.routes.setup import router as setup_router
@@ -32,6 +34,8 @@ from secretsauce.plugins.context import PluginContext, ServiceRegistry
 from secretsauce.plugins.loader import PluginLoader
 from secretsauce.plugins.registry import PluginRegistry
 from secretsauce.secrets import KeyManager
+from secretsauce.stream import EventBroadcaster, router as stream_router
+import uuid
 
 
 class Kernel:
@@ -41,6 +45,9 @@ class Kernel:
         self.key_path = data_dir / "secret.key"
         self.plugins_dir = data_dir / "plugins"
         self.assets_dir = data_dir / "assets"
+
+        self.boot_id = str(uuid.uuid4())
+        self.broadcaster = EventBroadcaster()
 
         self.db = Database(self.db_path)
         self.key_manager = KeyManager(self.key_path)
@@ -54,9 +61,11 @@ class Kernel:
         self.attributes = AttributesRepo(self.db)
         self.hooks = HookRegistry()
         self.events = EventLog(self.db)
+        self.events.set_broadcaster(self.broadcaster)
         self.jobs = JobManager(self.db)
         self.tokens = TokenManager(self.db)
         self.registry = PluginRegistry(self.db)
+        self.plugins = self.registry
         self.loader = PluginLoader(self.registry, search_paths=[self.plugins_dir])
         self.services = ServiceRegistry()
 
@@ -81,6 +90,9 @@ class Kernel:
         self.app.include_router(journal_router)
         self.app.include_router(assets_router)
         self.app.include_router(attributes_router)
+        self.app.include_router(jobs_router)
+        self.app.include_router(plugins_router)
+        self.app.include_router(stream_router)
 
         @self.app.exception_handler(SecretSauceError)
         async def handle_secretsauce_error(request, exc: SecretSauceError):

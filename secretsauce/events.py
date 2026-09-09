@@ -67,6 +67,10 @@ def _row_to_event(row: dict[str, Any]) -> Event:
 class EventLog:
     def __init__(self, db: Database):
         self.db = db
+        self.broadcaster: Any | None = None
+
+    def set_broadcaster(self, broadcaster: Any) -> None:
+        self.broadcaster = broadcaster
 
     async def append(
         self,
@@ -110,7 +114,33 @@ class EventLog:
                 now,
             ),
         )
-        return cursor.lastrowid
+        seq = cursor.lastrowid
+        if self.broadcaster is not None:
+            evt = Event(
+                seq=seq,
+                name=name,
+                entity_type=entity_type,
+                entity_id=entity_id,
+                revision=revision,
+                actor_member_id=actor_member_id,
+                origin=origin,
+                cause_seq=cause_seq,
+                depth=depth,
+                data=data or {},
+                created_at=now,
+            )
+            self.broadcaster.broadcast_event(evt)
+
+        return seq
+
+    async def get_head_seq(
+        self, conn: aiosqlite.Connection | None = None
+    ) -> int:
+        row = await self.db.read_one(
+            "SELECT COALESCE(MAX(seq), 0) AS head_seq FROM events;",
+            conn=conn,
+        )
+        return row["head_seq"] if row else 0
 
     async def get_events_after(
         self,

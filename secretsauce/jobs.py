@@ -96,6 +96,29 @@ class JobManager:
             raise NotFoundError(f"Job {job_id} not found")
         return _row_to_job(row)
 
+    async def list_jobs(
+        self,
+        status: str | None = None,
+        plugin_id: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        clauses = []
+        params = []
+        if status is not None:
+            clauses.append("status = ?")
+            params.append(status)
+        if plugin_id is not None:
+            clauses.append("plugin_id = ?")
+            params.append(plugin_id)
+
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        sql = f"SELECT * FROM jobs {where} ORDER BY created_at DESC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
+
+        rows = await self.db.read_all(sql, tuple(params))
+        return [_row_to_job(r) for r in rows]
+
     async def cancel_job(self, job_id: str) -> None:
         now = _now_iso()
         async with self.db.transaction() as tx:

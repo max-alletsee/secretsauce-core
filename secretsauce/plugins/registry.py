@@ -28,6 +28,7 @@ class PluginRegistry:
         if not row:
             return None
         res = dict(row)
+        res["enabled"] = bool(res.get("enabled", 1))
         res["applied_schema"] = res.get("schema_applied", 0)
         res["error"] = res.get("last_error")
         if isinstance(res.get("config"), str):
@@ -54,6 +55,7 @@ class PluginRegistry:
         res = []
         for r in rows:
             item = dict(r)
+            item["enabled"] = bool(item.get("enabled", 1))
             item["applied_schema"] = item.get("schema_applied", 0)
             item["error"] = item.get("last_error")
             if isinstance(item.get("config"), str):

@@ -1269,7 +1269,7 @@ git commit -m "feat(kernel): implement assets and attributes rest api routes"
 - Consumes: `PluginRegistry`, `JobManager`, `EventLog`.
 - Produces: `SSEStreamHub`, FastAPI APIRouter mounted at `/api/plugins`, `/api/jobs`, `/api/events/stream`.
 
-- [ ] **Step 1: Write failing test for SSE Stream and Jobs**
+- [x] **Step 1: Write failing test for SSE Stream and Jobs**
 ```python
 # tests/test_stream_jobs_api.py
 import pytest
@@ -1283,18 +1283,18 @@ async def test_jobs_and_stream(tmp_path):
         assert isinstance(plugins_res.json()["items"], list)
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_stream_jobs_api.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement SSE Stream and Plugins/Jobs Routes**
+- [x] **Step 3: Implement SSE Stream and Plugins/Jobs Routes**
 Implement `secretsauce/stream.py`, `secretsauce/api/routes/plugins.py`, and `secretsauce/api/routes/jobs.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_stream_jobs_api.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/stream.py secretsauce/api/routes/plugins.py secretsauce/api/routes/jobs.py tests/test_stream_jobs_api.py
 git commit -m "feat(kernel): implement sse stream hub and plugin/job api routes"
