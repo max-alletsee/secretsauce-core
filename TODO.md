@@ -51,7 +51,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 6: Schedule & Cook Journal Repositories**
   - Files: `secretsauce/nouns/schedule.py`, `secretsauce/nouns/journal.py`
   - Tests: `tests/test_schedule_journal.py`
-- [ ] **Task 7: Assets & Entity Attributes Repositories**
+- [x] **Task 7: Assets & Entity Attributes Repositories**
   - Files: `secretsauce/nouns/assets.py`, `secretsauce/nouns/attributes.py`
   - Tests: `tests/test_assets_attributes.py`
 
@@ -122,3 +122,4 @@ When starting a new Pi session to continue development:
 - **Task 4: Household Members Repository** - Commit: `9ad6b80` (feat(kernel): add household members repository with revision concurrency)
 - **Task 5: Recipe Repository (Language Rows, Trigram FTS5 & Safe Deletion)** - Commit: `cbd058f` (feat(kernel): implement recipe repository with trigram fts5 and group language resolution)
 - **Task 6: Schedule & Cook Journal Repositories** - Commit: `5c425b3` (feat(kernel): implement schedule and cook journal repositories)
+- **Task 7: Assets & Entity Attributes Repositories** - Commit: `56023f6` (feat(kernel): implement assets and entity attributes repositories)

@@ -503,7 +503,7 @@ git commit -m "feat(kernel): implement schedule and cook journal repositories"
 - Consumes: `Database`, filesystem upload directory.
 - Produces: `AssetsRepo` and `AttributesRepo`.
 
-- [ ] **Step 1: Write failing test**
+- [x] **Step 1: Write failing test**
 ```python
 # tests/test_assets_attributes.py
 import pytest
@@ -525,18 +525,18 @@ async def test_entity_attributes_filtering(tmp_path):
     await db.close()
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_assets_attributes.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement AssetsRepo and AttributesRepo**
+- [x] **Step 3: Implement AssetsRepo and AttributesRepo**
 Implement `secretsauce/nouns/assets.py` and `secretsauce/nouns/attributes.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_assets_attributes.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/nouns/assets.py secretsauce/nouns/attributes.py tests/test_assets_attributes.py
 git commit -m "feat(kernel): implement assets and entity attributes repositories"
