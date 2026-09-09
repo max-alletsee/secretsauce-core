@@ -165,7 +165,7 @@ git commit -m "feat(kernel): add project config and standard error hierarchy"
 - Consumes: SQLite database file path.
 - Produces: `Database` class with `connect()`, `close()`, `read()`, `write()`, `transaction()`, and `run_migrations()`.
 
-- [ ] **Step 1: Write the failing test for Database engine and migrations**
+- [x] **Step 1: Write the failing test for Database engine and migrations**
 
 ```python
 # tests/test_db.py
@@ -205,19 +205,19 @@ async def test_database_init_and_pragmas(tmp_path):
         await db.close()
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `uv run pytest tests/test_db.py`
 Expected: FAIL
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 Implement `secretsauce/migrations/0001_initial.sql` with full DDL matching Section 4.3 of the spec (including `recipes_fts` with `tokenize='trigram'`).
 Implement `secretsauce/db.py` managing the single writer connection (with `asyncio.Lock`), reader connection, and migration execution tracking `kernel_migrations`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `uv run pytest tests/test_db.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/db.py secretsauce/migrations/0001_initial.sql tests/test_db.py
 git commit -m "feat(kernel): implement sqlite wal database engine and initial schema migration"

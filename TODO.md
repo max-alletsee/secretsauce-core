@@ -36,7 +36,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 1: Package Scaffolding, Config & Error Hierarchy**
   - Files: `pyproject.toml`, `secretsauce/config.py`, `secretsauce/errors.py`
   - Tests: `tests/test_config.py`, `tests/test_errors.py`
-- [ ] **Task 2: Database Connection Engine & Migration Runner**
+- [x] **Task 2: Database Connection Engine & Migration Runner**
   - Files: `secretsauce/db.py`, `secretsauce/migrations/0001_initial.sql`
   - Tests: `tests/test_db.py`
 - [ ] **Task 3: Household Configuration Repository**
@@ -117,3 +117,4 @@ When starting a new Pi session to continue development:
 
 ## Completed Tasks Log
 - **Task 1: Package Scaffolding, Config & Error Hierarchy** - Commit: `e5e9233` (feat(kernel): add project scaffolding, config and error hierarchy)
+- **Task 2: Database Connection Engine & Migration Runner** - Commit: `1f234e0` (feat(kernel): implement sqlite wal database engine and initial schema migration)
