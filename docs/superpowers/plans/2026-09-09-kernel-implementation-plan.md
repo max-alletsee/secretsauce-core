@@ -237,7 +237,7 @@ git commit -m "feat(kernel): implement sqlite wal database engine and initial sc
 - Consumes: `Database` instance.
 - Produces: `HouseholdRepo` with `get_config()`, `update_config(dict)`, `get_passphrase_info()`, `set_passphrase(hash)`.
 
-- [ ] **Step 1: Write failing test for HouseholdRepo**
+- [x] **Step 1: Write failing test for HouseholdRepo**
 ```python
 # tests/test_household.py
 import pytest
@@ -262,18 +262,18 @@ async def test_household_config_crud(tmp_path):
     await db.close()
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_household.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement HouseholdRepo**
+- [x] **Step 3: Implement HouseholdRepo**
 Implement `secretsauce/nouns/household.py` storing values in `household_config`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_household.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/nouns/household.py tests/test_household.py
 git commit -m "feat(kernel): add household config repository"

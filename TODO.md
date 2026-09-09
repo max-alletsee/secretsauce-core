@@ -39,7 +39,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 2: Database Connection Engine & Migration Runner**
   - Files: `secretsauce/db.py`, `secretsauce/migrations/0001_initial.sql`
   - Tests: `tests/test_db.py`
-- [ ] **Task 3: Household Configuration Repository**
+- [x] **Task 3: Household Configuration Repository**
   - Files: `secretsauce/nouns/household.py`
   - Tests: `tests/test_household.py`
 - [ ] **Task 4: Household Members Repository**
@@ -118,3 +118,4 @@ When starting a new Pi session to continue development:
 ## Completed Tasks Log
 - **Task 1: Package Scaffolding, Config & Error Hierarchy** - Commit: `e5e9233` (feat(kernel): add project scaffolding, config and error hierarchy)
 - **Task 2: Database Connection Engine & Migration Runner** - Commit: `1f234e0` (feat(kernel): implement sqlite wal database engine and initial schema migration)
+- **Task 3: Household Configuration Repository** - Commit: `a00ccea` (feat(kernel): add household config repository)
