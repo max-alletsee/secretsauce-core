@@ -4,7 +4,10 @@ import httpx
 from fastapi import FastAPI
 from itsdangerous import URLSafeTimedSerializer
 
+from secretsauce.api.routes.auth import router as auth_router
+from secretsauce.api.routes.setup import router as setup_router
 from secretsauce.api_tokens import TokenManager
+from secretsauce.auth import AuthMiddleware, hash_passphrase
 from secretsauce.db import Database
 from secretsauce.events import Event, EventDispatcher, EventLog
 from secretsauce.hooks import HookRegistry
@@ -54,9 +57,14 @@ class Kernel:
         self.app = FastAPI(title="SecretSauce Kernel Test")
         self.app.state.kernel = self
 
+        self.app.add_middleware(AuthMiddleware)
+
         @self.app.get("/api/health")
         async def health():
             return {"status": "ok"}
+
+        self.app.include_router(setup_router)
+        self.app.include_router(auth_router)
 
         self.client: httpx.AsyncClient | None = None
 
@@ -97,7 +105,9 @@ class Kernel:
                     "units": "metric",
                 }
             )
-            await self.household.set_passphrase("test_hash")
+            version = await self.household.set_passphrase(
+                hash_passphrase("test_passphrase")
+            )
             await self.members.create_member(
                 {"name": "Admin", "color": "#0088cc"}
             )
@@ -109,10 +119,10 @@ class Kernel:
 
         if auto_setup:
             serializer = URLSafeTimedSerializer(
-                self.key_manager.derive_session_key()
+                self.key_manager.derive_session_key(), salt="session"
             )
             token = serializer.dumps(
-                {"session_id": "test_session", "passphrase_version": 1}
+                {"session_id": "test_session", "passphrase_version": version}
             )
             self.client.cookies.set("ss_session", token)
 

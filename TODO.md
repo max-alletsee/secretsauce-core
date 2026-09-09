@@ -81,7 +81,7 @@ When starting a new Pi session to continue development:
   - Tests: `tests/test_testing_harness.py`
 
 ### Stage 4: HTTP API, Auth & SSE Streaming
-- [ ] **Task 15: Auth Middleware, Session Cookies & Setup Flow**
+- [x] **Task 15: Auth Middleware, Session Cookies & Setup Flow**
   - Files: `secretsauce/auth.py`, `secretsauce/api/routes/setup.py`, `secretsauce/api/routes/auth.py`
   - Tests: `tests/test_auth_routes.py`
 - [ ] **Task 16: Household & Member REST API Routes**
@@ -130,3 +130,4 @@ When starting a new Pi session to continue development:
 - **Task 12: Plugin Discovery, Manifest Validation & Registry** - Commit: `9a465ae` (feat(kernel): implement plugin discovery, validation, and registry)
 - **Task 13: Plugin Context SDK & Token Management** - Commit: `db4dd0c` (feat(kernel): implement plugin context sdk and token management)
 - **Task 14: Plugin Test Harness (`secretsauce.testing`)** - Commit: `69d7f95` (feat(kernel): implement secretsauce.testing harness)
+- **Task 15: Auth Middleware, Session Cookies & Setup Flow** - Commit: `ebbb5d6` (feat(kernel): implement setup flow, scrypt auth, and session cookie validation)

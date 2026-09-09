@@ -985,7 +985,7 @@ git commit -m "feat(kernel): implement secretsauce.testing harness"
 - Consumes: `HouseholdRepo`, `KeyManager`, FastAPI Request/Response.
 - Produces: Auth middleware, `/api/setup`, `/api/auth/login`, `/api/auth/logout`, `/api/auth/session`.
 
-- [ ] **Step 1: Write failing test for Auth and Setup**
+- [x] **Step 1: Write failing test for Auth and Setup**
 ```python
 # tests/test_auth_routes.py
 import pytest
@@ -1014,18 +1014,18 @@ async def test_setup_and_login_lifecycle(tmp_path):
         assert hh.json()["household_name"] == "Alletsee Home"
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_auth_routes.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement Auth and Setup Routes**
+- [x] **Step 3: Implement Auth and Setup Routes**
 Implement `secretsauce/auth.py`, `secretsauce/api/routes/setup.py`, and `secretsauce/api/routes/auth.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_auth_routes.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/auth.py secretsauce/api/routes/setup.py secretsauce/api/routes/auth.py tests/test_auth_routes.py
 git commit -m "feat(kernel): implement setup flow, scrypt auth, and session cookie validation"
