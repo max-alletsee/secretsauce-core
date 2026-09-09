@@ -76,7 +76,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 13: Plugin Context SDK & Token Management**
   - Files: `secretsauce/plugins/context.py`, `secretsauce/api_tokens.py`
   - Tests: `tests/test_plugin_context.py`
-- [ ] **Task 14: Plugin Test Harness (`secretsauce.testing`)**
+- [x] **Task 14: Plugin Test Harness (`secretsauce.testing`)**
   - Files: `secretsauce/testing.py`
   - Tests: `tests/test_testing_harness.py`
 
@@ -129,3 +129,4 @@ When starting a new Pi session to continue development:
 - **Task 11: Background Jobs Engine** - Commit: `9316629` (feat(kernel): implement background jobs engine)
 - **Task 12: Plugin Discovery, Manifest Validation & Registry** - Commit: `9a465ae` (feat(kernel): implement plugin discovery, validation, and registry)
 - **Task 13: Plugin Context SDK & Token Management** - Commit: `db4dd0c` (feat(kernel): implement plugin context sdk and token management)
+- **Task 14: Plugin Test Harness (`secretsauce.testing`)** - Commit: `69d7f95` (feat(kernel): implement secretsauce.testing harness)

@@ -937,7 +937,7 @@ git commit -m "feat(kernel): implement plugin context sdk and token management"
 - Consumes: `secretsauce` kernel subsystems.
 - Produces: `make_kernel()`, `drain_events()`, `KernelTestHarness`.
 
-- [ ] **Step 1: Write failing test for testing harness**
+- [x] **Step 1: Write failing test for testing harness**
 ```python
 # tests/test_testing_harness.py
 import pytest
@@ -952,18 +952,18 @@ async def test_make_kernel_fixture(tmp_path):
         assert res.json()["status"] == "ok"
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_testing_harness.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement testing.py**
+- [x] **Step 3: Implement testing.py**
 Implement `secretsauce/testing.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_testing_harness.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/testing.py tests/test_testing_harness.py
 git commit -m "feat(kernel): implement secretsauce.testing harness"

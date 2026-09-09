@@ -44,6 +44,12 @@ class KeyManager:
         )
         return hkdf.derive(self.master_key)
 
+    def derive_session_key(self) -> bytes:
+        return self._session_subkey
+
+    def derive_config_key(self) -> bytes:
+        return self._config_subkey
+
     def get_session_serializer(self) -> URLSafeTimedSerializer:
         return URLSafeTimedSerializer(self._session_subkey, salt="session")
 
