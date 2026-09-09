@@ -1046,7 +1046,7 @@ git commit -m "feat(kernel): implement setup flow, scrypt auth, and session cook
 - Consumes: `HouseholdRepo`, `MembersRepo`, Auth dependencies.
 - Produces: FastAPI APIRouter mounted at `/api/household` and `/api/members`.
 
-- [ ] **Step 1: Write failing test**
+- [x] **Step 1: Write failing test**
 ```python
 # tests/test_household_members_api.py
 import pytest
@@ -1069,18 +1069,18 @@ async def test_household_and_members_api(tmp_path):
         assert patch_res.json()["name"] == "Sarah A."
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_household_members_api.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement Household and Members Routes**
+- [x] **Step 3: Implement Household and Members Routes**
 Implement `secretsauce/api/routes/household.py` and `secretsauce/api/routes/members.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_household_members_api.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/api/routes/household.py secretsauce/api/routes/members.py tests/test_household_members_api.py
 git commit -m "feat(kernel): implement household and members rest api routes"

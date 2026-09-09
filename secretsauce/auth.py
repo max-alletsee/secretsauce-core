@@ -247,4 +247,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         else:
             request.state.actor_member_id = None
 
-        return await call_next(request)
+        response = await call_next(request)
+        if path.startswith("/api"):
+            response.headers["Cache-Control"] = "no-store"
+        return response

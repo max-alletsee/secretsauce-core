@@ -84,7 +84,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 15: Auth Middleware, Session Cookies & Setup Flow**
   - Files: `secretsauce/auth.py`, `secretsauce/api/routes/setup.py`, `secretsauce/api/routes/auth.py`
   - Tests: `tests/test_auth_routes.py`
-- [ ] **Task 16: Household & Member REST API Routes**
+- [x] **Task 16: Household & Member REST API Routes**
   - Files: `secretsauce/api/routes/household.py`, `secretsauce/api/routes/members.py`
   - Tests: `tests/test_household_members_api.py`
 - [ ] **Task 17: Recipe REST API Routes (Search, Languages & Deletion)**
@@ -131,3 +131,4 @@ When starting a new Pi session to continue development:
 - **Task 13: Plugin Context SDK & Token Management** - Commit: `db4dd0c` (feat(kernel): implement plugin context sdk and token management)
 - **Task 14: Plugin Test Harness (`secretsauce.testing`)** - Commit: `69d7f95` (feat(kernel): implement secretsauce.testing harness)
 - **Task 15: Auth Middleware, Session Cookies & Setup Flow** - Commit: `ebbb5d6` (feat(kernel): implement setup flow, scrypt auth, and session cookie validation)
+- **Task 16: Household & Member REST API Routes** - Commit: `d3b5638` (feat(kernel): implement household and members rest api routes)
