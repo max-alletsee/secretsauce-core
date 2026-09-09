@@ -293,7 +293,7 @@ git commit -m "feat(kernel): add household config repository"
 - Consumes: `Database`.
 - Produces: `MembersRepo` with `list_members()`, `get_member(id)`, `create_member(data)`, `update_member(id, revision, data)`, `delete_member(id, revision)`.
 
-- [ ] **Step 1: Write failing test for MembersRepo**
+- [x] **Step 1: Write failing test for MembersRepo**
 ```python
 # tests/test_members.py
 import pytest
@@ -324,18 +324,18 @@ async def test_member_crud_and_revision_conflict(tmp_path):
     await db.close()
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_members.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement MembersRepo**
+- [x] **Step 3: Implement MembersRepo**
 Implement `secretsauce/nouns/members.py` with SQL queries, JSON serialization, and conflict checking.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_members.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/nouns/members.py tests/test_members.py
 git commit -m "feat(kernel): add household members repository with revision concurrency"
