@@ -7,6 +7,7 @@ from itsdangerous import URLSafeTimedSerializer
 from secretsauce.api.routes.auth import router as auth_router
 from secretsauce.api.routes.household import router as household_router
 from secretsauce.api.routes.members import router as members_router
+from secretsauce.api.routes.recipes import router as recipes_router
 from secretsauce.api.routes.setup import router as setup_router
 from secretsauce.api_tokens import TokenManager
 from secretsauce.auth import AuthMiddleware, hash_passphrase
@@ -71,6 +72,7 @@ class Kernel:
         self.app.include_router(auth_router)
         self.app.include_router(household_router)
         self.app.include_router(members_router)
+        self.app.include_router(recipes_router)
 
         @self.app.exception_handler(SecretSauceError)
         async def handle_secretsauce_error(request, exc: SecretSauceError):

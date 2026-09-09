@@ -1100,7 +1100,7 @@ git commit -m "feat(kernel): implement household and members rest api routes"
 - Consumes: `RecipesRepo`, `HookRegistry`, `EventLog`.
 - Produces: FastAPI APIRouter mounted at `/api/recipes`.
 
-- [ ] **Step 1: Write failing test for Recipe Routes**
+- [x] **Step 1: Write failing test for Recipe Routes**
 ```python
 # tests/test_recipes_api.py
 import pytest
@@ -1126,18 +1126,18 @@ async def test_recipe_routes_crud_and_search(tmp_path):
         assert list_res.json()["total"] == 1
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `uv run pytest tests/test_recipes_api.py`
 Expected: FAIL
 
-- [ ] **Step 3: Implement Recipe Routes**
+- [x] **Step 3: Implement Recipe Routes**
 Implement `secretsauce/api/routes/recipes.py`.
 
-- [ ] **Step 4: Run test to verify pass**
+- [x] **Step 4: Run test to verify pass**
 Run: `uv run pytest tests/test_recipes_api.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add secretsauce/api/routes/recipes.py tests/test_recipes_api.py
 git commit -m "feat(kernel): implement recipe rest api routes with fts5 search and language resolution"
