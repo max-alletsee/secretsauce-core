@@ -39,7 +39,7 @@
   - `GET /static/{file_path:path}` -> static file with `Cache-Control: public, max-age=31536000, immutable` (refuses `index.html` and `sw.js`)
   - `GET /{full_path:path}` -> templated `index.html` with `window.__SS__` and `Cache-Control: no-cache`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Write `tests/test_pwa.py`:
 ```python
@@ -132,12 +132,12 @@ async def test_pwa_spa_index_fallback(tmp_path: Path):
         assert k.boot_id in res.text
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_pwa.py`
 Expected: FAIL with 404 Not Found (routes not yet registered)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 1. Create `secretsauce/api/routes/pwa.py`:
 ```python
@@ -294,12 +294,12 @@ async def spa_fallback(request: Request, full_path: str):
 3. Update `secretsauce/boot.py`:
 Add `compute_precache_info()` call into `boot()` and expose `precache_info: dict` on `BootedKernel`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/test_pwa.py`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add secretsauce/api/routes/pwa.py secretsauce/app.py secretsauce/boot.py tests/test_pwa.py
