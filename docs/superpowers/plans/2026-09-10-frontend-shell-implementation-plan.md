@@ -1570,7 +1570,7 @@ git commit -m "feat(sw): implement classify pure function, service worker strate
 - Consumes: `idb`, `ApiClient`, `Outbox`, `OutboxRequest`, `OutboxEntry`
 - Produces: `createOutbox(api: ApiClient, pluginIsActive?: (pluginId: string) => boolean): Outbox`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Write `shell/src/outbox.spec.ts`:
 ```ts
@@ -1659,12 +1659,12 @@ describe('Outbox engine', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --prefix shell test`
 Expected: FAIL (missing `src/outbox.ts`)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `shell/src/outbox.ts`:
 ```ts
@@ -1867,12 +1867,12 @@ export function createOutbox(
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --prefix shell test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add shell/src/outbox.ts shell/src/outbox.spec.ts
