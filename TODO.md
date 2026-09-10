@@ -1,9 +1,9 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Ready to begin Phase 1 execution  
-**Active Plan:** `docs/superpowers/plans/2026-09-09-kernel-implementation-plan.md`  
+**Current Status:** Phase 2: Frontend Shell & PWA in progress (Task 1 completed, Task 2 ready)  
+**Active Plan:** `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`  
 **Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md` (Revision 7)  
-**Last Updated:** 2026-09-09  
+**Last Updated:** 2026-09-10  
 
 ---
 
@@ -16,7 +16,7 @@ When starting a new Pi session to continue development:
    - Run `git status` and `git log -n 5 --oneline`.
    - Run existing tests: `uv run pytest` to ensure the baseline is completely green.
 3. **Execute Task:**
-   - Open `docs/superpowers/plans/2026-09-09-kernel-implementation-plan.md`.
+   - Open `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`.
    - Locate the first task with unchecked boxes (`- [ ]`).
    - Follow each step strictly with Test-Driven Development (TDD):
      - Step 1: Write failing test
@@ -102,6 +102,48 @@ When starting a new Pi session to continue development:
 - [x] **Task 21: Application Boot Orchestrator, CLI & Garbage Collector**
   - Files: `secretsauce/app.py`, `secretsauce/boot.py`, `secretsauce/gc.py`, `secretsauce/cli.py`, `secretsauce/__main__.py`
   - Tests: `tests/test_app_boot.py`, `tests/test_cli.py`
+
+## Phase 2: Frontend Shell & PWA (Stage 5)
+
+- [x] **Task 1: Backend PWA & Shell Serving Routes** - Commit: `135ae32`
+  - Files: `secretsauce/api/routes/pwa.py`, `secretsauce/app.py`, `secretsauce/boot.py`, `secretsauce/testing.py`
+  - Tests: `tests/test_pwa.py`
+- [ ] **Task 2: Shell Project Scaffolding & Dependencies**
+  - Files: `shell/package.json`, `shell/pnpm-workspace.yaml`, `shell/tsconfig.json`, `shell/vite.config.ts`, `shell/vitest.config.ts`, `shell/packages/ui/package.json`, `shell/packages/ui/tsconfig.json`
+  - Tests: `shell/tests/scaffold.spec.ts`
+- [ ] **Task 3: @secretsauce/ui Package Core**
+  - Files: `shell/packages/ui/src/index.ts`, `shell/packages/ui/src/Slot.vue`, `shell/packages/ui/src/IntentTrigger.vue`, `shell/packages/ui/src/fake.ts`
+  - Tests: `shell/packages/ui/tests/ui.spec.ts`
+- [ ] **Task 4: Shell API Client**
+  - Files: `shell/src/api.ts`
+  - Tests: `shell/tests/api.spec.ts`
+- [ ] **Task 5: Service Worker & URL Classifier**
+  - Files: `shell/src/sw/classify.ts`, `shell/src/sw/sw.ts`, `shell/vite.sw.config.ts`
+  - Tests: `shell/tests/classify.spec.ts`
+- [ ] **Task 6: IndexedDB Outbox Engine**
+  - Files: `shell/src/outbox.ts`
+  - Tests: `shell/tests/outbox.spec.ts`
+- [ ] **Task 7: SSE Stream Client**
+  - Files: `shell/src/stream.ts`
+  - Tests: `shell/tests/stream.spec.ts`
+- [ ] **Task 8: Shell Registries & Plugin Loader**
+  - Files: `shell/src/registries.ts`, `shell/src/plugins.ts`
+  - Tests: `shell/tests/registries.spec.ts`, `shell/tests/plugins.spec.ts`
+- [ ] **Task 9: Stores, Theming & PrimeVue Setup**
+  - Files: `shell/src/stores/app.ts`, `shell/src/stores/household.ts`, `shell/src/stores/member.ts`, `shell/src/themes.ts`
+  - Tests: `shell/tests/stores.spec.ts`
+- [ ] **Task 10: Shell Components & Offline Bar**
+  - Files: `shell/src/components/OfflineBar.vue`, `shell/src/components/ConfigForm.vue`, `shell/src/components/AppHeader.vue`, `shell/src/components/AppNav.vue`
+  - Tests: `shell/tests/components.spec.ts`
+- [ ] **Task 11: Core Shell Pages**
+  - Files: `shell/src/pages/SetupPage.vue`, `shell/src/pages/LoginPage.vue`, `shell/src/pages/SettingsPage.vue`, `shell/src/pages/PluginManagerPage.vue`, `shell/src/pages/SharePage.vue`
+  - Tests: `shell/tests/pages.spec.ts`
+- [ ] **Task 12: App Shell Assembly & Routing**
+  - Files: `shell/src/App.vue`, `shell/src/router/index.ts`, `shell/src/main.ts`, `shell/index.html`
+  - Tests: `shell/tests/app.spec.ts`
+- [ ] **Task 13: Build Pipeline, Vendoring & End-to-End Build Verification**
+  - Files: `shell/scripts/build.js`, `pyproject.toml`
+  - Tests: `tests/test_pwa_vendored.py`
 
 ---
 

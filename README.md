@@ -35,7 +35,7 @@ uv sync
 ```
 
 ### Running Tests
-Execute the full test suite (69 automated test cases across all kernel subsystems):
+Execute the full test suite (74 automated test cases across kernel subsystems and PWA endpoints):
 ```bash
 uv run pytest
 ```
@@ -67,7 +67,8 @@ uv run secretsauce serve --host 0.0.0.0 --port 8000 --data-dir ./data
 - [Kernel Architecture Guide](docs/KERNEL_ARCHITECTURE.md) - Deep-dive into database concurrency, cryptographic derivation, entity models, event dispatching, and background jobs.
 - [REST API Reference](docs/API_REFERENCE.md) - Endpoints, request/response models, authentication headers, error codes, and SSE stream framing.
 - [Plugin Developer Guide](docs/PLUGIN_DEVELOPER_GUIDE.md) - Creating plugins, `PLUGIN` manifest spec, `PluginContext` SDK reference, and test harness usage.
-- [Kernel Implementation Plan](docs/superpowers/plans/2026-09-09-kernel-implementation-plan.md) - Phase 1 through Phase 4 build steps and status.
+- [Phase 1: Kernel Implementation Plan](docs/superpowers/plans/2026-09-09-kernel-implementation-plan.md) - Phase 1 build steps and status (21/21 completed).
+- [Phase 2: Frontend Shell Implementation Plan](docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md) - Phase 2 SPA shell, service worker, and PWA serving plan.
 
 ---
 

@@ -351,3 +351,30 @@ Signals cancellation for a running job.
    ```text
    : ping
    ```
+
+---
+
+## 11. PWA & App Shell Serving Endpoints
+
+These endpoints are served outside `/api` directly at the application root / `BASE_PATH`.
+
+### `GET /manifest.webmanifest`
+Serves the templated Web App Manifest.
+- **Cache-Control:** `no-cache`
+- **Content-Type:** `application/manifest+json`
+- **Response:** When authenticated, includes the household name (`SecretSauce – {household_name}`); otherwise returns generic `SecretSauce`.
+
+### `GET /sw.js`
+Serves the Service Worker script template, dynamically substituting `__SS_PRECACHE__` with computed build hash and static asset paths.
+- **Cache-Control:** `no-cache`
+- **Content-Type:** `text/javascript`
+
+### `GET /static/{file_path}`
+Serves immutable frontend assets (bundles, chunks, styles, icons). Refuses direct serving of `sw.js` and `index.html`.
+- **Cache-Control:** `public, max-age=31536000, immutable`
+
+### `GET /{full_path}` (SPA Catch-all)
+Serves `index.html` with injected `window.__SS__` bootstrap context (`boot_id`, `base_path`, `version`).
+- **Cache-Control:** `no-cache`
+- **Content-Type:** `text/html`
+
