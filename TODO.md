@@ -1,6 +1,6 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-7 completed, Task 8 ready)  
+**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-8 completed, Task 9 ready)  
 **Active Plan:** `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`  
 **Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md` (Revision 7)  
 **Last Updated:** 2026-09-10  
@@ -126,9 +126,9 @@ When starting a new Pi session to continue development:
 - [x] **Task 7: SSE Stream Client** - Commit: `d5c14f6`
   - Files: `shell/src/stream.ts`
   - Tests: `shell/tests/stream.spec.ts`
-- [ ] **Task 8: Shell Registries & Plugin Loader**
-  - Files: `shell/src/registries.ts`, `shell/src/plugins.ts`
-  - Tests: `shell/tests/registries.spec.ts`, `shell/tests/plugins.spec.ts`
+- [x] **Task 8: Shell Registries & Plugin Loader** - Commit: `edebe9c`
+  - Files: `shell/src/registries/routes.ts`, `shell/src/registries/slots.ts`, `shell/src/registries/intents.ts`, `shell/src/registries/settings.ts`, `shell/src/registries/i18n.ts`, `shell/src/registries/plugins.ts`
+  - Tests: `shell/src/registries/registries.spec.ts`
 - [ ] **Task 9: Stores, Theming & PrimeVue Setup**
   - Files: `shell/src/stores/app.ts`, `shell/src/stores/household.ts`, `shell/src/stores/member.ts`, `shell/src/themes.ts`
   - Tests: `shell/tests/stores.spec.ts`
