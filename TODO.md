@@ -1,6 +1,6 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-6 completed, Task 7 ready)  
+**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-7 completed, Task 8 ready)  
 **Active Plan:** `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`  
 **Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md` (Revision 7)  
 **Last Updated:** 2026-09-10  
@@ -123,7 +123,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 6: IndexedDB Outbox Engine** - Commit: `d161563`
   - Files: `shell/src/outbox.ts`
   - Tests: `shell/tests/outbox.spec.ts`
-- [ ] **Task 7: SSE Stream Client**
+- [x] **Task 7: SSE Stream Client** - Commit: `d5c14f6`
   - Files: `shell/src/stream.ts`
   - Tests: `shell/tests/stream.spec.ts`
 - [ ] **Task 8: Shell Registries & Plugin Loader**
