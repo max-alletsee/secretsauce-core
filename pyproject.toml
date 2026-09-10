@@ -30,6 +30,6 @@ build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-norecursedirs = ["tmp", ".git", ".venv"]
+norecursedirs = ["tmp", "tmp_claudecode", ".git", ".venv"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

@@ -14,7 +14,7 @@ SecretSauce is a meal-planning platform for **one household per instance**. An i
 
 The design philosophy is borrowed from `pi`: **primitives, not features.** The kernel is a harness, not a product. All product functionality is delivered by plugins. The plugins we consider essential ship inside the image as *core plugins*, enabled by default, and are replaceable and disableable like any other plugin.
 
-The existing `tmp` codebase is a source of ideas, not of data. There is no data migration; instances start from a clean slate.
+The existing `tmp_claudecode` codebase is a source of ideas, not of data. There is no data migration; instances start from a clean slate.
 
 ---
 
@@ -933,7 +933,7 @@ These ship in the image under `/app/plugins/`, are enabled by default, and use o
 | `cook-tracker` | Providers `mark-cooked`, `skip`, `log-leftover` on `entry:interact`, written through the outbox with client ids (8.8); journal page; entry type `leftover`; tables `plugin_cook_tracker_leftovers(schedule_entry_id, journal_id)` and `plugin_cook_tracker_carryovers(journal_id, resolved_by_entry_id)` | Slot `journal.entry.footer` with `{ entry }`; command `rebuild` |
 | `shortlist` | Table `plugin_shortlist_entries(id, member_id, recipe_id REFERENCES recipes(id) ON DELETE CASCADE, note, created_at)` | Contributes to `recipe.card.actions` and `timeline.sidebar` |
 | `ratings` | Table `plugin_ratings_scores(journal_id, member_id, score)`; mirrors the mean as attribute `ratings.score` for sorting | Contributes to `journal.entry.footer`; command `rebuild` |
-| `ai-provider` | Config `provider` (enum, `gemini` only for now), `model`, `api_key` (secret), `monthly_budget`; table `plugin_ai_provider_calls`; public object `api.complete(schema, prompt, images=None)`, implemented on `google-genai` structured outputs with `response_schema` as `tmp` does; no multi-provider library, a second provider is a second branch behind the same object | Settings section with usage |
+| `ai-provider` | Config `provider` (enum, `gemini` only for now), `model`, `api_key` (secret), `monthly_budget`; table `plugin_ai_provider_calls`; public object `api.complete(schema, prompt, images=None)`, implemented on `google-genai` structured outputs with `response_schema` as `tmp_claudecode` does; no multi-provider library, a second provider is a second branch behind the same object | Settings section with usage |
 | `translator` | Requires `ai-provider`; config `target_languages`; on `recipe:created` and `recipe:updated` with `origin` other than itself, writes or overwrites the rows for each target language whose `origin` is `plugin:translator` or which do not exist yet | Command `retranslate-all` |
 | `recipe-importer` | Requires `ai-provider`; providers `import-url`, `import-photo` on `recipe:create` and `import-shared` on `share:receive` (8.7); jobs with progress; online only | Slot contribution `recipe.detail.footer` for "imported from" |
 | `meal-planner` | Requires `ai-provider`; config `system_prompt`, `days_ahead`; uses member restrictions, allergies, cuisines and serving ratios | Provider `suggest-week` on `timeline:assist` |
@@ -1015,7 +1015,7 @@ Each stage ends with a commit and with the named tests passing. A stage does not
 
 ## 14. Non-Goals and Deliberate Defaults
 
-**Non-goals for this architecture:** multi-tenant logic in the core; plugin sandboxing inside the instance; per-plugin virtual environments; roles and permissions; cross-dimension unit conversion; display-time unit conversion or per-member unit preferences; a separate translations table or kernel-enforced consistency between language rows; data migration from `tmp`; merging conflicting offline edits (a rejected queued write is dropped and shown, 8.5); Web Push and any behavior while the app is closed; the Background Sync and Periodic Background Sync APIs; file share targets; queued writes from shell-owned pages; configurable app icons and colors; in-process reload of Python modules; a server-side session table.
+**Non-goals for this architecture:** multi-tenant logic in the core; plugin sandboxing inside the instance; per-plugin virtual environments; roles and permissions; cross-dimension unit conversion; display-time unit conversion or per-member unit preferences; a separate translations table or kernel-enforced consistency between language rows; data migration from `tmp_claudecode`; merging conflicting offline edits (a rejected queued write is dropped and shown, 8.5); Web Push and any behavior while the app is closed; the Background Sync and Periodic Background Sync APIs; file share targets; queued writes from shell-owned pages; configurable app icons and colors; in-process reload of Python modules; a server-side session table.
 
 **Deliberate couplings, kept on purpose:** one event cursor per plugin, which trades isolation between a plugin's handlers for causal ordering within the plugin; one pinned Vue and one pinned PrimeVue in the import map for every plugin bundle, which is what makes composition and a single look possible.
 
