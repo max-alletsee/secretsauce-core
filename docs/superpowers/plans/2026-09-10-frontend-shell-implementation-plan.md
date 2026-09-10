@@ -2408,7 +2408,7 @@ git commit -m "feat(shell): implement route, slot, intent, settings, and plugin 
 - Consumes: Pinia, PrimeVue Aura, ApiClient
 - Produces: Reactive stores for currentMember, members, household config, online status, theme selection
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Write `shell/src/stores/stores.spec.ts`:
 ```ts
@@ -2446,12 +2446,12 @@ describe('Shell Stores & Theming', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --prefix shell test`
 Expected: FAIL (stores missing)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 1. Create `shell/src/stores/member.ts`:
 ```ts
@@ -2575,12 +2575,12 @@ export function createThemeRegistry() {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --prefix shell test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add shell/src/stores/ shell/src/theme.ts
