@@ -3313,7 +3313,7 @@ git commit -m "feat(shell): implement setup, login, settings, plugin manager, an
 - Consumes: All components, pages, stores, registries
 - Produces: Integrated SPA application mounting to `#app`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Write `shell/src/app.spec.ts`:
 ```ts
@@ -3351,12 +3351,12 @@ describe('Root App Shell', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --prefix shell test`
 Expected: FAIL (missing `App.vue`)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 1. Create `shell/src/App.vue`:
 ```vue
@@ -3575,12 +3575,12 @@ stream.connect()
 5. Scaffold placeholder icons in `shell/public/icons/`:
 Create placeholder pngs/icons for `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --prefix shell test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add shell/src/App.vue shell/src/router.ts shell/src/main.ts shell/index.html shell/public/icons/ shell/src/app.spec.ts
