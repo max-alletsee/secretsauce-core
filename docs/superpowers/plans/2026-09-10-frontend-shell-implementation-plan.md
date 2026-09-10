@@ -324,7 +324,7 @@ git commit -m "feat(pwa): add manifest, sw.js, static files, and spa index route
 - Consumes: Node >= 20, pnpm >= 9
 - Produces: Configured pnpm workspace with root `shell` and subpackage `@secretsauce/ui`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Write `shell/tests/scaffold.spec.ts`:
 ```ts
@@ -351,12 +351,12 @@ describe('Shell Workspace Scaffolding', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --prefix shell test`
 Expected: FAIL (files missing)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 1. Create `shell/pnpm-workspace.yaml`:
 ```yaml
@@ -505,12 +505,12 @@ export default defineConfig({
 
 Run `pnpm install` in `shell/`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --prefix shell test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add shell/
