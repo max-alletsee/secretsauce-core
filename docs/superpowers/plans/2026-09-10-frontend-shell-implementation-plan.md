@@ -1024,7 +1024,7 @@ git commit -m "feat(ui): implement @secretsauce/ui types, Slot, IntentTrigger, a
 - Consumes: `ApiClient`, `ApiError`, `ConflictError`, `OfflineError` from `@secretsauce/ui`
 - Produces: `createApiClient(basePath: string, getActorMemberId: () => string | null): ApiClient`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Write `shell/src/api.spec.ts`:
 ```ts
@@ -1080,12 +1080,12 @@ describe('ApiClient', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --prefix shell test`
 Expected: FAIL (missing `src/api.ts`)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `shell/src/api.ts`:
 ```ts
@@ -1189,12 +1189,12 @@ export function createApiClient(
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --prefix shell test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add shell/src/api.ts shell/src/api.spec.ts
