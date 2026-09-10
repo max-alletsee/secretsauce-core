@@ -1,6 +1,6 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 2: Frontend Shell & PWA in progress (Task 1 completed, Task 2 ready)  
+**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-2 completed, Task 3 ready)  
 **Active Plan:** `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`  
 **Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md` (Revision 7)  
 **Last Updated:** 2026-09-10  
@@ -108,7 +108,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 1: Backend PWA & Shell Serving Routes** - Commit: `135ae32`
   - Files: `secretsauce/api/routes/pwa.py`, `secretsauce/app.py`, `secretsauce/boot.py`, `secretsauce/testing.py`
   - Tests: `tests/test_pwa.py`
-- [ ] **Task 2: Shell Project Scaffolding & Dependencies**
+- [x] **Task 2: Shell Project Scaffolding & Dependencies** - Commit: `736ae85`
   - Files: `shell/package.json`, `shell/pnpm-workspace.yaml`, `shell/tsconfig.json`, `shell/vite.config.ts`, `shell/vitest.config.ts`, `shell/packages/ui/package.json`, `shell/packages/ui/tsconfig.json`
   - Tests: `shell/tests/scaffold.spec.ts`
 - [ ] **Task 3: @secretsauce/ui Package Core**
