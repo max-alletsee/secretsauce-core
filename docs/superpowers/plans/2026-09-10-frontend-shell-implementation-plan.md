@@ -2097,7 +2097,7 @@ git commit -m "feat(shell): implement SSE stream client with reconnect, wildcard
 - Consumes: `@secretsauce/ui` types
 - Produces: Registries for routes, slots, intents, settings, i18n, and dynamic plugin activation/deactivation manager
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Write `shell/src/registries/registries.spec.ts`:
 ```ts
@@ -2151,12 +2151,12 @@ describe('Shell Registries', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --prefix shell test`
 Expected: FAIL (registries missing)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 1. Create `shell/src/registries/routes.ts`:
 ```ts
@@ -2381,12 +2381,12 @@ export function createPluginLoader(ctx: PluginLoaderContext) {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --prefix shell test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add shell/src/registries/
