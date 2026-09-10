@@ -1,6 +1,6 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-8 completed, Task 9 ready)  
+**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-9 completed, Task 10 ready)  
 **Active Plan:** `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`  
 **Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md` (Revision 7)  
 **Last Updated:** 2026-09-10  
@@ -129,9 +129,9 @@ When starting a new Pi session to continue development:
 - [x] **Task 8: Shell Registries & Plugin Loader** - Commit: `edebe9c`
   - Files: `shell/src/registries/routes.ts`, `shell/src/registries/slots.ts`, `shell/src/registries/intents.ts`, `shell/src/registries/settings.ts`, `shell/src/registries/i18n.ts`, `shell/src/registries/plugins.ts`
   - Tests: `shell/src/registries/registries.spec.ts`
-- [ ] **Task 9: Stores, Theming & PrimeVue Setup**
-  - Files: `shell/src/stores/app.ts`, `shell/src/stores/household.ts`, `shell/src/stores/member.ts`, `shell/src/themes.ts`
-  - Tests: `shell/tests/stores.spec.ts`
+- [x] **Task 9: Stores, Theming & PrimeVue Setup** - Commit: `23f94f5`
+  - Files: `shell/src/stores/app.ts`, `shell/src/stores/household.ts`, `shell/src/stores/member.ts`, `shell/src/theme.ts`
+  - Tests: `shell/src/stores/stores.spec.ts`
 - [ ] **Task 10: Shell Components & Offline Bar**
   - Files: `shell/src/components/OfflineBar.vue`, `shell/src/components/ConfigForm.vue`, `shell/src/components/AppHeader.vue`, `shell/src/components/AppNav.vue`
   - Tests: `shell/tests/components.spec.ts`
