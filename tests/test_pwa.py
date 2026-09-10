@@ -45,6 +45,7 @@ async def test_pwa_sw_js_templating(tmp_path: Path):
     static_dir = Path("secretsauce/static")
     static_dir.mkdir(parents=True, exist_ok=True)
     dummy_sw = static_dir / "sw.js"
+    orig_content = dummy_sw.read_text(encoding="utf-8") if dummy_sw.exists() else None
     dummy_sw.write_text("const precache = __SS_PRECACHE__;", encoding="utf-8")
     try:
         async with make_kernel(tmp_path) as k:
@@ -57,7 +58,9 @@ async def test_pwa_sw_js_templating(tmp_path: Path):
             assert '"build":' in res.text
             assert '"files":' in res.text
     finally:
-        if dummy_sw.exists():
+        if orig_content is not None:
+            dummy_sw.write_text(orig_content, encoding="utf-8")
+        elif dummy_sw.exists():
             dummy_sw.unlink()
 
 
