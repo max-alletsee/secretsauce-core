@@ -193,3 +193,124 @@ async def test_my_plugin(tmp_path):
         res = await k.client.get("/api/recipes")
         assert res.status_code == 200
 ```
+
+---
+
+## 6. Frontend Plugin Development (`ui.js`)
+
+Plugins can provide interactive user interface components by compiling a single ES module bundle to `ui.js` and an optional `ui.css` stylesheet in the root of the plugin directory.
+
+### 6.1 Bundling with Vite
+Plugins compile `ui.js` using Vite in library mode, externalizing shared host dependencies:
+
+```ts
+// vite.config.ts (in your plugin project)
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  plugins: [vue()],
+  build: {
+    lib: {
+      entry: 'src/index.ts',
+      formats: ['es'],
+      fileName: () => 'ui.js'
+    },
+    rollupOptions: {
+      external: [
+        'vue',
+        'pinia',
+        'vue-router',
+        '@secretsauce/ui',
+        /^primevue\//,
+        /^@primevue\//,
+        /^@primeuix\//
+      ]
+    }
+  }
+})
+```
+
+Because these dependencies are externalized, plugins do not bundle their own copies of Vue or PrimeVue. Shared dependencies resolve at runtime through the shell's vendor import map.
+
+### 6.2 The `activate(ss)` Function
+The entry point of `ui.js` must default export an activation function receiving `SecretSauceUI`:
+
+```ts
+import type { SecretSauceUI } from '@secretsauce/ui'
+import NutritionPage from './NutritionPage.vue'
+import NutritionWidget from './NutritionWidget.vue'
+import NutritionSettings from './NutritionSettings.vue'
+
+export default function activate(ss: SecretSauceUI) {
+  // 1. Register routes in sidebar / navigation
+  ss.route({
+    path: '/nutrition',
+    component: NutritionPage,
+    nav: { label: 'Nutrition', icon: 'heart', order: 40 }
+  })
+
+  // 2. Insert components into existing shell or plugin slots
+  ss.slot('recipe.detail.sidebar', NutritionWidget, { order: 10 })
+
+  // 3. Register intent providers (e.g. handle shared content or calculations)
+  ss.intent.provider({
+    hub: 'recipe:analyze',
+    id: 'calculate-macros',
+    title: 'Calculate Nutrition Macros',
+    kind: 'action',
+    action: async (ctx) => {
+      return ss.api.post(`/api/plugins/${ss.pluginId}/calculate`, { recipe_id: ctx.recipeId })
+    }
+  })
+
+  // 4. Register settings sections in /settings
+  ss.settings.section({
+    id: 'nutrition',
+    title: 'Nutrition Settings',
+    component: NutritionSettings
+  })
+
+  // 5. Listen to real-time events from SSE
+  ss.on('recipe:*', (event) => {
+    console.log('Recipe event received:', event)
+  })
+
+  // 6. Register localized strings
+  ss.i18n.add('de', {
+    'nutrition.title': 'Nährwerte',
+    'nutrition.calories': 'Kalorien'
+  })
+}
+```
+
+---
+
+## 7. Testing Frontend Plugin Components
+
+The `@secretsauce/ui` package provides a test harness (`createFakeSecretSauceUI`) for unit testing plugin components in Vitest / Jest:
+
+```ts
+import { describe, it, expect } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { createFakeSecretSauceUI } from '@secretsauce/ui'
+import MyComponent from './MyComponent.vue'
+
+describe('MyComponent', () => {
+  it('renders and calls ss.api', async () => {
+    const fakeSS = createFakeSecretSauceUI('my-plugin')
+    fakeSS.api.get = vi.fn().mockResolvedValue({ calories: 450 })
+
+    const wrapper = mount(MyComponent, {
+      global: {
+        provide: {
+          __SS_UI__: fakeSS
+        }
+      }
+    })
+
+    expect(wrapper.text()).toContain('Nutrition')
+  })
+})
+```
+

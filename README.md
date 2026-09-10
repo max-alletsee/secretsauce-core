@@ -1,11 +1,12 @@
 # SecretSauce Core
 
-Local-first, extensible recipe and meal management kernel with plugin runtime, SQLite WAL persistence, FTS5 trigram search, and transactional event dispatching.
+Local-first, extensible recipe and meal management kernel with plugin runtime, SQLite WAL persistence, FTS5 trigram search, transactional event dispatching, and Vue 3 + PrimeVue PWA application shell.
 
 ---
 
 ## Architecture & Features
 
+### Backend Kernel
 - **SQLite WAL Concurrency**: Dedicated single-writer connection protected by `asyncio.Lock` with concurrent non-blocking reader connections.
 - **Recipe Engine**: Composite group and language rows (`<group_id>_<language>`), fallback language resolution, safe deletion foreign-key re-pointing, and trigram FTS5 search.
 - **Optimistic Revision Concurrency**: Conflict detection returning HTTP 409 on stale edits for recipes, members, and journals.
@@ -16,13 +17,20 @@ Local-first, extensible recipe and meal management kernel with plugin runtime, S
 - **Plugin Architecture**: Manifest validation, dependency sorting, scoped database context, entity attributes, synchronous pre-commit policy hooks, and inter-plugin services.
 - **CLI & Backup**: SQLite hot backup via `VACUUM INTO` bundling database, uploads, plugins, and config into portable zip archives.
 
+### Frontend Shell & PWA
+- **Progressive Web App (PWA)**: Standalone installation support, dynamic manifest generation with household name, and Service Worker offline caching.
+- **Modular Shell & `@secretsauce/ui`**: Micro-frontend slot and cross-plugin intent dispatch architecture allowing plugins to mount Vue components without full page reloads.
+- **Offline Outbox Engine**: IndexedDB persistent write queue with exponential backoff retries, conflict detection, 401 pause handling, and optimistic rollbacks.
+- **Dynamic Theming**: PrimeVue 4 Aura preset foundation with live theme switching and token synchronization.
+- **Schema Form Generator**: Dynamic form generation for plugin settings from JSON Schema specifications.
+
 ---
 
 ## Getting Started
 
 ### Requirements
-- Python 3.12+
-- `uv` (recommended) or standard `pip`
+- Python 3.12+ (managed with `uv`)
+- Node.js 22+ & `pnpm` 10+ (for frontend shell development)
 
 ### Installation
 ```bash
@@ -30,14 +38,27 @@ Local-first, extensible recipe and meal management kernel with plugin runtime, S
 git clone https://github.com/your-org/secretsauce-core.git
 cd secretsauce-core
 
-# Sync dependencies with uv
+# Sync Python backend dependencies
 uv sync
+
+# Install frontend shell dependencies
+pnpm --prefix shell install
+```
+
+### Building Frontend Shell
+Compile the SPA shell, Service Worker, and vendored assets into `secretsauce/static/`:
+```bash
+pnpm --prefix shell build
 ```
 
 ### Running Tests
-Execute the full test suite (74 automated test cases across kernel subsystems and PWA endpoints):
+Execute the complete automated test suite (106 tests total):
 ```bash
+# Run backend kernel & PWA serving tests (75 tests)
 uv run pytest
+
+# Run frontend shell & component tests (31 tests across 13 suites)
+pnpm --prefix shell test
 ```
 
 ---
@@ -56,7 +77,7 @@ uv run secretsauce migrate --data-dir ./data
 # 2. Export a full system backup (VACUUM INTO snapshot + uploads + config)
 uv run secretsauce export --data-dir ./data --output backup.zip
 
-# 3. Start the FastAPI server
+# 3. Start the FastAPI server (serves REST API, SSE stream, and PWA shell)
 uv run secretsauce serve --host 0.0.0.0 --port 8000 --data-dir ./data
 ```
 
@@ -64,37 +85,60 @@ uv run secretsauce serve --host 0.0.0.0 --port 8000 --data-dir ./data
 
 ## Documentation
 
+- [Frontend Shell & PWA Architecture](docs/SHELL_ARCHITECTURE.md) - Deep-dive into Vue 3 shell, service worker caching, outbox queue, slot & intent registries, and theming.
 - [Kernel Architecture Guide](docs/KERNEL_ARCHITECTURE.md) - Deep-dive into database concurrency, cryptographic derivation, entity models, event dispatching, and background jobs.
 - [REST API Reference](docs/API_REFERENCE.md) - Endpoints, request/response models, authentication headers, error codes, and SSE stream framing.
-- [Plugin Developer Guide](docs/PLUGIN_DEVELOPER_GUIDE.md) - Creating plugins, `PLUGIN` manifest spec, `PluginContext` SDK reference, and test harness usage.
+- [Plugin Developer Guide](docs/PLUGIN_DEVELOPER_GUIDE.md) - Backend Python plugins and frontend `ui.js` ES module development with `@secretsauce/ui`.
 - [Phase 1: Kernel Implementation Plan](docs/superpowers/plans/2026-09-09-kernel-implementation-plan.md) - Phase 1 build steps and status (21/21 completed).
-- [Phase 2: Frontend Shell Implementation Plan](docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md) - Phase 2 SPA shell, service worker, and PWA serving plan.
+- [Phase 2: Frontend Shell Implementation Plan](docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md) - Phase 2 SPA shell, service worker, and PWA serving plan (13/13 completed).
 
 ---
 
 ## Project Structure
 
 ```text
-secretsauce/
-├── __init__.py           # Package definition & __version__
-├── __main__.py           # `python -m secretsauce` entry point
-├── app.py                # FastAPI application factory with lifespan
-├── boot.py               # Application boot sequence orchestrator
-├── cli.py                # Command-line interface (`serve`, `migrate`, `export`)
-├── config.py             # Infrastructure & environment configuration
-├── db.py                 # SQLite WAL single-writer / reader database engine
-├── errors.py             # Domain error hierarchy
-├── events.py             # Transactional event log & plugin outbox dispatchers
-├── gc.py                 # Hourly lazy garbage collector
-├── hooks.py              # Synchronous pre-commit policy hooks
-├── jobs.py               # Background jobs manager & boot recovery
-├── secrets.py            # HKDF key derivation & secret encryption
-├── stream.py             # Server-Sent Events (SSE) broadcaster & replay
-├── testing.py            # Ephemeral test kernel harness (`make_kernel`)
-├── api/
-│   └── routes/           # REST API routes (auth, household, members, recipes, ...)
-├── nouns/                # Domain repositories (recipes, schedule, journal, assets, ...)
-└── plugins/              # Plugin loader, manifest validator, registry, & SDK context
+secretsauce-core/
+├── secretsauce/                 # Python backend kernel
+│   ├── app.py                   # FastAPI application factory with lifespan
+│   ├── boot.py                  # Application boot sequence orchestrator
+│   ├── cli.py                   # Command-line interface (`serve`, `migrate`, `export`)
+│   ├── config.py                # Infrastructure & environment configuration
+│   ├── db.py                    # SQLite WAL single-writer / reader database engine
+│   ├── errors.py                # Domain error hierarchy
+│   ├── events.py                # Transactional event log & plugin outbox dispatchers
+│   ├── gc.py                    # Hourly lazy garbage collector
+│   ├── hooks.py                 # Synchronous pre-commit policy hooks
+│   ├── jobs.py                  # Background jobs manager & boot recovery
+│   ├── secrets.py               # HKDF key derivation & secret encryption
+│   ├── stream.py                # Server-Sent Events (SSE) broadcaster & replay
+│   ├── testing.py               # Ephemeral test kernel harness (`make_kernel`)
+│   ├── api/routes/              # REST API & PWA routes (auth, recipes, pwa, ...)
+│   ├── nouns/                   # Domain repositories (recipes, schedule, journal, ...)
+│   ├── plugins/                 # Plugin loader, manifest validator, & context SDK
+│   └── static/                  # Built shell assets, sw.js, vendor libraries, icons
+│
+├── shell/                       # Frontend PWA application shell (pnpm workspace)
+│   ├── packages/
+│   │   └── ui/                  # `@secretsauce/ui` package (Slot, IntentTrigger, types)
+│   ├── src/
+│   │   ├── api.ts               # Typed API client with actor header injection
+│   │   ├── outbox.ts            # IndexedDB offline mutation outbox engine
+│   │   ├── stream.ts            # Reconnecting SSE client with wildcard events
+│   │   ├── theme.ts             # PrimeVue dynamic preset switcher
+│   │   ├── components/          # AppHeader, AppNav, OfflineBar, ConfigForm
+│   │   ├── pages/               # SetupPage, LoginPage, SettingsPage, Plugins, Share
+│   │   ├── registries/          # Dynamic route, slot, intent, settings registries
+│   │   ├── stores/              # Pinia stores (member, household, app)
+│   │   ├── sw/                  # Service Worker engine & pure URL classifier
+│   │   ├── App.vue              # Main application root
+│   │   ├── main.ts              # SPA entry point and bootstrapper
+│   │   └── router.ts            # Vue Router definitions
+│   ├── vite.config.ts           # Vite shell configuration
+│   ├── vite.sw.config.ts        # Vite Service Worker IIFE build config
+│   └── package.json
+│
+├── tests/                       # Pytest test suite (75 automated test cases)
+└── docs/                        # Architecture guides, API reference, & developer guides
 ```
 
 ---
