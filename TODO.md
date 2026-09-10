@@ -1,6 +1,6 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-9 completed, Task 10 ready)  
+**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-10 completed, Task 11 ready)  
 **Active Plan:** `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`  
 **Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md` (Revision 7)  
 **Last Updated:** 2026-09-10  
@@ -132,9 +132,9 @@ When starting a new Pi session to continue development:
 - [x] **Task 9: Stores, Theming & PrimeVue Setup** - Commit: `23f94f5`
   - Files: `shell/src/stores/app.ts`, `shell/src/stores/household.ts`, `shell/src/stores/member.ts`, `shell/src/theme.ts`
   - Tests: `shell/src/stores/stores.spec.ts`
-- [ ] **Task 10: Shell Components & Offline Bar**
+- [x] **Task 10: Shell Components & Offline Bar** - Commit: `612448a`
   - Files: `shell/src/components/OfflineBar.vue`, `shell/src/components/ConfigForm.vue`, `shell/src/components/AppHeader.vue`, `shell/src/components/AppNav.vue`
-  - Tests: `shell/tests/components.spec.ts`
+  - Tests: `shell/src/components/components.spec.ts`
 - [ ] **Task 11: Core Shell Pages**
   - Files: `shell/src/pages/SetupPage.vue`, `shell/src/pages/LoginPage.vue`, `shell/src/pages/SettingsPage.vue`, `shell/src/pages/PluginManagerPage.vue`, `shell/src/pages/SharePage.vue`
   - Tests: `shell/tests/pages.spec.ts`
