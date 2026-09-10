@@ -1,6 +1,6 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-2 completed, Task 3 ready)  
+**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-3 completed, Task 4 ready)  
 **Active Plan:** `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`  
 **Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md` (Revision 7)  
 **Last Updated:** 2026-09-10  
@@ -111,9 +111,9 @@ When starting a new Pi session to continue development:
 - [x] **Task 2: Shell Project Scaffolding & Dependencies** - Commit: `736ae85`
   - Files: `shell/package.json`, `shell/pnpm-workspace.yaml`, `shell/tsconfig.json`, `shell/vite.config.ts`, `shell/vitest.config.ts`, `shell/packages/ui/package.json`, `shell/packages/ui/tsconfig.json`
   - Tests: `shell/tests/scaffold.spec.ts`
-- [ ] **Task 3: @secretsauce/ui Package Core**
-  - Files: `shell/packages/ui/src/index.ts`, `shell/packages/ui/src/Slot.vue`, `shell/packages/ui/src/IntentTrigger.vue`, `shell/packages/ui/src/fake.ts`
-  - Tests: `shell/packages/ui/tests/ui.spec.ts`
+- [x] **Task 3: @secretsauce/ui Package Core** - Commit: `62c1752`
+  - Files: `shell/packages/ui/src/index.ts`, `shell/packages/ui/src/types.ts`, `shell/packages/ui/src/Slot.vue`, `shell/packages/ui/src/IntentTrigger.vue`, `shell/packages/ui/src/testing.ts`
+  - Tests: `shell/packages/ui/tests/slot.spec.ts`, `shell/packages/ui/tests/intent-trigger.spec.ts`
 - [ ] **Task 4: Shell API Client**
   - Files: `shell/src/api.ts`
   - Tests: `shell/tests/api.spec.ts`
