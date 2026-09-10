@@ -1217,7 +1217,7 @@ git commit -m "feat(shell): implement ApiClient with headers, base path, and err
   - `classify(url: URL, scope: URL): RequestClass`
   - IIFE worker bundle `sw.js` with workbox-expiration LRU caches and network-first 5s timeouts
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Write `shell/src/sw/classify.spec.ts`:
 ```ts
@@ -1265,12 +1265,12 @@ describe('Service Worker classify()', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --prefix shell test`
 Expected: FAIL (missing `classify.ts`)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 1. Create `shell/src/sw/classify.ts`:
 ```ts
@@ -1546,12 +1546,12 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --prefix shell test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add shell/src/sw/ shell/vite.sw.config.ts
