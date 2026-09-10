@@ -3605,7 +3605,7 @@ git commit -m "feat(shell): assemble App, Vue Router, PrimeVue Aura, and app boo
   - Service worker in `secretsauce/static/sw.js`
   - Full passing suite: `pnpm test` and `uv run pytest tests/test_pwa.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Write `shell/tests/e2e-build.spec.ts`:
 ```ts
@@ -3628,12 +3628,12 @@ describe('Shell Production Build Output', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --prefix shell build`
 Expected: Build setup needed for vendoring script
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 1. Create `shell/scripts/vendor.ts`:
 ```ts
@@ -3669,13 +3669,13 @@ console.log('Vendoring completed successfully.')
 
 3. Run build: `pnpm --prefix shell build`
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --prefix shell test`
 Run: `uv run pytest tests/test_pwa.py`
 Expected: PASS for both test suites.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add shell/scripts/vendor.ts shell/package.json shell/tests/e2e-build.spec.ts
