@@ -1,6 +1,6 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-12 completed, Task 13 ready)  
+**Current Status:** Phase 2: Frontend Shell & PWA completed (all 13 tasks done, 31 Vitest tests & 75 Pytest tests passing)  
 **Active Plan:** `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`  
 **Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md` (Revision 7)  
 **Last Updated:** 2026-09-10  
@@ -141,9 +141,9 @@ When starting a new Pi session to continue development:
 - [x] **Task 12: App Shell Assembly & Routing** - Commit: `88b8413`
   - Files: `shell/src/App.vue`, `shell/src/router.ts`, `shell/src/main.ts`, `shell/index.html`, `shell/public/icons/`
   - Tests: `shell/src/app.spec.ts`
-- [ ] **Task 13: Build Pipeline, Vendoring & End-to-End Build Verification**
-  - Files: `shell/scripts/build.js`, `pyproject.toml`
-  - Tests: `tests/test_pwa_vendored.py`
+- [x] **Task 13: Build Pipeline, Vendoring & End-to-End Build Verification** - Commit: `78a6e90`
+  - Files: `shell/scripts/vendor.ts`, `shell/package.json`, `secretsauce/static/`
+  - Tests: `shell/tests/e2e-build.spec.ts`, `tests/test_pwa_vendored.py`
 
 ---
 
@@ -179,3 +179,18 @@ When starting a new Pi session to continue development:
 - **Task 19: Assets & Attributes REST API Routes** - Commit: `934e5fb` (feat(kernel): implement assets and attributes rest api routes)
 - **Task 20: Plugins, Jobs & Server-Sent Events (SSE) Stream** - Commit: `7d5444a` (feat(kernel): implement sse stream hub and plugin/job api routes)
 - **Task 21: Application Boot Orchestrator, CLI & Garbage Collector** - Commit: `b9c0c38` (feat(kernel): implement application boot factory, hourly gc, export, and cli)
+
+### Phase 2: Shell & PWA Frontend (Stage 5)
+- **Phase 2 Task 1: Backend PWA & Shell Serving Routes** - Commit: `135ae32` (feat(pwa): implement backend pwa routes, manifest, sw, and static asset serving)
+- **Phase 2 Task 2: Shell Project Scaffolding & Dependencies** - Commit: `736ae85` (feat(shell): initialize pnpm workspace and vue 3 + primevue scaffolding)
+- **Phase 2 Task 3: @secretsauce/ui Package Core** - Commit: `62c1752` (feat(ui): implement Slot, IntentTrigger, and harness in @secretsauce/ui)
+- **Phase 2 Task 4: Shell API Client** - Commit: `715e70b` (feat(shell): implement shell api client with x-actor-member header and typed error mapping)
+- **Phase 2 Task 5: Service Worker & URL Classifier** - Commit: `9b9ea09` (feat(sw): implement offline service worker with workbox and pure url classifier)
+- **Phase 2 Task 6: IndexedDB Outbox Engine** - Commit: `d161563` (feat(shell): implement indexeddb outbox queue engine with retries and conflict handling)
+- **Phase 2 Task 7: SSE Stream Client** - Commit: `d5c14f6` (feat(shell): implement sse stream client with wildcard subscriptions and boot_id reload)
+- **Phase 2 Task 8: Shell Registries & Plugin Loader** - Commit: `edebe9c` (feat(shell): implement route, slot, intent, settings, i18n, and plugin registries)
+- **Phase 2 Task 9: Stores, Theming & PrimeVue Setup** - Commit: `23f94f5` (feat(shell): implement Pinia stores and dynamic theme registry)
+- **Phase 2 Task 10: Shell Components & Offline Bar** - Commit: `612448a` (feat(shell): implement OfflineBar, ConfigForm, AppHeader, and AppNav)
+- **Phase 2 Task 11: Core Shell Pages** - Commit: `a43e777` (feat(shell): implement setup, login, settings, plugin manager, and share pages)
+- **Phase 2 Task 12: App Shell Assembly & Routing** - Commit: `88b8413` (feat(shell): assemble App, Vue Router, PrimeVue Aura, and app bootstrapping)
+- **Phase 2 Task 13: Build Pipeline, Vendoring & End-to-End Build Verification** - Commit: `78a6e90` (feat(shell): implement vendoring script, build pipeline, and end-to-end verification)
