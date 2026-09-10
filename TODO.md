@@ -1,6 +1,6 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-3 completed, Task 4 ready)  
+**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-4 completed, Task 5 ready)  
 **Active Plan:** `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`  
 **Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md` (Revision 7)  
 **Last Updated:** 2026-09-10  
@@ -114,7 +114,7 @@ When starting a new Pi session to continue development:
 - [x] **Task 3: @secretsauce/ui Package Core** - Commit: `62c1752`
   - Files: `shell/packages/ui/src/index.ts`, `shell/packages/ui/src/types.ts`, `shell/packages/ui/src/Slot.vue`, `shell/packages/ui/src/IntentTrigger.vue`, `shell/packages/ui/src/testing.ts`
   - Tests: `shell/packages/ui/tests/slot.spec.ts`, `shell/packages/ui/tests/intent-trigger.spec.ts`
-- [ ] **Task 4: Shell API Client**
+- [x] **Task 4: Shell API Client** - Commit: `715e70b`
   - Files: `shell/src/api.ts`
   - Tests: `shell/tests/api.spec.ts`
 - [ ] **Task 5: Service Worker & URL Classifier**
