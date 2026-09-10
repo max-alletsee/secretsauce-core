@@ -13,14 +13,17 @@ from secretsauce.api.routes.jobs import router as jobs_router
 from secretsauce.api.routes.journal import router as journal_router
 from secretsauce.api.routes.members import router as members_router
 from secretsauce.api.routes.plugins import router as plugins_router
+from secretsauce.api.routes.pwa import router as pwa_router, render_index_html
 from secretsauce.api.routes.recipes import router as recipes_router
 from secretsauce.api.routes.schedule import router as schedule_router
 from secretsauce.api.routes.setup import router as setup_router
 from secretsauce.api_tokens import TokenManager
 from secretsauce.auth import AuthMiddleware, hash_passphrase
+from secretsauce.config import Config
 from secretsauce.db import Database
 from secretsauce.errors import SecretSauceError
-from fastapi.responses import JSONResponse
+from fastapi import HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 from secretsauce.events import Event, EventDispatcher, EventLog
 from secretsauce.hooks import HookRegistry
 from secretsauce.jobs import JobManager
@@ -48,6 +51,7 @@ class Kernel:
         self.assets_dir = data_dir / "assets"
 
         self.boot_id = str(uuid.uuid4())
+        self.config = Config(base_path="/")
         self.broadcaster = EventBroadcaster()
 
         self.db = Database(self.db_path)
@@ -91,6 +95,17 @@ class Kernel:
         self.app.include_router(plugins_router)
         self.app.include_router(stream_router)
         self.app.include_router(export_router)
+        self.app.include_router(pwa_router)
+
+        @self.app.get("/", response_class=HTMLResponse)
+        @self.app.get("/{full_path:path}", response_class=HTMLResponse)
+        async def spa_fallback(request: Request, full_path: str = ""):
+            if full_path.startswith("api/") or full_path == "api":
+                raise HTTPException(status_code=404, detail="API route not found")
+            kernel = getattr(request.app.state, "kernel", None)
+            base_path = kernel.config.base_path if kernel and hasattr(kernel, "config") else "/"
+            html = render_index_html(kernel, base_path)
+            return HTMLResponse(content=html, headers={"Cache-Control": "no-cache"})
 
         @self.app.exception_handler(SecretSauceError)
         async def handle_secretsauce_error(request, exc: SecretSauceError):

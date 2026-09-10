@@ -3,8 +3,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncIterator
 
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from secretsauce.api.routes.assets import router as assets_router
 from secretsauce.api.routes.attributes import router as attributes_router
@@ -15,6 +15,7 @@ from secretsauce.api.routes.jobs import router as jobs_router
 from secretsauce.api.routes.journal import router as journal_router
 from secretsauce.api.routes.members import router as members_router
 from secretsauce.api.routes.plugins import router as plugins_router
+from secretsauce.api.routes.pwa import router as pwa_router, render_index_html
 from secretsauce.api.routes.recipes import router as recipes_router
 from secretsauce.api.routes.schedule import router as schedule_router
 from secretsauce.api.routes.setup import router as setup_router
@@ -66,6 +67,18 @@ def build_app(data_dir: Path | str | None = None) -> FastAPI:
     app.include_router(jobs_router)
     app.include_router(stream_router)
     app.include_router(export_router)
+    app.include_router(pwa_router)
+
+    # Catch-all SPA route outside /api
+    @app.get("/", response_class=HTMLResponse)
+    @app.get("/{full_path:path}", response_class=HTMLResponse)
+    async def spa_fallback(request: Request, full_path: str = ""):
+        if full_path.startswith("api/") or full_path == "api":
+            raise HTTPException(status_code=404, detail="API route not found")
+        kernel = getattr(request.app.state, "kernel", None)
+        base_path = kernel.config.base_path if kernel else "/"
+        html = render_index_html(kernel, base_path)
+        return HTMLResponse(content=html, headers={"Cache-Control": "no-cache"})
 
     # Exception handler
     @app.exception_handler(SecretSauceError)

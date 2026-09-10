@@ -1,7 +1,9 @@
 import os
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+
+from secretsauce.api.routes.pwa import compute_precache_info
 
 from secretsauce.api_tokens import TokenManager
 from secretsauce.config import Config, load_config
@@ -47,6 +49,7 @@ class BootedKernel:
     data_dir: Path
     uploads_dir: Path
     plugins_dir: Path
+    precache_info: dict = field(default_factory=dict)
 
 
 async def boot(data_dir: Path | str | None = None) -> BootedKernel:
@@ -113,6 +116,7 @@ async def boot(data_dir: Path | str | None = None) -> BootedKernel:
     await loader.discover_and_sync()
 
     boot_id = uuid.uuid4().hex
+    precache_info = compute_precache_info()
 
     return BootedKernel(
         boot_id=boot_id,
@@ -137,4 +141,5 @@ async def boot(data_dir: Path | str | None = None) -> BootedKernel:
         data_dir=data_path,
         uploads_dir=uploads_dir,
         plugins_dir=plugins_dir,
+        precache_info=precache_info,
     )
