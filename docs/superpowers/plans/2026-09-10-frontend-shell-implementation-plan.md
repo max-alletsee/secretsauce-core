@@ -538,7 +538,7 @@ git commit -m "chore(shell): scaffold pnpm workspace, vitest, and package config
   - Components: `Slot`, `IntentTrigger`
   - Testing helper: `createFakeSecretSauceUI()`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 1. Write `shell/packages/ui/tests/slot.spec.ts`:
 ```ts
@@ -631,12 +631,12 @@ describe('<IntentTrigger /> component', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --prefix shell test`
 Expected: FAIL (files missing)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 1. Create `shell/packages/ui/src/types.ts`:
 ```ts
@@ -1000,12 +1000,12 @@ export { default as IntentTrigger } from './IntentTrigger.vue'
 export { createFakeSecretSauceUI } from './testing'
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --prefix shell test`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add shell/packages/ui/
