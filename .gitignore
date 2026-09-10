@@ -53,3 +53,8 @@ uploads/
 # Operating System
 .DS_Store
 Thumbs.db
+
+# Git Worktrees
+.worktrees/
+worktrees/
+
