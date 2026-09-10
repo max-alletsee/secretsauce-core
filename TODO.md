@@ -1,6 +1,6 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-11 completed, Task 12 ready)  
+**Current Status:** Phase 2: Frontend Shell & PWA in progress (Tasks 1-12 completed, Task 13 ready)  
 **Active Plan:** `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`  
 **Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md` (Revision 7)  
 **Last Updated:** 2026-09-10  
@@ -138,9 +138,9 @@ When starting a new Pi session to continue development:
 - [x] **Task 11: Core Shell Pages** - Commit: `a43e777`
   - Files: `shell/src/pages/SetupPage.vue`, `shell/src/pages/LoginPage.vue`, `shell/src/pages/SettingsPage.vue`, `shell/src/pages/PluginManagerPage.vue`, `shell/src/pages/SharePage.vue`
   - Tests: `shell/src/pages/pages.spec.ts`
-- [ ] **Task 12: App Shell Assembly & Routing**
-  - Files: `shell/src/App.vue`, `shell/src/router/index.ts`, `shell/src/main.ts`, `shell/index.html`
-  - Tests: `shell/tests/app.spec.ts`
+- [x] **Task 12: App Shell Assembly & Routing** - Commit: `88b8413`
+  - Files: `shell/src/App.vue`, `shell/src/router.ts`, `shell/src/main.ts`, `shell/index.html`, `shell/public/icons/`
+  - Tests: `shell/src/app.spec.ts`
 - [ ] **Task 13: Build Pipeline, Vendoring & End-to-End Build Verification**
   - Files: `shell/scripts/build.js`, `pyproject.toml`
   - Tests: `tests/test_pwa_vendored.py`
