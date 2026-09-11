@@ -75,3 +75,66 @@ def test_parse_notes_and_subjective_amounts():
     assert res_belieben["quantity"] is None
     assert res_belieben["name"] == "Pfeffer"
     assert res_belieben["notes"] == "nach Belieben"
+
+
+from secretsauce.units import convert, to_system, format as format_unit
+
+
+def test_convert_mass_and_volume():
+    assert convert(1000, "g", "kg") == 1.0
+    assert pytest.approx(convert(1, "kg", "g")) == 1000.0
+    assert pytest.approx(convert(1, "lb", "oz"), rel=1e-3) == 16.0
+    assert pytest.approx(convert(500, "ml", "l")) == 0.5
+
+    # Mismatched dimension raises ValueError
+    with pytest.raises(ValueError):
+        convert(100, "g", "ml")
+
+
+def test_convert_temperature():
+    # 350 F to C: (350 - 32) * 5 / 9 = 176.666 -> rounded to nearest 5 is 175
+    assert convert(350, "f", "c") == 175.0
+    # 200 C to F: (200 * 9 / 5) + 32 = 392 -> rounded to nearest 5 is 390
+    assert convert(200, "c", "f") == 390.0
+
+
+def test_to_system_metric():
+    # Mass: <1000g -> g, >=1000g -> kg
+    q, q_max, u = to_system(1.0, None, "lb", "metric")  # 1 lb
+    assert u == "g"
+    assert q == 450.0  # nearest 10 below 1000
+
+    q2, _, u2 = to_system(2.205, None, "lb", "metric")  # ~1 kg
+    assert u2 == "kg"
+    assert q2 == 1.0  # rounded to 0.05 step
+
+    # Volume: >=1000ml -> l, <1000ml -> ml
+    q3, _, u3 = to_system(4, None, "cup", "metric")  # 960 ml
+    assert u3 == "ml"
+    assert q3 == 960.0
+
+    # Shared units pass through
+    assert to_system(2, None, "tbsp", "metric") == (2.0, None, "tbsp")
+    assert to_system(3, None, "piece", "metric") == (3.0, None, "piece")
+
+
+def test_to_system_us_customary():
+    # Mass: >=16oz -> lb, <16oz -> oz
+    q, _, u = to_system(1000, None, "g", "us_customary")
+    assert u == "lb"
+    assert pytest.approx(q, rel=1e-2) == 2.2
+
+    # Volume: >=60ml -> cup, >=15ml -> tbsp, <15ml -> tsp
+    q2, _, u2 = to_system(240, None, "ml", "us_customary")
+    assert u2 == "cup"
+    assert pytest.approx(q2, rel=1e-2) == 1.0
+
+
+def test_format_vulgar_fractions():
+    # US customary fraction formatting within 4%
+    assert format_unit(0.5, None, "cup", "en", "us_customary") == "½ cup"
+    assert format_unit(0.25, None, "tsp", "en", "us_customary") == "¼ tsp"
+    assert format_unit(1.5, None, "tbsp", "en", "us_customary") == "1 ½ tbsp"
+    # Range formatting
+    assert format_unit(2.0, 3.0, "clove", "en", "us_customary") == "2-3 clove"
+
