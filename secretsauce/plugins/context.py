@@ -137,12 +137,67 @@ class ScopedJobs:
 class ServiceRegistry:
     def __init__(self):
         self._services: dict[str, Any] = {}
+        self._commands: dict[tuple[str, str], dict[str, Any]] = {}
 
     def register(self, name: str, service: Any) -> None:
         self._services[name] = service
 
     def get(self, name: str) -> Any | None:
         return self._services.get(name)
+
+    def register_command(
+        self, plugin_id: str, command_id: str, fn: Callable[..., Any], title: str = ""
+    ) -> None:
+        self._commands[(plugin_id, command_id)] = {"fn": fn, "title": title}
+
+    def get_command(
+        self, plugin_id: str, command_id: str
+    ) -> Callable[..., Any] | None:
+        entry = self._commands.get((plugin_id, command_id))
+        return entry["fn"] if entry else None
+
+
+class RouterRegistry:
+    def __init__(self, app: Any = None):
+        self._app = app
+        self._routers: list[Any] = []
+
+    def set_app(self, app: Any) -> None:
+        self._app = app
+        for r in self._routers:
+            self._include_router_before_fallback(r)
+
+    def _include_router_before_fallback(self, router: Any) -> None:
+        if self._app is None:
+            return
+        fallback_idx = None
+        for idx, route in enumerate(self._app.router.routes):
+            if getattr(route, "path", None) == "/{full_path:path}":
+                fallback_idx = idx
+                break
+
+        if fallback_idx is not None:
+            prev_count = len(self._app.router.routes)
+            self._app.include_router(router)
+            new_routes = self._app.router.routes[prev_count:]
+            base_routes = self._app.router.routes[:fallback_idx]
+            fallback_routes = self._app.router.routes[fallback_idx:prev_count]
+            self._app.router.routes = base_routes + new_routes + fallback_routes
+        else:
+            self._app.include_router(router)
+
+    def mount(self, router: Any) -> None:
+        self._routers.append(router)
+        self._include_router_before_fallback(router)
+
+
+class ScopedRoutes:
+    def __init__(self, router_registry: RouterRegistry, plugin_id: str):
+        self._registry = router_registry
+        self._plugin_id = plugin_id
+
+    def mount(self, router: Any) -> None:
+        self._registry.mount(router)
 
 
 class PluginContext:
@@ -157,6 +212,7 @@ class PluginContext:
         job_manager: JobManager | None = None,
         token_manager: TokenManager | None = None,
         service_registry: ServiceRegistry | None = None,
+        router_registry: RouterRegistry | None = None,
     ):
         self.plugin_id = plugin_id
         self.db = db
@@ -183,6 +239,21 @@ class PluginContext:
         self._event_log = event_log or EventLog(db)
         self._dispatcher = dispatcher or EventDispatcher(db, plugin_id=plugin_id)
         self.services = service_registry or ServiceRegistry()
+        self._router_registry = router_registry or RouterRegistry()
+        self.routes = ScopedRoutes(self._router_registry, plugin_id)
+
+    def router(
+        self,
+        router: Any,
+        auth: str = "cookie",
+        scope: str | None = None,
+    ) -> None:
+        self.routes.mount(router)
+
+    def command(
+        self, command_id: str, fn: Callable[..., Any], title: str = ""
+    ) -> None:
+        self.services.register_command(self.plugin_id, command_id, fn, title=title)
 
     def hook(
         self, name: str, handler: Callable[..., Any] | None = None

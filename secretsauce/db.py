@@ -137,6 +137,10 @@ class Database:
             rows = await cursor.fetchall()
             return [dict(row) for row in rows]
 
+    fetch_all = read_all
+    fetch_one = read_one
+    execute = write
+
     async def run_migrations(
         self, migrations_dir: Path | str | None = None
     ) -> list[int]:

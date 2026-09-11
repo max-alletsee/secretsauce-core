@@ -547,4 +547,6 @@ class RecipesRepo:
 
 
 RecipeRepo = RecipesRepo
+RecipesRepo.create = RecipesRepo.create_recipe
+RecipesRepo.get = RecipesRepo.get_recipe
 

@@ -285,3 +285,15 @@ class ScheduleRepo:
                     entry["recipe"] = None
             results.append(entry)
         return results
+
+    create = create_entry
+
+    async def get_for_date(
+        self,
+        date_str: str,
+        lang: str | None = None,
+        conn: aiosqlite.Connection | None = None,
+    ) -> list[dict[str, Any]]:
+        return await self.list_entries(
+            from_date=date_str, to_date=date_str, lang=lang, conn=conn
+        )

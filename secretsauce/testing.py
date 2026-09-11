@@ -34,7 +34,11 @@ from secretsauce.nouns.journal import JournalRepo
 from secretsauce.nouns.members import MembersRepo
 from secretsauce.nouns.recipes import RecipesRepo
 from secretsauce.nouns.schedule import ScheduleRepo
-from secretsauce.plugins.context import PluginContext, ServiceRegistry
+from secretsauce.plugins.context import (
+    PluginContext,
+    RouterRegistry,
+    ServiceRegistry,
+)
 from secretsauce.plugins.loader import PluginLoader
 from secretsauce.plugins.registry import PluginRegistry
 from secretsauce.secrets import KeyManager
@@ -85,6 +89,7 @@ class Kernel:
 
         self.app = FastAPI(title="SecretSauce Kernel Test")
         self.app.state.kernel = self
+        self.router_registry = RouterRegistry(app=self.app)
 
         self.app.add_middleware(AuthMiddleware)
 
@@ -135,6 +140,7 @@ class Kernel:
             job_manager=self.jobs,
             token_manager=self.tokens,
             service_registry=self.services,
+            router_registry=self.router_registry,
         )
 
     async def start(

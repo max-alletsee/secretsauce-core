@@ -18,7 +18,11 @@ from secretsauce.nouns.journal import JournalRepo
 from secretsauce.nouns.members import MembersRepo
 from secretsauce.nouns.recipes import RecipesRepo
 from secretsauce.nouns.schedule import ScheduleRepo
-from secretsauce.plugins.context import PluginContext, ServiceRegistry
+from secretsauce.plugins.context import (
+    PluginContext,
+    RouterRegistry,
+    ServiceRegistry,
+)
 from secretsauce.plugins.loader import PluginLoader
 from secretsauce.plugins.registry import PluginRegistry
 from secretsauce.secrets import KeyManager
@@ -43,6 +47,7 @@ class BootedKernel:
     jobs: JobManager
     tokens: TokenManager
     services: ServiceRegistry
+    router_registry: RouterRegistry
     registry: PluginRegistry
     loader: PluginLoader
     broadcaster: EventBroadcaster
@@ -96,6 +101,7 @@ async def boot(data_dir: Path | str | None = None) -> BootedKernel:
     jobs = JobManager(db)
     tokens = TokenManager(db)
     services = ServiceRegistry()
+    router_registry = RouterRegistry()
     registry = PluginRegistry(db)
 
     # Recover dangling jobs from previous run
@@ -112,6 +118,7 @@ async def boot(data_dir: Path | str | None = None) -> BootedKernel:
             job_manager=jobs,
             token_manager=tokens,
             service_registry=services,
+            router_registry=router_registry,
         )
 
     core_plugins_dir = Path(__file__).resolve().parent / "plugins" / "core"
@@ -141,6 +148,7 @@ async def boot(data_dir: Path | str | None = None) -> BootedKernel:
         jobs=jobs,
         tokens=tokens,
         services=services,
+        router_registry=router_registry,
         registry=registry,
         loader=loader,
         broadcaster=broadcaster,

@@ -33,6 +33,7 @@ def build_app(data_dir: Path | str | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         kernel: BootedKernel = await boot(data_dir)
         app.state.kernel = kernel
+        kernel.router_registry.set_app(app)
 
         gc_task = asyncio.create_task(
             periodic_gc_worker(kernel.db, kernel.data_dir, interval=3600.0)
