@@ -157,7 +157,7 @@ In `shell/src/components/AppHeader.vue`:
   - `ss.route({ path: "/recipes/:id/edit", component: RecipeEditPage })`
 - **Hubs**:
   - `recipe:create`: Declares provider `manual` (`order: 100`, headless navigation to `/recipes/new`).
-  - `recipe:actions`: Declares provider `edit` (`order: 10`, navigates to `/recipes/:id/edit`) and provider `delete` (`order: 999`, prompts delete confirmation).
+  - `recipe:actions`: Declares provider `edit` (`order: 10`, navigates to `/recipes/:id/edit`) and provider `delete` (`order: 999`, prompts delete confirmation: offers deletion of current language row via `DELETE /api/recipes/{id}` or, if multiple language translations exist, deleting the whole recipe group via `DELETE /api/recipes/groups/{group_id}`).
 - **Slots**:
   - Declares `recipe.list.filters`, `recipe.card.actions`, `recipe.detail.sidebar`, and `recipe.detail.footer`.
 
