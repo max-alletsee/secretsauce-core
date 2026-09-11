@@ -10,6 +10,8 @@ from secretsauce.plugins.registry import PluginRegistry
 
 
 class PluginLoader:
+    CORE_PLUGINS_DIR = Path(__file__).resolve().parent / "core"
+
     def __init__(
         self,
         registry: PluginRegistry,
@@ -18,11 +20,12 @@ class PluginLoader:
     ):
         self.registry = registry
         if search_paths is None:
-            self.search_paths = [Path("/app/plugins"), Path("/data/plugins")]
+            self.search_paths = [self.CORE_PLUGINS_DIR, Path("/app/plugins"), Path("/data/plugins")]
         else:
             self.search_paths = [Path(p) for p in search_paths]
         self.context_factory = context_factory
         self.loaded_modules: dict[str, Any] = {}
+        self.plugin_dirs: dict[str, Path] = {}
 
     async def discover_and_sync(self) -> None:
         discovered: dict[str, tuple[Path, Path]] = {}
@@ -44,6 +47,7 @@ class PluginLoader:
         loaded_candidates: dict[str, dict[str, Any]] = {}
 
         for plugin_id, (module_path, plugin_dir) in discovered.items():
+            self.plugin_dirs[plugin_id] = plugin_dir
             try:
                 module_name = f"secretsauce_plugins_{plugin_id.replace('-', '_')}"
                 spec = importlib.util.spec_from_file_location(

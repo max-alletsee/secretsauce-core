@@ -71,7 +71,9 @@ class Kernel:
         self.tokens = TokenManager(self.db)
         self.registry = PluginRegistry(self.db)
         self.plugins = self.registry
-        self.loader = PluginLoader(self.registry, search_paths=[self.plugins_dir])
+        core_plugins_dir = Path(__file__).resolve().parent / "plugins" / "core"
+        search_paths = [self.plugins_dir, core_plugins_dir] if core_plugins_dir.is_dir() else [self.plugins_dir]
+        self.loader = PluginLoader(self.registry, search_paths=search_paths)
         self.services = ServiceRegistry()
 
         self._dispatchers: dict[str, EventDispatcher] = {}

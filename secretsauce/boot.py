@@ -51,6 +51,10 @@ class BootedKernel:
     plugins_dir: Path
     precache_info: dict = field(default_factory=dict)
 
+    @property
+    def plugins(self) -> PluginRegistry:
+        return self.registry
+
 
 async def boot(data_dir: Path | str | None = None) -> BootedKernel:
     """Orchestrates the full kernel startup sequence."""
@@ -110,8 +114,10 @@ async def boot(data_dir: Path | str | None = None) -> BootedKernel:
             service_registry=services,
         )
 
+    core_plugins_dir = Path(__file__).resolve().parent / "plugins" / "core"
+    search_paths = [core_plugins_dir, plugins_dir] if core_plugins_dir.is_dir() else [plugins_dir]
     loader = PluginLoader(
-        registry, search_paths=[plugins_dir], context_factory=context_factory
+        registry, search_paths=search_paths, context_factory=context_factory
     )
     await loader.discover_and_sync()
 
