@@ -1,4 +1,5 @@
 import os
+from typing import Any, Callable
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -55,10 +56,16 @@ class BootedKernel:
     uploads_dir: Path
     plugins_dir: Path
     precache_info: dict = field(default_factory=dict)
+    context_factory: Any = None
 
     @property
     def plugins(self) -> PluginRegistry:
         return self.registry
+
+    def ctx_for(self, plugin_id: str) -> PluginContext:
+        if self.context_factory:
+            return self.context_factory(plugin_id)
+        raise RuntimeError("context_factory not set on BootedKernel")
 
 
 async def boot(data_dir: Path | str | None = None) -> BootedKernel:
@@ -156,4 +163,5 @@ async def boot(data_dir: Path | str | None = None) -> BootedKernel:
         uploads_dir=uploads_dir,
         plugins_dir=plugins_dir,
         precache_info=precache_info,
+        context_factory=context_factory,
     )

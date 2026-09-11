@@ -68,6 +68,14 @@ async def delete_rule(rule_id: str, request: Request) -> dict[str, bool]:
     return {"ok": True}
 
 
+@router.post("/materialize")
+async def trigger_materialize(request: Request) -> dict[str, Any]:
+    kernel = request.app.state.kernel
+    ctx = kernel.ctx_for("recurring")
+    await materialize_rules(ctx)
+    return {"ok": True}
+
+
 async def materialize_rules(ctx: PluginContext) -> None:
     rules = await ctx.db.read_all("SELECT * FROM plugin_recurring_rules")
     if not rules:

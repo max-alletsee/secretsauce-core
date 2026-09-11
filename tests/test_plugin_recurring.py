@@ -54,7 +54,11 @@ async def test_recurring_plugin_backend_and_materializer(tmp_path: Path):
         assert len(rules) == 1
         assert rules[0]["id"] == rule_id
 
-        # 4. Materialize rules using the registered command
+        # 4. Materialize rules using the registered command and the API endpoint
+        mat_res = await k.client.post("/api/x/recurring/materialize", json={})
+        assert mat_res.status_code == 200
+        assert mat_res.json()["ok"] is True
+
         ctx = k.ctx_for("recurring")
         materialize_fn = k.services.get_command("recurring", "materialize")
         assert materialize_fn is not None
@@ -88,3 +92,9 @@ async def test_recurring_plugin_backend_and_materializer(tmp_path: Path):
             "SELECT * FROM plugin_recurring_rules WHERE id = ?", (rule_id,)
         )
         assert rule_after is None
+
+        # 7. Verify UI bundle is accessible via plugin UI route
+        ui_res = await k.client.get("/api/plugins/recurring/ui.js")
+        assert ui_res.status_code == 200
+        assert "javascript" in ui_res.headers.get("content-type", "")
+        assert "recurring" in ui_res.text
