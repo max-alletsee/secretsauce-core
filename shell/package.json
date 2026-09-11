@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@secretsauce/ui": "workspace:*",
+    "@secretsauce/units": "workspace:*",
     "@types/node": "^22.13.0",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/test-utils": "^2.4.6",

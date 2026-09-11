@@ -31,4 +31,14 @@ if (!fs.existsSync(vendorUIPath)) {
   )
 }
 
+// Create secretsauce-units.js in vendor directory
+const vendorUnitsPath = path.join(vendorDir, 'secretsauce-units.js')
+if (!fs.existsSync(vendorUnitsPath)) {
+  fs.writeFileSync(
+    vendorUnitsPath,
+    '// SecretSauce Units runtime vendor bundle\nexport * from "./secretsauce-units.js";\n',
+    'utf-8'
+  )
+}
+
 console.log('Vendoring completed successfully.')

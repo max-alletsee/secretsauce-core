@@ -113,6 +113,11 @@ async def get_static_file(file_path: str) -> Response:
     )
 
 
+@router.get("/assets/{file_path:path}")
+async def get_asset_file_fallback(file_path: str) -> Response:
+    return await get_static_file(f"assets/{file_path}")
+
+
 def render_index_html(kernel, base_path: str) -> str:
     index_file = STATIC_DIR / "index.html"
     if index_file.exists():
@@ -130,14 +135,35 @@ def render_index_html(kernel, base_path: str) -> str:
   <div id="app"></div>
 </body>
 </html>"""
+    norm_base = base_path if base_path.endswith("/") else f"{base_path}/"
+    if norm_base != "/":
+        template = template.replace('href="/manifest.webmanifest"', f'href="{norm_base}manifest.webmanifest"')
+        template = template.replace('href="/static/', f'href="{norm_base}static/')
+        template = template.replace('src="/static/', f'src="{norm_base}static/')
+
     ss_meta = {
         "boot_id": kernel.boot_id if kernel else "dev",
         "base_path": base_path,
         "version": getattr(secretsauce, "__version__", "0.1.0"),
     }
-    inject_script = f"window.__SS__ = {json.dumps(ss_meta)};"
-    if "__SS_INJECT__" in template:
-        return template.replace("__SS_INJECT__", inject_script)
+    meta_tag = f"<script>window.__SS__ = {json.dumps(ss_meta)};</script>"
+    import_map_tag = f"""<script type="importmap">
+    {{
+      "imports": {{
+        "vue": "{norm_base}static/vendor/vue.js",
+        "pinia": "{norm_base}static/vendor/pinia.js",
+        "vue-router": "{norm_base}static/vendor/vue-router.js",
+        "@secretsauce/ui": "{norm_base}static/vendor/secretsauce-ui.js",
+        "@secretsauce/units": "{norm_base}static/vendor/secretsauce-units.js"
+      }}
+    }}
+    </script>"""
+    combined_inject = f"{meta_tag}\n{import_map_tag}"
+
+    if "<script>__SS_INJECT__</script>" in template:
+        return template.replace("<script>__SS_INJECT__</script>", combined_inject)
+    elif "__SS_INJECT__" in template:
+        return template.replace("__SS_INJECT__", f"window.__SS__ = {json.dumps(ss_meta)};")
     elif "<head>" in template:
-        return template.replace("<head>", f"<head><script>{inject_script}</script>")
-    return f"<script>{inject_script}</script>\n" + template
+        return template.replace("<head>", f"<head>\n{combined_inject}")
+    return f"{combined_inject}\n" + template

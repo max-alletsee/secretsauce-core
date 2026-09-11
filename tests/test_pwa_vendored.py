@@ -10,6 +10,7 @@ async def test_pwa_vendored_static_assets(tmp_path: Path):
         res_root = await k.client.get("/")
         assert res_root.status_code == 200
         assert "window.__SS__" in res_root.text
+        assert "@secretsauce/units" in res_root.text
         assert res_root.headers["cache-control"] == "no-cache"
 
         # 2. Service worker serving
@@ -28,6 +29,10 @@ async def test_pwa_vendored_static_assets(tmp_path: Path):
         res_vendor = await k.client.get("/static/vendor/secretsauce-ui.js")
         assert res_vendor.status_code == 200
         assert res_vendor.headers["cache-control"] == "public, max-age=31536000, immutable"
+
+        res_vendor_units = await k.client.get("/static/vendor/secretsauce-units.js")
+        assert res_vendor_units.status_code == 200
+        assert res_vendor_units.headers["cache-control"] == "public, max-age=31536000, immutable"
 
         # 5. Manifest serving
         res_manifest = await k.client.get("/manifest.webmanifest")
