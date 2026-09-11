@@ -1,9 +1,9 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 2: Frontend Shell & PWA completed (all 13 tasks done, 31 Vitest tests & 75 Pytest tests passing)  
-**Active Plan:** `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`  
-**Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md` (Revision 7)  
-**Last Updated:** 2026-09-10  
+**Current Status:** Phase 3A: Units Engine & Stage 6 Core Plugins completed (all 8 tasks done, 35 Vitest tests & 92 Pytest tests passing)  
+**Active Plan:** `docs/superpowers/plans/2026-09-11-phase-3a-units-and-stage-6-plugins.md`  
+**Architecture Spec:** `docs/superpowers/specs/2026-09-11-phase-3a-units-and-stage-6-plugins-design.md`  
+**Last Updated:** 2026-09-11  
 
 ---
 
@@ -14,16 +14,11 @@ When starting a new Pi session to continue development:
 2. **Inspect State:**
    - Read this `TODO.md` to see the current active task and last commit.
    - Run `git status` and `git log -n 5 --oneline`.
-   - Run existing tests: `uv run pytest` to ensure the baseline is completely green.
+   - Run existing tests: `uv run pytest` and `pnpm --prefix shell test` to ensure baseline is green.
 3. **Execute Task:**
-   - Open `docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md`.
+   - Open active implementation plan.
    - Locate the first task with unchecked boxes (`- [ ]`).
-   - Follow each step strictly with Test-Driven Development (TDD):
-     - Step 1: Write failing test
-     - Step 2: Run test to verify failure
-     - Step 3: Write minimal implementation
-     - Step 4: Run test to verify it passes
-     - Step 5: Commit with conventional commit message
+   - Follow each step strictly with Test-Driven Development (TDD).
    - Update `- [ ]` to `- [x]` in both the plan file and this `TODO.md`.
 4. **Surprises & Blockers:**
    - If an unexpected error, constraint violation, or design ambiguity arises, **stop immediately**. Do not work around it silently. Surface it to the human partner and update the plan.
@@ -145,6 +140,32 @@ When starting a new Pi session to continue development:
   - Files: `shell/scripts/vendor.ts`, `shell/package.json`, `secretsauce/static/`
   - Tests: `shell/tests/e2e-build.spec.ts`, `tests/test_pwa_vendored.py`
 
+## Phase 3A: Units Engine & Stage 6 Core Plugins
+
+- [x] **Task 1: Python Units Table & Ingredient Parsing Engine** - Commit: `aa959f5`
+  - Files: `secretsauce/units/units.json`, `secretsauce/units/__init__.py`
+  - Tests: `tests/test_units.py`
+- [x] **Task 2: Python Units Conversion, System Targeting & Formatting** - Commit: `d73ccd9`
+  - Files: `secretsauce/units/__init__.py`
+  - Tests: `tests/test_units.py`
+- [x] **Task 3: Browser Units Package (@secretsauce/units) & Import Map Integration** - Commit: `943df6b`
+  - Files: `shell/packages/units/`, `shell/scripts/vendor.ts`, `secretsauce/api/routes/pwa.py`
+  - Tests: `shell/packages/units/tests/units.spec.ts`, `tests/test_pwa_vendored.py`
+- [x] **Task 4: Core Plugin Search Path Discovery & Plugin UI Serving Endpoints** - Commit: `488598a`
+  - Files: `secretsauce/plugins/loader.py`, `secretsauce/boot.py`, `secretsauce/testing.py`, `secretsauce/api/routes/plugins.py`
+  - Tests: `tests/test_plugin_ui_routes.py`
+- [x] **Task 5: units Core Plugin Implementation** - Commit: `e7c4f4a`
+  - Files: `secretsauce/plugins/core/units/`, `secretsauce/nouns/recipes.py`, `secretsauce/jobs.py`
+  - Tests: `tests/test_plugin_units.py`
+- [x] **Task 6: recurring Core Plugin Backend & Materializer** - Commit: `3c0d285`
+  - Files: `secretsauce/plugins/core/recurring/`, `secretsauce/nouns/schedule.py`, `secretsauce/plugins/context.py`
+  - Tests: `tests/test_plugin_recurring.py`
+- [x] **Task 7: Plugin UI Build Pipeline & recurring UI Bundle** - Commit: `2d2d594`
+  - Files: `secretsauce/plugins/core/recurring/ui/`, `shell/scripts/build-plugins.ts`, `shell/package.json`
+  - Tests: `tests/test_plugin_recurring.py`
+- [x] **Task 8: End-to-End Build & Test Suite Verification**
+  - Verification: 92 Pytest passing, 35 Vitest passing, full PWA and plugin production build succeeding
+
 ---
 
 ## Upcoming Phases (Roadmap)
@@ -194,3 +215,12 @@ When starting a new Pi session to continue development:
 - **Phase 2 Task 11: Core Shell Pages** - Commit: `a43e777` (feat(shell): implement setup, login, settings, plugin manager, and share pages)
 - **Phase 2 Task 12: App Shell Assembly & Routing** - Commit: `88b8413` (feat(shell): assemble App, Vue Router, PrimeVue Aura, and app bootstrapping)
 - **Phase 2 Task 13: Build Pipeline, Vendoring & End-to-End Build Verification** - Commit: `78a6e90` (feat(shell): implement vendoring script, build pipeline, and end-to-end verification)
+
+### Phase 3A: Units & Stage 6 Core Plugins
+- **Phase 3A Task 1: Python Units Table & Ingredient Parsing Engine** - Commit: `aa959f5` (feat(units): implement units table and ingredient parsing engine)
+- **Phase 3A Task 2: Python Units Conversion, System Targeting & Formatting** - Commit: `d73ccd9` (feat(units): implement unit conversion, targeting, and vulgar fraction formatting)
+- **Phase 3A Task 3: Browser Units Package (@secretsauce/units) & Import Map Integration** - Commit: `943df6b` (feat(units): implement browser @secretsauce/units package and import map integration)
+- **Phase 3A Task 4: Core Plugin Search Path Discovery & Plugin UI Serving Endpoints** - Commit: `488598a` (feat(plugins): support core plugin search paths and plugin ui serving routes)
+- **Phase 3A Task 5: units Core Plugin Implementation** - Commit: `e7c4f4a` (feat(plugins): implement core units plugin and recipe normalization hooks)
+- **Phase 3A Task 6: recurring Core Plugin Backend & Materializer** - Commit: `3c0d285` (feat(recurring): implement recurring meals plugin with rules table and materializer)
+- **Phase 3A Task 7: Plugin UI Build Pipeline & recurring UI Bundle** - Commit: `2d2d594` (feat(recurring): add recurring settings UI bundle and plugin build script)

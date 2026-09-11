@@ -64,7 +64,7 @@
   - `canonical(alias: str, lang: str = "en") -> str | None`
   - `parse(text: str, lang: str = "en") -> dict[str, Any]` returning `{"raw_text": str, "name": str, "quantity": float | None, "quantity_max": float | None, "quantity_text": str | None, "unit": str | None, "notes": str | None}`
 
-- [ ] **Step 1: Write the failing tests for unit alias canonicalization and ingredient parsing**
+- [x] **Step 1: Write the failing tests for unit alias canonicalization and ingredient parsing**
 
 ```python
 # tests/test_units.py
@@ -147,12 +147,12 @@ def test_parse_notes_and_subjective_amounts():
     assert res_belieben["notes"] == "nach Belieben"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_units.py -v`  
 Expected: FAIL (ModuleNotFoundError: No module named 'secretsauce.units')
 
-- [ ] **Step 3: Create `units.json` and implement `canonical()` and `parse()`**
+- [x] **Step 3: Create `units.json` and implement `canonical()` and `parse()`**
 
 Write `secretsauce/units/units.json`:
 ```json
@@ -413,12 +413,12 @@ def parse(text: str, lang: str = "en") -> dict[str, Any]:
     }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/test_units.py -v`  
 Expected: PASS (4 passed)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add secretsauce/units/ units.json tests/test_units.py
@@ -439,7 +439,7 @@ git commit -m "feat(units): add unit table and canonical alias parsing engine"
   - `to_system(quantity: float | None, quantity_max: float | None, unit: str | None, system: str = "metric") -> tuple[float | None, float | None, str | None]`
   - `format(quantity: float | None, quantity_max: float | None, unit: str | None, lang: str = "en", system: str = "metric") -> str`
 
-- [ ] **Step 1: Write failing tests for conversions, system targeting, and formatting**
+- [x] **Step 1: Write failing tests for conversions, system targeting, and formatting**
 
 ```python
 # append to tests/test_units.py
@@ -505,12 +505,12 @@ def test_format_vulgar_fractions():
     assert format_unit(2.0, 3.0, "clove", "en", "us_customary") == "2-3 clove"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_units.py -k "test_convert or test_to_system or test_format" -v`  
 Expected: FAIL (cannot import name 'convert')
 
-- [ ] **Step 3: Implement conversion, targeting, and formatting logic**
+- [x] **Step 3: Implement conversion, targeting, and formatting logic**
 
 Add to `secretsauce/units/__init__.py`:
 ```python
@@ -667,12 +667,12 @@ def format(
     return res
 ```
 
-- [ ] **Step 4: Run tests to verify all tests pass**
+- [x] **Step 4: Run tests to verify all tests pass**
 
 Run: `uv run pytest tests/test_units.py -v`  
 Expected: PASS (8 passed)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add secretsauce/units/__init__.py tests/test_units.py
@@ -697,7 +697,7 @@ git commit -m "feat(units): add conversion, system targeting, and format functio
   - Vendored bundle: `secretsauce/static/vendor/secretsauce-units.js`
   - Import map entry: `"@secretsauce/units": "/static/vendor/secretsauce-units.js"`
 
-- [ ] **Step 1: Write failing Vitest test for browser `@secretsauce/units`**
+- [x] **Step 1: Write failing Vitest test for browser `@secretsauce/units`**
 
 Write `shell/packages/units/tests/units.spec.ts`:
 ```typescript
@@ -728,12 +728,12 @@ describe('@secretsauce/units browser package', () => {
 })
 ```
 
-- [ ] **Step 2: Run Vitest to verify it fails**
+- [x] **Step 2: Run Vitest to verify it fails**
 
 Run: `pnpm --prefix shell test shell/packages/units/tests/units.spec.ts`  
 Expected: FAIL (Cannot find module '../src/index')
 
-- [ ] **Step 3: Implement `shell/packages/units`**
+- [x] **Step 3: Implement `shell/packages/units`**
 
 Write `shell/packages/units/package.json`:
 ```json
@@ -963,14 +963,14 @@ Update `secretsauce/api/routes/pwa.py` in `render_index_html`:
 """
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm --prefix shell test`  
 Expected: PASS (all tests including units.spec.ts passing)  
 Run: `uv run pytest`  
 Expected: PASS (78+ kernel tests passing)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add shell/packages/units/ shell/scripts/vendor.ts secretsauce/api/routes/pwa.py
@@ -995,7 +995,7 @@ git commit -m "feat(units): add @secretsauce/units browser package and vendor ma
   - `GET /api/plugins/{id}/ui.js` -> serves ES module JS with immutable caching header if `?v=` present
   - `GET /api/plugins/{id}/ui.css` -> serves stylesheet CSS if configured
 
-- [ ] **Step 1: Write failing tests for plugin UI serving and directory confinement**
+- [x] **Step 1: Write failing tests for plugin UI serving and directory confinement**
 
 Write `tests/test_stage6_plugins.py`:
 ```python
@@ -1050,12 +1050,12 @@ async def setup(ctx):
         assert "no-cache" in res_unv.headers.get("cache-control", "")
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_stage6_plugins.py -v`  
 Expected: FAIL (make_kernel does not accept extra_plugins_dirs or 404/405 for /api/plugins/testplugin/ui.js)
 
-- [ ] **Step 3: Implement plugin search paths, plugin_dir recording, and UI serving endpoints**
+- [x] **Step 3: Implement plugin search paths, plugin_dir recording, and UI serving endpoints**
 
 In `secretsauce/plugins/loader.py`:
 Record `plugin_dir` in `self.registry.record_plugin_dir(plugin_id, dir_path)` or store `module_path.parent` in the plugin record.
@@ -1148,14 +1148,14 @@ async def get_plugin_ui_css(plugin_id: str, request: Request, v: str | None = No
     )
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `uv run pytest tests/test_stage6_plugins.py -v`  
 Expected: PASS  
 Run: `uv run pytest tests/test_plugins.py -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add secretsauce/boot.py secretsauce/plugins/loader.py secretsauce/plugins/registry.py secretsauce/api/routes/plugins.py tests/test_stage6_plugins.py
@@ -1180,7 +1180,7 @@ git commit -m "feat(plugins): add plugin search paths and ui.js/ui.css serving e
 - Produces:
   - Active `units` plugin standardizing recipe ingredients
 
-- [ ] **Step 1: Write failing tests for `units` plugin hooks and command**
+- [x] **Step 1: Write failing tests for `units` plugin hooks and command**
 
 Add to `tests/test_stage6_plugins.py`:
 ```python
@@ -1231,12 +1231,12 @@ async def test_units_plugin_hooks_and_reconvert(tmp_path):
     assert updated.ingredients[0]["quantity"] == 2.0
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_stage6_plugins.py -k test_units_plugin_hooks_and_reconvert -v`  
 Expected: FAIL (Plugin 'units' not found)
 
-- [ ] **Step 3: Implement `plugins/units/__init__.py`**
+- [x] **Step 3: Implement `plugins/units/__init__.py`**
 
 Write `plugins/units/__init__.py`:
 ```python
@@ -1302,12 +1302,12 @@ async def setup(ctx: PluginContext) -> None:
     ctx.command("reconvert-all", reconvert_all, title="Re-convert all recipes")
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/test_stage6_plugins.py -k test_units_plugin_hooks_and_reconvert -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add plugins/units/ tests/test_stage6_plugins.py
@@ -1333,7 +1333,7 @@ git commit -m "feat(units): implement units core plugin with hooks and reconvert
   - Background schedule materializer populating next 14 days
   - REST endpoints `/api/x/recurring/rules`
 
-- [ ] **Step 1: Write failing tests for `recurring` plugin migration, rules CRUD, and schedule materializer**
+- [x] **Step 1: Write failing tests for `recurring` plugin migration, rules CRUD, and schedule materializer**
 
 Add to `tests/test_stage6_plugins.py`:
 ```python
@@ -1391,12 +1391,12 @@ async def test_recurring_plugin_backend(tmp_path):
     assert rule_after is None
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `uv run pytest tests/test_stage6_plugins.py -k test_recurring_plugin_backend -v`  
 Expected: FAIL (Plugin 'recurring' not found)
 
-- [ ] **Step 3: Implement migration and `plugins/recurring/__init__.py`**
+- [x] **Step 3: Implement migration and `plugins/recurring/__init__.py`**
 
 Write `plugins/recurring/migrations/0001_rules.sql`:
 ```sql
@@ -1520,12 +1520,12 @@ async def setup(ctx: PluginContext) -> None:
     ctx.background(background_loop(ctx))
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `uv run pytest tests/test_stage6_plugins.py -k test_recurring_plugin_backend -v`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add plugins/recurring/ tests/test_stage6_plugins.py
@@ -1551,7 +1551,7 @@ git commit -m "feat(recurring): implement recurring meals plugin with rules tabl
   - `pnpm --prefix shell build:plugins`
   - `plugins/recurring/ui/dist/index.js`
 
-- [ ] **Step 1: Write plugin build script `shell/scripts/build-plugins.ts`**
+- [x] **Step 1: Write plugin build script `shell/scripts/build-plugins.ts`**
 
 Write `shell/scripts/build-plugins.ts`:
 ```typescript
@@ -1614,7 +1614,7 @@ buildPlugins().catch(err => {
 })
 ```
 
-- [ ] **Step 2: Add `build:plugins` to `shell/package.json`**
+- [x] **Step 2: Add `build:plugins` to `shell/package.json`**
 
 In `shell/package.json`:
 ```json
@@ -1624,7 +1624,7 @@ In `shell/package.json`:
 }
 ```
 
-- [ ] **Step 3: Implement `recurring/ui` Vue component and activator**
+- [x] **Step 3: Implement `recurring/ui` Vue component and activator**
 
 Write `plugins/recurring/ui/package.json`:
 ```json
@@ -1725,12 +1725,12 @@ export default function activate(ss: SecretSauceUI) {
 }
 ```
 
-- [ ] **Step 4: Run build and verify output bundle**
+- [x] **Step 4: Run build and verify output bundle**
 
 Run: `pnpm --prefix shell build:plugins`  
 Expected: `plugins/recurring/ui/dist/index.js` is created successfully.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add plugins/recurring/ui/ shell/scripts/build-plugins.ts shell/package.json
@@ -1748,26 +1748,26 @@ git commit -m "feat(recurring): add recurring settings UI bundle and plugin buil
 - Consumes: All Phase 3A deliverables
 - Produces: Full passing suite across Python, TypeScript, and Vite production builds
 
-- [ ] **Step 1: Run full Python test suite**
+- [x] **Step 1: Run full Python test suite**
 
 Run: `uv run pytest`  
 Expected: PASS (All tests passing)
 
-- [ ] **Step 2: Run full Frontend Vitest suite**
+- [x] **Step 2: Run full Frontend Vitest suite**
 
 Run: `pnpm --prefix shell test`  
 Expected: PASS (All unit and component tests passing)
 
-- [ ] **Step 3: Run full Production Build**
+- [x] **Step 3: Run full Production Build**
 
 Run: `pnpm --prefix shell build`  
 Expected: PASS (Vite bundles shell, plugins, vendors static assets without errors)
 
-- [ ] **Step 4: Update `TODO.md`**
+- [x] **Step 4: Update `TODO.md`**
 
 Update `TODO.md` reflecting Stage 6 / Phase 3A completion.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add TODO.md
