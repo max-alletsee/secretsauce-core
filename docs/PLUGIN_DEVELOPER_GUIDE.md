@@ -6,14 +6,19 @@ This guide explains how to develop, test, and package backend plugins for the Se
 
 ## 1. Plugin Directory Structure
 
-A plugin lives in a directory under `/data/plugins/<plugin-id>/` (or `/app/plugins/<plugin-id>/` for built-in plugins).
+A plugin lives in a directory under `data/plugins/<plugin-id>/` (for user or runtime plugins) or under `secretsauce/plugins/core/<plugin-id>/` (for built-in core plugins).
 
 ```text
 my-plugin/
 ├── __init__.py          # Plugin definition and setup(ctx) entry point
 ├── migrations/          # SQLite schema migrations (optional)
 │   └── 0001_initial.sql
-├── ui.js                # Frontend ES module bundle (for Phase 2 UI integration)
+├── ui/                  # UI source files (Vite library build)
+│   ├── package.json
+│   └── src/
+│       ├── index.ts
+│       └── MyComponent.vue
+├── ui.js                # Compiled frontend ES module bundle
 └── ui.css               # Optional frontend styles
 ```
 
@@ -143,7 +148,55 @@ async for handle in ctx.jobs.run(job_id):
     await handle.set_result({"imported_count": 1})
 ```
 
-### 4.4 Inter-Plugin Services (`ctx.services`)
+### 4.4 Custom REST Endpoints (`ctx.routes` / `ctx.router`)
+Plugins can mount custom FastAPI routers scoped to the `/api/x/{plugin_id}` prefix:
+
+```python
+from fastapi import APIRouter, Request
+
+router = APIRouter(prefix="/api/x/my-plugin", tags=["my-plugin"])
+
+@router.get("/status")
+async def get_status(request: Request):
+    return {"status": "operational"}
+
+async def setup(ctx: PluginContext):
+    ctx.routes.mount(router)
+```
+
+### 4.5 Invocable Commands (`ctx.command`)
+Plugins can expose commands registered in the kernel's `ServiceRegistry`:
+
+```python
+async def recalculate_all(ctx: PluginContext):
+    # Command implementation
+    return {"updated": 42}
+
+async def setup(ctx: PluginContext):
+    ctx.command("recalculate", recalculate_all, title="Recalculate all statistics")
+```
+
+### 4.6 Cooperative Background Tasks (`ctx.background`)
+Plugins can run persistent background loops managed cooperatively by the kernel:
+
+```python
+import asyncio
+
+async def polling_worker(ctx: PluginContext):
+    while True:
+        try:
+            await do_periodic_work()
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            ctx.log.error(f"Worker error: {e}")
+        await asyncio.sleep(3600)
+
+async def setup(ctx: PluginContext):
+    ctx.background(polling_worker(ctx))
+```
+
+### 4.7 Inter-Plugin Services (`ctx.services`)
 Plugins can export services or invoke other plugins without direct imports:
 
 ```python
@@ -156,7 +209,7 @@ if summary_fn:
     result = await summary_fn(recipe_text)
 ```
 
-### 4.5 API Tokens (`ctx.tokens`)
+### 4.8 API Tokens (`ctx.tokens`)
 Issue dedicated bearer tokens for external webhooks or integrations:
 
 ```python
@@ -221,6 +274,7 @@ export default defineConfig({
         'pinia',
         'vue-router',
         '@secretsauce/ui',
+        '@secretsauce/units',
         /^primevue\//,
         /^@primevue\//,
         /^@primeuix\//
@@ -230,7 +284,12 @@ export default defineConfig({
 })
 ```
 
-Because these dependencies are externalized, plugins do not bundle their own copies of Vue or PrimeVue. Shared dependencies resolve at runtime through the shell's vendor import map.
+For workspace-managed core plugins, run the build script to compile all plugins into `ui.js`:
+```bash
+pnpm --prefix shell build:plugins
+```
+
+Because these dependencies are externalized, plugins do not bundle their own copies of Vue, PrimeVue, or the units engine. Shared dependencies resolve at runtime through the shell's vendor import map.
 
 ### 6.2 The `activate(ss)` Function
 The entry point of `ui.js` must default export an activation function receiving `SecretSauceUI`:

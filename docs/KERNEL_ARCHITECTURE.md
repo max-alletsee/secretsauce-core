@@ -178,7 +178,75 @@ Long-running plugin tasks (recipe imports, translations, backups) run through th
 
 ---
 
-## 7. Garbage Collector (`secretsauce/gc.py`)
+## 7. Units Engine Subsystem (`secretsauce/units/`)
+
+The kernel includes a localized culinary units parsing, conversion, and formatting engine designed for ingredient text processing:
+
+1. **Units Definition Table (`units.json`)**:
+   - Classifies units into dimensions: `mass`, `volume`, `temperature`, `length`, `time`, and `count`.
+   - Associates unit factors relative to SI base units (`g` for mass, `ml` for volume).
+   - Maps localized aliases across languages (`en`, `de`), e.g., `"tbsp"`, `"tablespoon"`, `"EL"`, `"Esslöffel"`.
+2. **Natural Language Ingredient Parsing (`parse`)**:
+   - Parses vulgar Unicode fractions (`¼`, `½`, `¾`, `⅓`, `⅔`, `⅛`, `⅜`, `⅝`, `⅞`) and standard slash fractions (`1 1/2`, `3/4`).
+   - Extracts quantity ranges (`2-3 cloves`) and subjective amounts (`pinch of salt`).
+   - Extracts parenthetical notes (`cloves garlic (minced)`) and resolves leading unit names to canonical IDs.
+3. **Dimensional Conversion & Rounding (`convert`)**:
+   - Converts between units within the same dimension (rejects cross-dimensional conversion like `g` to `ml`).
+   - For temperatures (`f` and `c`), rounds converted values to the nearest 5°.
+4. **Target System Normalization (`to_system`)**:
+   - Translates measurements between `metric` and `us_customary`.
+   - Implements tiered rounding rules for metric output (<20g/ml integer, 20-199g/ml nearest 5, 200-999g/ml nearest 10, >=1kg/l to 0.05 step).
+5. **Formatting (`format`)**:
+   - Formats quantities with localized decimal separators.
+   - For US customary measurements, renders remainders within 0.04 tolerance as Unicode vulgar fraction glyphs (`1 ¼ cup`).
+
+---
+
+## 8. Plugin Runtime, Core Plugins & Dynamic UI Serving
+
+```
+                     ┌───────────────────────────────┐
+                     │         PluginLoader          │
+                     └───────────────┬───────────────┘
+                                     │ Searches
+                    ┌────────────────┴────────────────┐
+                    ▼                                 ▼
+       ┌────────────────────────┐        ┌────────────────────────┐
+       │ secretsauce/plugins/   │        │     data/plugins/      │
+       │        core/           │        │     (User/Runtime)     │
+       │ (units, recurring, ...)│        └────────────────────────┘
+       └────────────┬───────────┘
+                    │
+                    ▼
+       ┌────────────────────────┐
+       │  PluginContext (Sandboxed)
+       │  • ctx.routes / router() -> mounts under /api/x/{id}
+       │  • ctx.command()        -> registers in ServiceRegistry
+       │  • ctx.hook()           -> synchronous pre-commit hooks
+       │  • ctx.jobs             -> Scoped background job engine
+       │  • ctx.background()     -> cooperative task runners
+       └────────────┬───────────┘
+                    │ Serves UI
+                    ▼
+       ┌────────────────────────┐
+       │ GET /api/plugins/{id}/ui.js (SHA-256 ETag + 304 / Immutable)
+       │ GET /api/plugins/{id}/ui.css
+       └────────────────────────┘
+```
+
+1. **Dual Search Paths**:
+   - The kernel discovers built-in core plugins (`secretsauce/plugins/core/`) and external runtime plugins (`data/plugins/`).
+   - Core plugins (such as `units` and `recurring`) are pre-installed and activated during boot.
+2. **Dynamic Extension Routers (`ctx.routes` / `RouterRegistry`)**:
+   - Plugins mount custom FastAPI routers under `/api/x/{plugin_id}/...`.
+   - The `RouterRegistry` inserts plugin routes before the SPA catch-all fallback route (`/{full_path:path}`).
+3. **Dynamic UI Bundle Serving**:
+   - `GET /api/plugins/active`: Lists enabled plugins and flags whether `ui.js` or `ui.css` are present.
+   - `GET /api/plugins/{plugin_id}/ui.js` and `GET /api/plugins/{plugin_id}/ui.css`: Serves compiled ES modules directly from the plugin directory with SHA-256 ETag headers for conditional 304 validation and long-lived immutable caching with version query params (`?v=...`).
+
+---
+
+## 9. Garbage Collector (`secretsauce/gc.py`)
 
 An hourly background task cleans lazy references:
 1. **Unlinked Uploads**: Deletes files under `uploads/` with no matching row in `assets`.
@@ -187,7 +255,7 @@ An hourly background task cleans lazy references:
 
 ---
 
-## 8. Backup & Export (`secretsauce/api/routes/export.py`)
+## 10. Backup & Export (`secretsauce/api/routes/export.py`)
 
 - **Full System Backup (`GET /api/export` / `secretsauce export`)**:
   - Uses SQLite `VACUUM INTO` outside active transactions for zero-downtime hot backup.
@@ -197,7 +265,7 @@ An hourly background task cleans lazy references:
 
 ---
 
-## 9. Runtime Boot & `BootedKernel` Lifecycle (`secretsauce/boot.py`)
+## 11. Runtime Boot & `BootedKernel` Lifecycle (`secretsauce/boot.py`)
 
 When the application boots via `boot(data_dir)`, it orchestrates the following sequence:
 1. **Directories**: Ensures `uploads/` and `plugins/` directories exist within `data_dir`.

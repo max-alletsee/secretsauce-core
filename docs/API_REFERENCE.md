@@ -312,6 +312,36 @@ Returns entity attributes for an entity.
 ### `GET /api/plugins`
 Lists all discovered plugins, enabled status, and schema versions.
 
+### `GET /api/plugins/active`
+Lists currently active plugins enriched with frontend asset URLs.
+- **Status:** `200 OK`
+- **Response:**
+  ```json
+  [
+    {
+      "id": "recurring",
+      "name": "Recurring Meals",
+      "version": "1.0.0",
+      "description": "Weekly recurring meal planning and scheduling",
+      "state": "active",
+      "ui_entry": "/api/plugins/recurring/ui.js",
+      "ui_css": null
+    }
+  ]
+  ```
+
+### `GET /api/plugins/{id}/ui.js`
+Serves the compiled frontend ES module bundle for the specified plugin.
+- **Status:** `200 OK` (or `304 Not Modified` with matching `If-None-Match`)
+- **Headers:** `Content-Type: text/javascript`, `ETag: "<sha256>"`
+- **Caching:** Defaults to `Cache-Control: no-cache`. When requested with version query `?v=<version>`, returns `Cache-Control: public, max-age=31536000, immutable`.
+
+### `GET /api/plugins/{id}/ui.css`
+Serves the optional frontend stylesheet for the specified plugin.
+- **Status:** `200 OK` (or `304 Not Modified` with matching `If-None-Match`)
+- **Headers:** `Content-Type: text/css`, `ETag: "<sha256>"`
+- **Caching:** Follows identical ETag and immutable versioning behavior as `ui.js`.
+
 ### `POST /api/plugins/{id}/enable` / `POST /api/plugins/{id}/disable`
 Enables or disables a plugin at runtime.
 
@@ -329,7 +359,54 @@ Signals cancellation for a running job.
 
 ---
 
-## 10. Server-Sent Events (SSE) Stream
+## 10. Core Plugin Extension Endpoints (`/api/x/...`)
+
+Plugins mount custom API routers under the `/api/x/{plugin_id}` namespace.
+
+### Recurring Meals Plugin (`/api/x/recurring`)
+
+#### `GET /api/x/recurring/rules`
+Lists all configured recurring meal rules joined with their target recipe titles.
+- **Status:** `200 OK`
+- **Response:**
+  ```json
+  [
+    {
+      "id": "2a047ae7-55c3-4700-828b-e52ee37498bf",
+      "weekday": 2,
+      "meal_type": "dinner",
+      "recipe_id": "rec_pasta_en",
+      "recipe_title": "Wednesday Pasta",
+      "created_at": "2026-09-11T12:00:00Z"
+    }
+  ]
+  ```
+
+#### `POST /api/x/recurring/rules`
+Creates a new recurring meal rule for a given weekday (0 = Monday, 6 = Sunday).
+- **Body:**
+  ```json
+  {
+    "weekday": 2,
+    "meal_type": "dinner",
+    "recipe_id": "rec_pasta_en"
+  }
+  ```
+- **Status:** `200 OK`
+
+#### `DELETE /api/x/recurring/rules/{id}`
+Deletes a recurring meal rule by ID.
+- **Status:** `200 OK`
+- **Response:** `{"ok": true}`
+
+#### `POST /api/x/recurring/materialize`
+Triggers immediate materialization of active recurring rules across the upcoming 14 calendar days into the schedule.
+- **Status:** `200 OK`
+- **Response:** `{"ok": true}`
+
+---
+
+## 11. Server-Sent Events (SSE) Stream
 
 ### `GET /api/events/stream`
 - **Headers:** `Last-Event-ID` (optional, integer sequence number).

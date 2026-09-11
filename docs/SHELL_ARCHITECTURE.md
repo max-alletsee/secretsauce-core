@@ -62,14 +62,20 @@ The frontend codebase is organized as a pnpm workspace under `shell/`:
 ```text
 shell/
 ├── packages/
-│   └── ui/                          # `@secretsauce/ui` public library
+│   ├── ui/                          # `@secretsauce/ui` public library
+│   │   ├── src/
+│   │   │   ├── types.ts             # SecretSauceUI, RouteDef, SlotDef, Outbox, etc.
+│   │   │   ├── Slot.vue             # Slot contribution renderer
+│   │   │   ├── IntentTrigger.vue    # Intent execution & picker component
+│   │   │   ├── testing.ts           # `createFakeSecretSauceUI` test harness
+│   │   │   └── index.ts             # Public module exports
+│   │   ├── tests/                   # Component unit tests
+│   │   └── package.json
+│   └── units/                       # `@secretsauce/units` client-side units engine
 │       ├── src/
-│       │   ├── types.ts             # SecretSauceUI, RouteDef, SlotDef, Outbox, etc.
-│       │   ├── Slot.vue             # Slot contribution renderer
-│       │   ├── IntentTrigger.vue    # Intent execution & picker component
-│       │   ├── testing.ts           # `createFakeSecretSauceUI` test harness
-│       │   └── index.ts             # Public module exports
-│       ├── tests/                   # Component unit tests
+│       │   └── index.ts             # parse(), format(), canonical(), types
+│       ├── tests/
+│       │   └── units.spec.ts        # Parsing and formatting unit tests
 │       └── package.json
 ├── src/
 │   ├── api.ts                       # API client (`createApiClient`)
@@ -105,7 +111,8 @@ shell/
 │   ├── main.ts                      # Application bootstrapper
 │   └── router.ts                    # Vue Router definition
 ├── scripts/
-│   └── vendor.ts                    # Asset vendoring build hook
+│   ├── vendor.ts                    # Runtime asset vendoring build hook
+│   └── build-plugins.ts             # Core plugin UI Vite library builder
 ├── public/icons/                    # PWA icons
 ├── vite.config.ts                   # Main Vite build config
 ├── vite.sw.config.ts                # Service Worker IIFE build config
@@ -208,7 +215,42 @@ export interface SecretSauceUI {
 
 ---
 
-## 8. Application Bootstrapping, Navigation Guards & Layout
+## 8. `@secretsauce/units` Browser Package & Import Map
+
+The `@secretsauce/units` workspace package (`shell/packages/units/`) mirrors unit parsing and formatting in the browser:
+- `parse(text, lang)`: Converts natural language lines (`"1 ½ cups flour"`) into `{ quantity, unit, name, notes }`.
+- `format(qty, qty_max, unit, lang, system)`: Renders quantities with vulgar fraction support (`"1 ¼ cup"`) or metric decimals.
+- `canonical(unit, lang)`: Canonicalizes unit aliases to base IDs.
+
+### Dynamic Import Map
+To enable externalized imports across dynamic plugin ES modules, the server injects a dynamic import map into `index.html`:
+```html
+<script type="importmap">
+{
+  "imports": {
+    "vue": "/static/vendor/vue.js",
+    "pinia": "/static/vendor/pinia.js",
+    "vue-router": "/static/vendor/vue-router.js",
+    "@secretsauce/ui": "/static/vendor/secretsauce-ui.js",
+    "@secretsauce/units": "/static/vendor/secretsauce-units.js"
+  }
+}
+</script>
+```
+Plugins can directly `import { parse, format } from '@secretsauce/units'` or `import type { SecretSauceUI } from '@secretsauce/ui'` without local bundling.
+
+---
+
+## 9. Plugin UI Build Tooling (`scripts/build-plugins.ts`)
+
+Plugins provide their frontend components under `<plugin_dir>/ui/src/index.ts`. The build script `shell/scripts/build-plugins.ts` iterates over core and external plugins, executing Vite library builds:
+- **Output:** `<plugin_dir>/ui/dist/index.js` copied to `<plugin_dir>/ui.js`.
+- **Externalized dependencies:** `vue`, `pinia`, `vue-router`, `@secretsauce/ui`, `@secretsauce/units`, and PrimeVue components.
+- **Invocation:** `pnpm --prefix shell build:plugins`, automatically included in `pnpm --prefix shell build`.
+
+---
+
+## 10. Application Bootstrapping, Navigation Guards & Layout
 
 ### Router Navigation Guard (`shell/src/main.ts`)
 The shell router manages unauthenticated visitors and onboarding state via a global `beforeEach` guard:
@@ -226,7 +268,7 @@ The shell router manages unauthenticated visitors and onboarding state via a glo
 
 ---
 
-## 9. Testing & Verification
+## 11. Testing & Verification
 
 The shell test suite uses Vitest with `@vue/test-utils` and HappyDOM:
 
