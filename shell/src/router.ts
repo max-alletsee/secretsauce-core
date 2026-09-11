@@ -9,6 +9,7 @@ export function buildRouter(basePath: string = '/') {
   return createRouter({
     history: createWebHistory(basePath),
     routes: [
+      { path: '/', redirect: '/plugins' },
       { path: '/setup', component: SetupPage },
       { path: '/login', component: LoginPage },
       {

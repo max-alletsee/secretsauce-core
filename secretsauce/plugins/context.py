@@ -127,6 +127,9 @@ class ScopedJobs:
     async def get(self, job_id: str) -> dict[str, Any]:
         return await self._manager.get_job(job_id)
 
+    def register(self, job_type: str, handler: Callable[..., Any]) -> None:
+        self._manager.register_handler(self._plugin_id, job_type, handler)
+
     async def cancel(self, job_id: str) -> None:
         await self._manager.cancel_job(job_id)
 
@@ -181,24 +184,37 @@ class PluginContext:
         self._dispatcher = dispatcher or EventDispatcher(db, plugin_id=plugin_id)
         self.services = service_registry or ServiceRegistry()
 
-    def hook(self, name: str, handler: Callable[..., Any]) -> None:
+    def hook(
+        self, name: str, handler: Callable[..., Any] | None = None
+    ) -> Any:
+        if handler is None:
+            def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+                self._hook_registry.register(name, self.plugin_id, fn)
+                return fn
+            return decorator
         self._hook_registry.register(name, self.plugin_id, handler)
 
     def on(
         self,
         name: str,
-        handler: Callable[..., Any],
+        handler: Callable[..., Any] | None = None,
         include_self: bool = False,
-    ) -> None:
-        async def wrapped_handler(event):
-            if (
-                not include_self
-                and event.origin == f"plugin:{self.plugin_id}"
-            ):
-                return
-            await handler(event)
+    ) -> Any:
+        def register_fn(fn: Callable[..., Any]) -> Callable[..., Any]:
+            async def wrapped_handler(event):
+                if (
+                    not include_self
+                    and event.origin == f"plugin:{self.plugin_id}"
+                ):
+                    return
+                await fn(event)
 
-        self._dispatcher.subscribe(name, wrapped_handler)
+            self._dispatcher.subscribe(name, wrapped_handler)
+            return fn
+
+        if handler is None:
+            return register_fn
+        return register_fn(handler)
 
     async def emit(
         self,

@@ -76,6 +76,30 @@ async def test_plugin_context_hooks_and_background(tmp_path):
         await ctx._hook_registry.run_before("before:recipe:create", {"title": "Cake"})
         assert hook_called is True
 
+        # Hook as decorator
+        decorator_called = False
+
+        @ctx.hook("before:recipe:update")
+        async def decorated_hook(data):
+            nonlocal decorator_called
+            decorator_called = True
+            return data
+
+        await ctx._hook_registry.run_before("before:recipe:update", {"title": "Updated Cake"})
+        assert decorator_called is True
+
+        # Listener as decorator
+        listener_called = False
+
+        @ctx.on("recipe:updated", include_self=True)
+        async def decorated_listener(event):
+            nonlocal listener_called
+            listener_called = True
+
+        await ctx.emit("recipe:updated", {"title": "Cake"}, entity=("recipe", "rec_1"))
+        await ctx._dispatcher.drain_to_head()
+        assert listener_called is True
+
         # Background task
         bg_ran = False
 

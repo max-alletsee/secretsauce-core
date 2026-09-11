@@ -129,8 +129,10 @@ The Service Worker (`shell/src/sw/sw.ts`) utilizes a pure request classification
 | `api_stream` | `/api/events/stream` | Direct Network (no cache) | Bypasses Service Worker cache completely |
 | `write` | POST, PUT, DELETE `/api/*` | Direct Network / Outbox | Offline writes intercepted by Outbox Queue |
 
-### Precache Manifest Injection
-During build, Vite generates shell bundles in `secretsauce/static/`. When the FastAPI server serves `GET /sw.js`, it calculates a SHA-256 hash across all static assets and injects the precache manifest dynamically:
+### Precache Manifest Injection & Static Asset Base Path
+Vite builds the frontend SPA with `base: '/static/'` (`shell/vite.config.ts`), generating hashed assets in `secretsauce/static/assets/`. This aligns script and stylesheet URLs directly with FastAPI's `/static/*` route and ensures Cache-First Service Worker handling. Missing assets return a strict 404 rather than triggering the HTML fallback.
+
+When the FastAPI server serves `GET /sw.js`, it calculates a SHA-256 hash across all static assets and injects the precache manifest dynamically:
 ```javascript
 const precache = {"build": "a1b2c3d4e5f6", "files": ["/static/assets/index.js", ...]};
 ```
@@ -206,7 +208,25 @@ export interface SecretSauceUI {
 
 ---
 
-## 8. Testing & Verification
+## 8. Application Bootstrapping, Navigation Guards & Layout
+
+### Router Navigation Guard (`shell/src/main.ts`)
+The shell router manages unauthenticated visitors and onboarding state via a global `beforeEach` guard:
+1. **Household Setup Check**: Queries `GET /api/setup`. If `needs_setup` is `true`, navigates to `/setup` (and blocks other routes). If setup is completed, `/setup` is blocked and redirected.
+2. **Session Authentication Check**: Queries `GET /api/auth/session`.
+   - If unauthenticated (401), disconnects the SSE event stream and redirects navigation to `/login`.
+   - If authenticated, visiting `/login` redirects to `/`.
+3. **Root Route Redirection**: Navigating to `/` redirects authenticated users to `/plugins` (or the first registered navigation plugin route).
+4. **Data Hydration**: Populates `householdStore` and `memberStore` upon successful authentication.
+5. **SSE Stream Lifecycle**: `stream.connect()` is only initiated when an authenticated session exists, preventing unauthenticated SSE 401 connection retries.
+
+### Shell Layout & Auth Pages (`shell/src/App.vue`)
+- Core navigation routes (`/settings`, `/plugins`) are registered in `routeRegistry` by default.
+- On authentication pages (`/login`, `/setup`), the sidebar `AppNav` is hidden (`v-if="!isAuthPage"`), presenting a clean, centered interface.
+
+---
+
+## 9. Testing & Verification
 
 The shell test suite uses Vitest with `@vue/test-utils` and HappyDOM:
 

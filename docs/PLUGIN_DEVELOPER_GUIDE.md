@@ -69,20 +69,19 @@ from secretsauce.plugins.context import PluginContext
 
 async def setup(ctx: PluginContext) -> None:
     # Register synchronous pre-commit policy hooks
-    @ctx.hooks.register("before_recipe_save")
+    @ctx.hook("before_recipe_save")
     async def validate_recipe(tx, recipe_data, is_new):
         # Mutate or veto before commit
         if "nutrition" not in recipe_data.get("tags", []):
             recipe_data.setdefault("tags", []).append("nutrition")
 
     # Register event listeners
-    @ctx.events.on("recipe:created")
+    @ctx.on("recipe:created")
     async def on_recipe_created(event):
         # Enqueue background job
-        await ctx.jobs.create_job(
-            plugin_id="recipe-nutrition",
-            action="calculate_nutrition",
-            payload={"recipe_id": event.entity_id}
+        await ctx.jobs.create(
+            job_type="calculate_nutrition",
+            input_data={"recipe_id": event.entity_id}
         )
 ```
 
@@ -97,14 +96,15 @@ Plugins store metadata on kernel entities without modifying kernel tables:
 # Store a numeric rating or nutrition value
 await ctx.attributes.set("recipe", "rec_123", "calories", 450.0)
 
-# Retrieve attribute value (automatically scoped to current plugin)
-calories = await ctx.attributes.get("recipe", "rec_123", "calories")
+# Retrieve attributes for an entity (automatically scoped to current plugin)
+attrs = await ctx.attributes.get("recipe", "rec_123")
+calories = attrs.get("calories")
 
 # Delete attribute
 await ctx.attributes.delete("recipe", "rec_123", "calories")
 ```
 
-### 4.2 Policy Hooks (`ctx.hooks`)
+### 4.2 Policy Hooks (`ctx.hook`)
 Hooks execute **synchronously** inside the active SQLite transaction before changes are committed.
 
 - **Mutation**: Mutate dictionary in place to transform data.
@@ -120,7 +120,7 @@ Supported hook points:
 ```python
 from secretsauce.errors import VetoError
 
-@ctx.hooks.register("before_member_save")
+@ctx.hook("before_member_save")
 async def check_member_name(tx, member_data, is_new):
     if member_data.get("name") == "Admin":
         raise VetoError("The name 'Admin' is reserved.")
@@ -130,10 +130,9 @@ async def check_member_name(tx, member_data, is_new):
 For long-running tasks:
 
 ```python
-job_id = await ctx.jobs.create_job(
-    plugin_id=ctx.plugin_id,
-    action="import_recipes",
-    payload={"url": "https://example.com/recipe"}
+job_id = await ctx.jobs.create(
+    job_type="import_recipes",
+    input_data={"url": "https://example.com/recipe"}
 )
 
 # In background worker:

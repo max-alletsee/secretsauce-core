@@ -194,3 +194,25 @@ An hourly background task cleans lazy references:
   - Bundles `secretsauce.db`, `uploads/`, `plugins/`, `site/` (if present), and `config.json` into an `application/zip` archive.
 - **Data Interop (`GET /api/export/json`)**:
   - Exports all kernel nouns (`recipes`, `schedule_entries`, `cook_journal`, `household_members`, `assets`, `household_config`) as a JSON payload for migration or external tools.
+
+---
+
+## 9. Runtime Boot & `BootedKernel` Lifecycle (`secretsauce/boot.py`)
+
+When the application boots via `boot(data_dir)`, it orchestrates the following sequence:
+1. **Directories**: Ensures `uploads/` and `plugins/` directories exist within `data_dir`.
+2. **Config & Keys**: Loads `config.json` and initializes `KeyManager` (`secret.key`).
+3. **Database**: Connects to `secretsauce.db` and runs any pending schema migrations.
+4. **Repositories**: Instantiates core noun repositories (`household`, `members`, `recipes`, `schedule`, `journal`, `assets`, `attributes`).
+5. **Services & Plugins**: Instantiates `JobManager`, `TokenManager`, `PluginRegistry`, and `PluginLoader`. Stale jobs from prior runs are recovered, and plugin manifests are discovered and synchronized.
+6. **Precache Computation**: Hashes static shell assets for the Service Worker precache manifest.
+7. **BootedKernel State**: Returns a `BootedKernel` dataclass attached to `app.state.kernel`.
+
+### Kernel Attributes & Accessors
+All API routers interact with the kernel through `request.app.state.kernel`:
+- `kernel.db`: Database connection and transaction runner.
+- `kernel.household`, `kernel.members`, etc.: Core noun repositories.
+- `kernel.plugins` / `kernel.registry`: `PluginRegistry` instance for listing, enabling, configuring, and inspecting plugins.
+- `kernel.loader`: `PluginLoader` for dynamic backend plugin activation.
+- `kernel.broadcaster`: `EventBroadcaster` for SSE clients.
+

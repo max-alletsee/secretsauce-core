@@ -77,3 +77,35 @@ async def test_build_app_lifespan(tmp_path):
             assert res.status_code == 200
             assert res.json()["boot_id"] == app.state.kernel.boot_id
 
+
+@pytest.mark.asyncio
+async def test_booted_kernel_plugins_endpoint(tmp_path):
+    import httpx
+    from httpx import ASGITransport
+
+    app = build_app(data_dir=tmp_path)
+    async with app.router.lifespan_context(app):
+        kernel = app.state.kernel
+        assert hasattr(kernel, "plugins")
+        assert kernel.plugins is kernel.registry
+
+        async with httpx.AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://testserver"
+        ) as client:
+            # Setup household
+            setup_res = await client.post(
+                "/api/setup",
+                json={
+                    "household_name": "Test Home",
+                    "passphrase": "super-passphrase",
+                    "first_member": {"name": "Alice"},
+                },
+            )
+            assert setup_res.status_code == 201
+
+            # GET /api/plugins should now return 200 with session cookie
+            plugins_res = await client.get("/api/plugins")
+            assert plugins_res.status_code == 200
+            assert isinstance(plugins_res.json(), list)
+
+

@@ -59,12 +59,12 @@ class Kernel:
 
         self.household = HouseholdRepo(self.db)
         self.members = MembersRepo(self.db)
-        self.recipes = RecipesRepo(self.db)
+        self.hooks = HookRegistry()
+        self.recipes = RecipesRepo(self.db, household_repo=self.household, hooks=self.hooks)
         self.schedule = ScheduleRepo(self.db)
         self.journal = JournalRepo(self.db)
         self.assets = AssetsRepo(self.db, uploads_dir=self.assets_dir)
         self.attributes = AttributesRepo(self.db)
-        self.hooks = HookRegistry()
         self.events = EventLog(self.db)
         self.events.set_broadcaster(self.broadcaster)
         self.jobs = JobManager(self.db)
@@ -73,7 +73,11 @@ class Kernel:
         self.plugins = self.registry
         core_plugins_dir = Path(__file__).resolve().parent / "plugins" / "core"
         search_paths = [self.plugins_dir, core_plugins_dir] if core_plugins_dir.is_dir() else [self.plugins_dir]
-        self.loader = PluginLoader(self.registry, search_paths=search_paths)
+        self.loader = PluginLoader(
+            self.registry,
+            search_paths=search_paths,
+            context_factory=self.ctx_for,
+        )
         self.services = ServiceRegistry()
 
         self._dispatchers: dict[str, EventDispatcher] = {}
@@ -177,6 +181,8 @@ class Kernel:
             for p in plugins:
                 # If path or module provided, load
                 pass
+
+        await self.loader.discover_and_sync()
 
     async def stop(self) -> None:
         if self.client:

@@ -173,7 +173,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 },
             )
 
-        # Already set up: /api/setup is blocked
+        # /api/setup GET is public (returns setup status whether setup is complete or not)
+        if path == "/api/setup" and request.method.upper() == "GET":
+            return await call_next(request)
+
+        # Already set up: /api/setup POST is blocked
         if path == "/api/setup" and request.method.upper() == "POST":
             return JSONResponse(
                 status_code=409,

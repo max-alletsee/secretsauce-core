@@ -9,7 +9,7 @@ All API routes are served under `/api` with prefix `/api/`. All responses automa
 ### Headers
 | Header | Description |
 |---|---|
-| `Cookie: secretsauce_session=<token>` | Session cookie containing household ID and passphrase version. |
+| `Cookie: ss_session=<token>` | Session cookie containing household ID and passphrase version. |
 | `Authorization: Bearer <ss_tok_...>` | API token for machine / plugin access. |
 | `X-Actor-Member: <member_id>` | Attributes mutating action to a specific household member. |
 | `Sec-Fetch-Site: same-origin` | CSRF defense. Value `cross-site` with session cookie is rejected with 403. |
@@ -70,8 +70,19 @@ Exports all kernel nouns as a JSON payload for interop.
 
 ## 3. Setup & Auth Endpoints
 
+### `GET /api/setup`
+Returns whether initial household setup is required. Publicly accessible without authentication.
+- **Status:** `200 OK`
+- **Response:**
+  ```json
+  {
+    "needs_setup": false,
+    "setup_required": false
+  }
+  ```
+
 ### `POST /api/setup`
-Initializes a new household. Only accessible when no household passphrase has been configured.
+Initializes a new household. Only accessible when no household passphrase has been configured. Subsequent calls return `409 Conflict`.
 - **Request:**
   ```json
   {
@@ -84,7 +95,7 @@ Initializes a new household. Only accessible when no household passphrase has be
   }
   ```
 - **Status:** `201 Created`
-- **Sets Cookie:** `secretsauce_session`
+- **Sets Cookie:** `ss_session`
 
 ### `POST /api/auth/login`
 Authenticates against the household passphrase. Subject to progressive delay rate-limiting.
@@ -95,7 +106,7 @@ Authenticates against the household passphrase. Subject to progressive delay rat
   }
   ```
 - **Status:** `200 OK`
-- **Sets Cookie:** `secretsauce_session`
+- **Sets Cookie:** `ss_session`
 
 ### `GET /api/auth/session`
 Returns the status of the current session and the actor member if provided.
@@ -375,6 +386,7 @@ Serves immutable frontend assets (bundles, chunks, styles, icons). Refuses direc
 
 ### `GET /{full_path}` (SPA Catch-all)
 Serves `index.html` with injected `window.__SS__` bootstrap context (`boot_id`, `base_path`, `version`).
+Missing `/api/*`, `/static/*`, or `/assets/*` asset paths return a strict `404 Not Found` rather than serving HTML to prevent script MIME type mismatch errors.
 - **Cache-Control:** `no-cache`
 - **Content-Type:** `text/html`
 

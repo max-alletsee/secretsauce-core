@@ -94,3 +94,40 @@ async def test_pwa_spa_index_fallback(tmp_path: Path):
         assert res.headers["cache-control"] == "no-cache"
         assert "window.__SS__ = {" in res.text
         assert k.boot_id in res.text
+
+
+@pytest.mark.asyncio
+async def test_pwa_index_html_serves_valid_script_and_css(tmp_path: Path):
+    import re
+
+    async with make_kernel(tmp_path) as k:
+        res = await k.client.get("/")
+        assert res.status_code == 200
+        html = res.text
+
+        # Must have script tag pointing to static assets
+        match_js = re.search(r'src="(/static/assets/[^"]+\.js)"', html)
+        assert match_js is not None, f"Expected /static/assets/ script in index.html, got: {html}"
+        js_url = match_js.group(1)
+
+        res_js = await k.client.get(js_url)
+        assert res_js.status_code == 200
+        assert "text/javascript" in res_js.headers["content-type"]
+        assert "index.html" not in res_js.text[:100]
+
+        # Must have link tag pointing to static assets
+        match_css = re.search(r'href="(/static/assets/[^"]+\.css)"', html)
+        assert match_css is not None, f"Expected /static/assets/ css in index.html, got: {html}"
+        css_url = match_css.group(1)
+
+        res_css = await k.client.get(css_url)
+        assert res_css.status_code == 200
+        assert "text/css" in res_css.headers["content-type"]
+
+        # Missing static assets or files under static/assets must return 404, not HTML
+        res_missing_static = await k.client.get("/static/assets/non-existent.js")
+        assert res_missing_static.status_code == 404
+
+        res_missing_assets = await k.client.get("/assets/non-existent.js")
+        assert res_missing_assets.status_code == 404
+

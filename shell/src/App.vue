@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { inject, computed } from 'vue'
+import { routeLocationKey } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import AppNav from './components/AppNav.vue'
 import OfflineBar from './components/OfflineBar.vue'
@@ -8,6 +9,12 @@ import { useAppStore } from './stores/app'
 const appStore = useAppStore()
 const routeRegistry = inject<any>('__SS_ROUTE_REGISTRY__')
 const outbox = inject<any>('__SS_OUTBOX__')
+const route = inject<any>(routeLocationKey, null)
+
+const isAuthPage = computed(() => {
+  const path = route?.path
+  return path === '/login' || path === '/setup'
+})
 
 const routes = computed(() => (routeRegistry ? routeRegistry.getRoutes() : []))
 </script>
@@ -16,7 +23,7 @@ const routes = computed(() => (routeRegistry ? routeRegistry.getRoutes() : []))
   <div class="ss-layout">
     <AppHeader />
     <div class="ss-main-container">
-      <AppNav :routes="routes" />
+      <AppNav v-if="!isAuthPage" :routes="routes" />
       <main class="ss-content">
         <router-view />
       </main>

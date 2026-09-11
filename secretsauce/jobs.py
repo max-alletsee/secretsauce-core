@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import json
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, Callable
 import uuid
 
 from secretsauce.db import Database
@@ -66,6 +66,28 @@ class JobHandle:
 class JobManager:
     def __init__(self, db: Database):
         self.db = db
+        self._handlers: dict[tuple[str, str], Callable[..., Any]] = {}
+
+    def register_handler(
+        self, plugin_id: str, job_type: str, handler: Callable[..., Any]
+    ) -> None:
+        self._handlers[(plugin_id, job_type)] = handler
+
+    async def execute_job(self, job_id: str) -> dict[str, Any]:
+        job = await self.get_job(job_id)
+        handler = self._handlers.get((job["plugin_id"], job["job_type"]))
+        if not handler:
+            raise ValueError(
+                f"No handler registered for job {job['job_type']} (plugin {job['plugin_id']})"
+            )
+        async with self.run(job_id) as handle:
+            res = await handler(job.get("input") or {}, handle)
+            if res is not None:
+                await handle.set_result(res)
+        return await self.get_job(job_id)
+
+    async def run_job(self, job_id: str) -> dict[str, Any]:
+        return await self.execute_job(job_id)
 
     async def create_job(
         self,

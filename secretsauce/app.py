@@ -73,8 +73,13 @@ def build_app(data_dir: Path | str | None = None) -> FastAPI:
     @app.get("/", response_class=HTMLResponse)
     @app.get("/{full_path:path}", response_class=HTMLResponse)
     async def spa_fallback(request: Request, full_path: str = ""):
-        if full_path.startswith("api/") or full_path == "api":
-            raise HTTPException(status_code=404, detail="API route not found")
+        if (
+            full_path.startswith("api/")
+            or full_path == "api"
+            or full_path.startswith("static/")
+            or full_path.startswith("assets/")
+        ):
+            raise HTTPException(status_code=404, detail="Route not found")
         kernel = getattr(request.app.state, "kernel", None)
         base_path = kernel.config.base_path if kernel else "/"
         html = render_index_html(kernel, base_path)

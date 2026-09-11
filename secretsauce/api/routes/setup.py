@@ -27,7 +27,8 @@ class SetupPayload(BaseModel):
 async def get_setup_status(request: Request):
     kernel = request.app.state.kernel
     passphrase_info = await kernel.household.get_passphrase_info()
-    return {"setup_required": passphrase_info is None}
+    needs_setup = passphrase_info is None
+    return {"needs_setup": needs_setup, "setup_required": needs_setup}
 
 
 @router.post("", status_code=201)

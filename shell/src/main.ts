@@ -19,6 +19,8 @@ import { createPluginLoader } from './registries/plugins'
 import { createThemeRegistry } from './theme'
 import { useMemberStore } from './stores/member'
 import { useHouseholdStore } from './stores/household'
+import SettingsPage from './pages/SettingsPage.vue'
+import PluginManagerPage from './pages/PluginManagerPage.vue'
 import type { SecretSauceUI } from '@secretsauce/ui'
 
 const meta = (typeof window !== 'undefined' && (window as any).__SS__) || {
@@ -57,6 +59,18 @@ const intents = createIntentRegistry()
 const settings = createSettingsRegistry()
 const i18n = createI18nRegistry()
 const themes = createThemeRegistry()
+
+// Register shell core navigation routes
+routes.register('shell', {
+  path: '/settings',
+  component: SettingsPage,
+  nav: { label: 'Settings', icon: 'cog', order: 900 },
+})
+routes.register('shell', {
+  path: '/plugins',
+  component: PluginManagerPage,
+  nav: { label: 'Plugins', icon: 'box', order: 910 },
+})
 
 // Register share intent hub owned by shell
 intents.registerHub({ id: 'share:receive', title: 'Handle Shared URL/Text' })
@@ -116,19 +130,66 @@ app.use(ConfirmationService)
 const router = buildRouter(meta.base_path)
 app.use(router)
 
+let storesFetched = false
+
 router.beforeEach(async (to, _from, next) => {
+  let needsSetup = false
   try {
-    const setupStatus = await api.get<{ needs_setup: boolean }>('/api/setup')
-    if (setupStatus?.needs_setup && to.path !== '/setup') {
+    const setupStatus = await api.get<{ needs_setup?: boolean; setup_required?: boolean }>('/api/setup')
+    needsSetup = Boolean(setupStatus?.needs_setup ?? setupStatus?.setup_required)
+  } catch {
+    // offline or network error, proceed
+  }
+
+  if (needsSetup) {
+    if (to.path !== '/setup') {
       return next('/setup')
     }
-  } catch {
-    // offline or error, proceed
+    return next()
   }
+
+  // Setup is complete; disallow visiting /setup
+  if (to.path === '/setup') {
+    return next('/login')
+  }
+
+  // Check auth session
+  let isAuthenticated = false
+  try {
+    const session = await api.get<{ authenticated: boolean }>('/api/auth/session')
+    isAuthenticated = Boolean(session?.authenticated)
+  } catch {
+    isAuthenticated = false
+  }
+
+  if (!isAuthenticated) {
+    storesFetched = false
+    stream.disconnect()
+    if (to.path !== '/login') {
+      return next('/login')
+    }
+    return next()
+  }
+
+  // Authenticated user navigating to /login -> redirect to home
+  if (to.path === '/login') {
+    return next('/')
+  }
+
+  // Connect stream and fetch stores once authenticated
+  if (typeof document !== 'undefined' && document.getElementById('app')) {
+    stream.connect()
+  }
+
+  if (!storesFetched) {
+    storesFetched = true
+    householdStore.fetchHousehold(api)
+    memberStore.fetchMembers(api)
+  }
+
   next()
 })
 
 if (typeof document !== 'undefined' && document.getElementById('app')) {
   app.mount('#app')
-  stream.connect()
 }

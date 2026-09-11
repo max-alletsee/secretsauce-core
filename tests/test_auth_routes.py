@@ -172,3 +172,50 @@ async def test_bearer_token_auth(tmp_path):
         assert res_auth.json()["authenticated"] is True
 
 
+@pytest.mark.asyncio
+async def test_setup_endpoint_public_access(tmp_path):
+    # Before setup: GET /api/setup is public and returns needs_setup=True
+    async with make_kernel(tmp_path, auto_setup=False) as k:
+        res = await k.client.get("/api/setup")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["needs_setup"] is True
+        assert data["setup_required"] is True
+
+        # Perform setup
+        setup_res = await k.client.post(
+            "/api/setup",
+            json={
+                "household_name": "Test Home",
+                "passphrase": "super-passphrase",
+                "first_member": {"name": "Alice"},
+            },
+        )
+        assert setup_res.status_code == 201
+
+    # After setup in a fresh client without cookies (e.g. private window)
+    async with make_kernel(tmp_path, auto_setup=False) as k:
+        k.client.cookies.clear()
+        res_after = await k.client.get("/api/setup")
+        assert res_after.status_code == 200
+        data_after = res_after.json()
+        assert data_after["needs_setup"] is False
+        assert data_after["setup_required"] is False
+
+        # POST /api/setup is blocked with 409
+        post_after = await k.client.post(
+            "/api/setup",
+            json={
+                "household_name": "Duplicate Home",
+                "passphrase": "super-passphrase",
+                "first_member": {"name": "Bob"},
+            },
+        )
+        assert post_after.status_code == 409
+
+        # Protected endpoints require auth
+        session_res = await k.client.get("/api/auth/session")
+        assert session_res.status_code == 401
+
+
+

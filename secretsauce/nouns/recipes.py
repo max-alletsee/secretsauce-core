@@ -71,9 +71,15 @@ def _extract_fts_data(data: dict[str, Any]) -> tuple[str, str, str, str]:
 
 
 class RecipesRepo:
-    def __init__(self, db: Database, household_repo: HouseholdRepo | None = None):
+    def __init__(
+        self,
+        db: Database,
+        household_repo: HouseholdRepo | None = None,
+        hooks: Any = None,
+    ):
         self.db = db
         self.household_repo = household_repo or HouseholdRepo(db)
+        self.hooks = hooks
 
     async def get_recipe(
         self,
@@ -140,8 +146,12 @@ class RecipesRepo:
     async def create_recipe(
         self, data: dict[str, Any], conn: aiosqlite.Connection | None = None
     ) -> dict[str, Any]:
-        group_id = data.get("group_id") or str(uuid.uuid4()).lower()
-        language = data["language"]
+        draft = dict(data)
+        if self.hooks:
+            draft = await self.hooks.run_before("recipe:create", draft)
+
+        group_id = draft.get("group_id") or str(uuid.uuid4()).lower()
+        language = draft["language"]
         row_id = f"{group_id}_{language}"
 
         existing = await self.db.read_one(
@@ -154,22 +164,22 @@ class RecipesRepo:
             )
 
         now = _now_iso()
-        title = data["title"]
-        description = data.get("description")
-        ingredients_json = json.dumps(data.get("ingredients") or [])
-        steps_json = json.dumps(data.get("steps") or [])
-        servings = float(data.get("servings", 2.0))
-        yield_text = data.get("yield_text")
-        prep_time_minutes = data.get("prep_time_minutes")
-        cook_time_minutes = data.get("cook_time_minutes")
-        total_time_minutes = data.get("total_time_minutes")
-        tags_json = json.dumps(data.get("tags") or [])
-        source_json = json.dumps(data["source"]) if data.get("source") else None
-        actor_member_id = data.get("actor_member_id")
-        origin = data.get("origin", "member")
+        title = draft["title"]
+        description = draft.get("description")
+        ingredients_json = json.dumps(draft.get("ingredients") or [])
+        steps_json = json.dumps(draft.get("steps") or [])
+        servings = float(draft.get("servings", 2.0))
+        yield_text = draft.get("yield_text")
+        prep_time_minutes = draft.get("prep_time_minutes")
+        cook_time_minutes = draft.get("cook_time_minutes")
+        total_time_minutes = draft.get("total_time_minutes")
+        tags_json = json.dumps(draft.get("tags") or [])
+        source_json = json.dumps(draft["source"]) if draft.get("source") else None
+        actor_member_id = draft.get("actor_member_id")
+        origin = draft.get("origin", "member")
         revision = 1
 
-        t_fts, d_fts, i_fts, tags_fts = _extract_fts_data(data)
+        t_fts, d_fts, i_fts, tags_fts = _extract_fts_data(draft)
 
         async def _do_create(writer_conn: aiosqlite.Connection) -> dict[str, Any]:
             await writer_conn.execute(
@@ -231,46 +241,52 @@ class RecipesRepo:
             if current["revision"] != revision:
                 raise ConflictError("Revision mismatch", current=current)
 
+            draft = {**current, **data}
+            if self.hooks:
+                draft = await self.hooks.run_before(
+                    "recipe:update", draft, current=current
+                )
+
             new_revision = current["revision"] + 1
             now = _now_iso()
 
-            title = data.get("title", current["title"])
+            title = draft.get("title", current["title"])
             description = (
-                data["description"]
-                if "description" in data
+                draft["description"]
+                if "description" in draft
                 else current.get("description")
             )
-            ingredients = data.get("ingredients", current.get("ingredients", []))
-            steps = data.get("steps", current.get("steps", []))
-            servings = float(data.get("servings", current.get("servings", 2.0)))
+            ingredients = draft.get("ingredients", current.get("ingredients", []))
+            steps = draft.get("steps", current.get("steps", []))
+            servings = float(draft.get("servings", current.get("servings", 2.0)))
             yield_text = (
-                data["yield_text"]
-                if "yield_text" in data
+                draft["yield_text"]
+                if "yield_text" in draft
                 else current.get("yield_text")
             )
             prep_time = (
-                data["prep_time_minutes"]
-                if "prep_time_minutes" in data
+                draft["prep_time_minutes"]
+                if "prep_time_minutes" in draft
                 else current.get("prep_time_minutes")
             )
             cook_time = (
-                data["cook_time_minutes"]
-                if "cook_time_minutes" in data
+                draft["cook_time_minutes"]
+                if "cook_time_minutes" in draft
                 else current.get("cook_time_minutes")
             )
             total_time = (
-                data["total_time_minutes"]
-                if "total_time_minutes" in data
+                draft["total_time_minutes"]
+                if "total_time_minutes" in draft
                 else current.get("total_time_minutes")
             )
-            tags = data.get("tags", current.get("tags", []))
-            source = data["source"] if "source" in data else current.get("source")
+            tags = draft.get("tags", current.get("tags", []))
+            source = draft["source"] if "source" in draft else current.get("source")
             actor_member_id = (
-                data["actor_member_id"]
-                if "actor_member_id" in data
+                draft["actor_member_id"]
+                if "actor_member_id" in draft
                 else current.get("actor_member_id")
             )
-            origin = data.get("origin", current.get("origin", "member"))
+            origin = draft.get("origin", current.get("origin", "member"))
 
             await writer_conn.execute(
                 """
