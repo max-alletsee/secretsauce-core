@@ -14,7 +14,7 @@ SecretSauce adopts a **modular PWA shell** architecture. The core application sh
 │                                                                        │
 │   ┌──────────────┐   ┌────────────────────────┐   ┌────────────────┐   │
 │   │  AppHeader   │   │     Dynamic Router     │   │   OfflineBar   │   │
-│   │ (Member Sel) │   │ (Routes / Nav Links)   │   │ (Outbox State) │   │
+│   │ (Slot Right) │   │ (Routes / Nav Links)   │   │ (Outbox State) │   │
 │   └──────────────┘   └────────────────────────┘   └────────────────┘   │
 │                                                                        │
 │   ┌────────────────────────────────────────────────────────────────┐   │
@@ -189,6 +189,7 @@ export interface SecretSauceUI {
   on(name: string, handler: (e: StreamEvent | StreamPush) => void): void
   api: ApiClient
   url(path: string): string
+  navigate?(path: string): void
   store: {
     currentMember: Ref<Member | null>
     members: Ref<Member[]>
@@ -205,6 +206,7 @@ export interface SecretSauceUI {
 
 ### Component Isolation & Slots
 - Plugins insert UI into predefined shell locations via `<Slot name="location.id" :context="context" />`.
+- `AppHeader.vue` completely decouples actor context selection, delegating its right-aligned container to `shell.header.right` where `core-members` mounts `MemberPicker.vue`.
 - Multiple plugins contributing to the same slot are rendered sorted by `order` (default 50).
 - If no contributions exist, `<Slot>` renders its default template fallback.
 
@@ -244,23 +246,28 @@ Plugins can directly `import { parse, format } from '@secretsauce/units'` or `im
 ## 9. Plugin UI Build Tooling (`scripts/build-plugins.ts`)
 
 Plugins provide their frontend components under `<plugin_dir>/ui/src/index.ts`. The build script `shell/scripts/build-plugins.ts` iterates over core and external plugins, executing Vite library builds:
-- **Output:** `<plugin_dir>/ui/dist/index.js` copied to `<plugin_dir>/ui.js`.
+- **Output:** `<plugin_dir>/ui/dist/index.js` copied to `<plugin_dir>/ui.js`, and `<plugin_dir>/ui/dist/style.css` copied to `<plugin_dir>/ui.css`.
 - **Externalized dependencies:** `vue`, `pinia`, `vue-router`, `@secretsauce/ui`, `@secretsauce/units`, and PrimeVue components.
 - **Invocation:** `pnpm --prefix shell build:plugins`, automatically included in `pnpm --prefix shell build`.
 
 ---
 
-## 10. Application Bootstrapping, Navigation Guards & Layout
+## 10. Application Bootstrapping, Dynamic Plugin Loading & Navigation
 
-### Router Navigation Guard (`shell/src/main.ts`)
-The shell router manages unauthenticated visitors and onboarding state via a global `beforeEach` guard:
-1. **Household Setup Check**: Queries `GET /api/setup`. If `needs_setup` is `true`, navigates to `/setup` (and blocks other routes). If setup is completed, `/setup` is blocked and redirected.
-2. **Session Authentication Check**: Queries `GET /api/auth/session`.
+### Router Navigation Guard & Dynamic Route Binding (`shell/src/main.ts`)
+The shell router manages unauthenticated visitors, dynamic plugin routing, and onboarding state via a global `beforeEach` guard:
+1. **Dynamic Plugin Loading**: On application startup, the shell queries `GET /api/plugins/active`. For each active plugin:
+   - Injects its stylesheet into `<head>` via `<link rel="stylesheet" id="plugin-css-{id}" href="/api/plugins/{id}/ui.css">` if `ui_css` is present.
+   - Dynamically imports the module entry point via native browser `import(plugin.ui_entry)`.
+   - Executes the plugin's `activate(ss)` export.
+   - Plugin routes registered into `routeRegistry` are bound to Vue Router via `routeRegistry.bindRouter(router)`.
+2. **Household Setup Check**: Queries `GET /api/setup`. If `needs_setup` is `true`, navigates to `/setup` (and blocks other routes). If setup is completed, `/setup` is blocked and redirected.
+3. **Session Authentication Check**: Queries `GET /api/auth/session`.
    - If unauthenticated (401), disconnects the SSE event stream and redirects navigation to `/login`.
    - If authenticated, visiting `/login` redirects to `/`.
-3. **Root Route Redirection**: Navigating to `/` redirects authenticated users to `/plugins` (or the first registered navigation plugin route).
-4. **Data Hydration**: Populates `householdStore` and `memberStore` upon successful authentication.
-5. **SSE Stream Lifecycle**: `stream.connect()` is only initiated when an authenticated session exists, preventing unauthenticated SSE 401 connection retries.
+4. **Root Route Redirection**: Navigating to `/` redirects authenticated users to `/recipes` (falling back to `/plugins` if `core-recipes` is not installed).
+5. **Data Hydration**: Populates `householdStore` and `memberStore` upon successful authentication.
+6. **SSE Stream Lifecycle**: `stream.connect()` is only initiated when an authenticated session exists, preventing unauthenticated SSE 401 connection retries.
 
 ### Shell Layout & Auth Pages (`shell/src/App.vue`)
 - Core navigation routes (`/settings`, `/plugins`) are registered in `routeRegistry` by default.
@@ -270,13 +277,16 @@ The shell router manages unauthenticated visitors and onboarding state via a glo
 
 ## 11. Testing & Verification
 
-The shell test suite uses Vitest with `@vue/test-utils` and HappyDOM:
+The shell test suite uses Vitest with `@vue/test-utils` and HappyDOM for unit and component testing, and Playwright for real-browser end-to-end testing:
 
 ```bash
 # Run all frontend shell tests
 pnpm --prefix shell test
 
-# Build shell SPA and Service Worker
+# Run live Chromium end-to-end browser tests
+pnpm --prefix shell test:e2e
+
+# Build shell SPA, Service Worker, and vendor modules
 pnpm --prefix shell build
 
 # Run all backend + PWA integration tests

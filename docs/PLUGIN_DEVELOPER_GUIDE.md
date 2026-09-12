@@ -266,7 +266,8 @@ export default defineConfig({
     lib: {
       entry: 'src/index.ts',
       formats: ['es'],
-      fileName: () => 'ui.js'
+      fileName: () => 'index.js',
+      cssFileName: 'style'
     },
     rollupOptions: {
       external: [
@@ -284,14 +285,26 @@ export default defineConfig({
 })
 ```
 
-For workspace-managed core plugins, run the build script to compile all plugins into `ui.js`:
+For workspace-managed core plugins, run the build script to compile all plugins into `ui.js` and `ui.css`:
 ```bash
 pnpm --prefix shell build:plugins
 ```
 
-Because these dependencies are externalized, plugins do not bundle their own copies of Vue, PrimeVue, or the units engine. Shared dependencies resolve at runtime through the shell's vendor import map.
+Because these dependencies are externalized, plugins do not bundle their own copies of Vue, Pinia, Vue Router, or the units engine. Shared dependencies resolve at runtime through the shell's vendor import map. Plugin stylesheets are automatically injected by the shell when the plugin is active.
 
-### 6.2 The `activate(ss)` Function
+### 6.2 Common Shell and Plugin Slots
+
+The shell and core domain plugins expose slot locations where plugins can contribute custom components:
+
+| Slot Name | Provider | Context | Description |
+|---|---|---|---|
+| `shell.header.right` | Shell (`AppHeader.vue`) | `{}` | Header controls (e.g. `core-members` mounts `MemberPicker.vue`). |
+| `settings.tab.members` | Shell (`SettingsPage.vue`) | `{}` | Member profiles & credentials. |
+| `recipe.card.actions` | Core Recipes (`RecipeCard.vue`) | `{ recipe, isShortlisted }` | Action buttons on recipe cards (e.g. `shortlist` star button). |
+| `recipe.list.filters` | Core Recipes (`RecipeListPage.vue`) | `{ filterShortlist, toggleShortlist }` | Filter chips in the recipe list. |
+| `timeline.sidebar` | Core Timeline | `{ date }` | Quick-access drawers and widgets (e.g. `shortlist` drawer). |
+
+### 6.3 The `activate(ss)` Function
 The entry point of `ui.js` must default export an activation function receiving `SecretSauceUI`:
 
 ```ts
@@ -309,7 +322,7 @@ export default function activate(ss: SecretSauceUI) {
   })
 
   // 2. Insert components into existing shell or plugin slots
-  ss.slot('recipe.detail.sidebar', NutritionWidget, { order: 10 })
+  ss.slot('recipe.card.actions', NutritionWidget, { order: 10 })
 
   // 3. Register intent providers (e.g. handle shared content or calculations)
   ss.intent.provider({
@@ -322,19 +335,22 @@ export default function activate(ss: SecretSauceUI) {
     }
   })
 
-  // 4. Register settings sections in /settings
+  // 4. Programmatic navigation without direct router imports
+  // ss.navigate?.('/recipes')
+
+  // 5. Register settings sections in /settings
   ss.settings.section({
     id: 'nutrition',
     title: 'Nutrition Settings',
     component: NutritionSettings
   })
 
-  // 5. Listen to real-time events from SSE
+  // 6. Listen to real-time events from SSE
   ss.on('recipe:*', (event) => {
     console.log('Recipe event received:', event)
   })
 
-  // 6. Register localized strings
+  // 7. Register localized strings
   ss.i18n.add('de', {
     'nutrition.title': 'Nährwerte',
     'nutrition.calories': 'Kalorien'

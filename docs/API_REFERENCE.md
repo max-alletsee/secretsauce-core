@@ -363,6 +363,47 @@ Signals cancellation for a running job.
 
 Plugins mount custom API routers under the `/api/x/{plugin_id}` namespace.
 
+### Recipe Shortlist Plugin (`/api/x/shortlist`)
+
+#### `GET /api/x/shortlist`
+Lists shortlisted recipes, ordered by most recently added.
+- **Query Parameters:** `member_id` (optional, string) to filter by a specific member.
+- **Status:** `200 OK`
+- **Response:**
+  ```json
+  [
+    {
+      "id": "e4a2d813-fdf5-430c-99c0-621458e0a13e",
+      "member_id": "c8bbad70-87a4-44aa-9c2b-e10b10be4e2d",
+      "recipe_id": "rec_salmon_1",
+      "recipe_title": "Lemon Herb Salmon",
+      "note": "Friday family dinner",
+      "created_at": "2026-09-12T12:00:00Z"
+    }
+  ]
+  ```
+
+#### `POST /api/x/shortlist`
+Adds a recipe to a member's shortlist or updates an existing entry's note.
+- **Headers:** `X-Actor-Member: <member_id>` (optional if provided in body).
+- **Body:**
+  ```json
+  {
+    "recipe_id": "rec_salmon_1",
+    "note": "Friday family dinner",
+    "member_id": "c8bbad70-87a4-44aa-9c2b-e10b10be4e2d"
+  }
+  ```
+- **Status:** `201 Created`
+- **Cascade Behavior:** The underlying table `plugin_shortlist_entries` enforces foreign keys with `ON DELETE CASCADE` against `recipes(id)`. When a recipe is deleted, all related shortlist entries across all household members are automatically pruned.
+
+#### `DELETE /api/x/shortlist/{id}`
+Removes an entry from the shortlist by shortlist entry ID.
+- **Status:** `200 OK`
+- **Response:** `{"ok": true}`
+
+---
+
 ### Recurring Meals Plugin (`/api/x/recurring`)
 
 #### `GET /api/x/recurring/rules`
@@ -442,7 +483,7 @@ Triggers immediate materialization of active recurring rules across the upcoming
 
 ---
 
-## 11. PWA & App Shell Serving Endpoints
+## 12. PWA & App Shell Serving Endpoints
 
 These endpoints are served outside `/api` directly at the application root / `BASE_PATH`.
 

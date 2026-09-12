@@ -236,11 +236,14 @@ The kernel includes a localized culinary units parsing, conversion, and formatti
 
 1. **Dual Search Paths**:
    - The kernel discovers built-in core plugins (`secretsauce/plugins/core/`) and external runtime plugins (`data/plugins/`).
-   - Core plugins (such as `units` and `recurring`) are pre-installed and activated during boot.
+   - Core plugins (`units`, `recurring`, `core-members`, `core-recipes`, `shortlist`) are pre-installed and activated during boot.
 2. **Dynamic Extension Routers (`ctx.routes` / `RouterRegistry`)**:
    - Plugins mount custom FastAPI routers under `/api/x/{plugin_id}/...`.
    - The `RouterRegistry` inserts plugin routes before the SPA catch-all fallback route (`/{full_path:path}`).
-3. **Dynamic UI Bundle Serving**:
+3. **Database Schema & Cascade Guarantees**:
+   - Plugin migrations create tables prefixed with `plugin_<plugin_id>_`.
+   - SQLite foreign keys are strictly enforced (`PRAGMA foreign_keys = ON;`). Plugins declaring foreign keys against kernel entities (e.g. `plugin_shortlist_entries.recipe_id REFERENCES recipes(id) ON DELETE CASCADE`) cascade cleanly upon noun deletions.
+4. **Dynamic UI Bundle Serving**:
    - `GET /api/plugins/active`: Lists enabled plugins and flags whether `ui.js` or `ui.css` are present.
    - `GET /api/plugins/{plugin_id}/ui.js` and `GET /api/plugins/{plugin_id}/ui.css`: Serves compiled ES modules directly from the plugin directory with SHA-256 ETag headers for conditional 304 validation and long-lived immutable caching with version query params (`?v=...`).
 
