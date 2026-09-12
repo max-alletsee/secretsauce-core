@@ -1,17 +1,8 @@
 <script setup lang="ts">
 import { Slot } from '@secretsauce/ui'
-import { useMemberStore } from '../stores/member'
 import { useHouseholdStore } from '../stores/household'
 
-const memberStore = useMemberStore()
 const householdStore = useHouseholdStore()
-
-function handleMemberChange(e: Event) {
-  const target = e.target as HTMLSelectElement
-  if (target.value) {
-    memberStore.setCurrentMember(target.value)
-  }
-}
 </script>
 
 <template>
@@ -22,20 +13,6 @@ function handleMemberChange(e: Event) {
     </div>
 
     <div class="header-right">
-      <select
-        v-if="memberStore.members.length > 0"
-        :value="memberStore.currentMember?.id"
-        class="member-select"
-        @change="handleMemberChange"
-      >
-        <option
-          v-for="m in memberStore.members"
-          :key="m.id"
-          :value="m.id"
-        >
-          {{ m.name }}
-        </option>
-      </select>
       <Slot name="shell.header.right" />
     </div>
   </header>
@@ -60,10 +37,5 @@ function handleMemberChange(e: Event) {
   font-weight: bold;
   font-size: 1.2em;
   color: #1c1917;
-}
-.member-select {
-  padding: 6px 12px;
-  border-radius: 4px;
-  border: 1px solid #d6d3d1;
 }
 </style>

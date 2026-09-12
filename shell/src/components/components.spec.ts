@@ -1,9 +1,38 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import OfflineBar from './OfflineBar.vue'
 import ConfigForm from './ConfigForm.vue'
+import AppHeader from './AppHeader.vue'
+import { useHouseholdStore } from '../stores/household'
+import { useMemberStore } from '../stores/member'
 
 describe('Shell UI Components', () => {
+  it('AppHeader renders title and delegates right section to slot', () => {
+    const pinia = createPinia()
+    const household = useHouseholdStore(pinia)
+    household.household.household_name = 'The Baker House'
+    const memberStore = useMemberStore(pinia)
+    memberStore.setMembers([{ id: 'm1', name: 'Alice' } as any])
+
+    const wrapper = mount(AppHeader, {
+      global: {
+        plugins: [pinia],
+        stubs: {
+          Slot: {
+            template: '<div class="slot-stub" :data-name="name"><slot /></div>',
+            props: ['name'],
+          },
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('The Baker House')
+    expect(wrapper.find('select.member-select').exists()).toBe(false)
+    const slot = wrapper.find('.slot-stub[data-name="shell.header.right"]')
+    expect(slot.exists()).toBe(true)
+  })
+
   it('renders OfflineBar when online is false with pending/failed counts', () => {
     const wrapper = mount(OfflineBar, {
       props: {
