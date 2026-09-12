@@ -41,8 +41,10 @@ async function buildPlugins() {
         build: {
           lib: {
             entry: uiSrc,
+            name: pluginId.replace(/[^a-zA-Z0-9]/g, '_'),
             formats: ['es'],
             fileName: () => 'index.js',
+            cssFileName: 'style',
           },
           outDir,
           emptyOutDir: true,
@@ -67,6 +69,13 @@ async function buildPlugins() {
       if (fs.existsSync(distBundle)) {
         fs.copyFileSync(distBundle, targetUiJs)
         console.log(`Copied ${distBundle} -> ${targetUiJs}`)
+      }
+
+      const distCss = path.join(outDir, 'style.css')
+      const targetUiCss = path.join(pluginDir, 'ui.css')
+      if (fs.existsSync(distCss)) {
+        fs.copyFileSync(distCss, targetUiCss)
+        console.log(`Copied ${distCss} -> ${targetUiCss}`)
       }
     }
   }

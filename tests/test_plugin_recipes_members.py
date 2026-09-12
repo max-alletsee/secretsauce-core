@@ -17,3 +17,19 @@ async def test_core_members_discovery(tmp_path: Path):
         assert r["state"] == "active"
         assert r["name"] == "Recipes"
         assert r["ui"] == "ui.js"
+
+
+@pytest.mark.asyncio
+async def test_plugin_ui_bundle_serving(tmp_path: Path):
+    async with make_kernel(tmp_path, auto_setup=True) as k:
+        client = k.client
+
+        for pid in ["core-members", "core-recipes", "shortlist"]:
+            res = await client.get(f"/api/plugins/{pid}/ui.js")
+            assert res.status_code == 200
+            assert "javascript" in res.headers["content-type"].lower()
+            assert res.headers.get("cache-control") == "no-cache"
+
+            res_ver = await client.get(f"/api/plugins/{pid}/ui.js?v=1.0.0")
+            assert res_ver.status_code == 200
+            assert "public, max-age=31536000, immutable" in res_ver.headers.get("cache-control", "")
