@@ -30,6 +30,8 @@ ENV/
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+test-results/
+.e2e_data/
 
 # Node / Frontend
 node_modules/

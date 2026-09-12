@@ -18,7 +18,8 @@ export default function activate(ss: any) {
     order: 100,
     kind: 'headless',
     execute: () => {
-      window.location.hash = '#/recipes/new'
+      if (ss.navigate) ss.navigate('/recipes/new')
+      else window.location.href = ss.url ? ss.url('/recipes/new') : '/recipes/new'
     },
   })
 
@@ -31,7 +32,8 @@ export default function activate(ss: any) {
     kind: 'headless',
     execute: (ctx: any) => {
       if (ctx?.recipe?.id) {
-        window.location.hash = `#/recipes/${ctx.recipe.id}/edit`
+        if (ss.navigate) ss.navigate(`/recipes/${ctx.recipe.id}/edit`)
+        else window.location.href = ss.url ? ss.url(`/recipes/${ctx.recipe.id}/edit`) : `/recipes/${ctx.recipe.id}/edit`
       }
     },
   })

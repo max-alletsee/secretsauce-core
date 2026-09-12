@@ -8,7 +8,14 @@ const api = inject<any>('__SS_API__')
 function onMemberChange(e: Event) {
   const target = e.target as HTMLSelectElement
   const id = target.value
-  if (!id) return
+  if (!id) {
+    memberStore.setCurrentMember(null)
+    localStorage.removeItem('secretsauce:current_member_id')
+    if (api && typeof api.setDefaultHeader === 'function') {
+      api.setDefaultHeader('x-actor-member', null)
+    }
+    return
+  }
   memberStore.setCurrentMember(id)
   localStorage.setItem('secretsauce:current_member_id', id)
   if (api && typeof api.setDefaultHeader === 'function') {
@@ -28,9 +35,10 @@ function onMemberChange(e: Event) {
     </div>
     <select
       class="member-select"
-      :value="memberStore.currentMember?.id"
+      :value="memberStore.currentMember?.id || ''"
       @change="onMemberChange"
     >
+      <option value="">All Members</option>
       <option
         v-for="m in memberStore.members"
         :key="m.id"

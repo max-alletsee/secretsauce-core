@@ -1,58 +1,62 @@
-import { defineComponent as d, inject as f, ref as x, watch as g, openBlock as n, createElementBlock as c, normalizeClass as S, onMounted as y, createElementVNode as m, toDisplayString as v, Fragment as b, renderList as k } from "vue";
-const $ = ["title"], A = /* @__PURE__ */ d({
+import { defineComponent as u, inject as S, ref as f, watch as y, openBlock as n, createElementBlock as l, normalizeClass as b, onMounted as k, createElementVNode as x, toDisplayString as g, Fragment as A, renderList as I } from "vue";
+const $ = ["title"], w = /* @__PURE__ */ u({
   __name: "ShortlistAction",
   props: {
     context: {}
   },
   emits: ["change"],
   setup(o, { emit: s }) {
-    var p;
-    const t = o, a = s, i = f("__SS_API__"), e = x(!!((p = t.context) != null && p.isShortlisted));
-    g(() => {
-      var r;
-      return (r = t.context) == null ? void 0 : r.isShortlisted;
-    }, (r) => {
-      e.value = !!r;
+    var h, p, m;
+    const t = o, a = s, i = S("__SS_API__"), e = f(!!((h = t.context) != null && h.isShortlisted || (m = (p = t.context) == null ? void 0 : p.recipe) != null && m.is_shortlisted));
+    y(() => {
+      var c, r, d;
+      return ((c = t.context) == null ? void 0 : c.isShortlisted) ?? ((d = (r = t.context) == null ? void 0 : r.recipe) == null ? void 0 : d.is_shortlisted);
+    }, (c) => {
+      c !== void 0 && (e.value = !!c);
     });
-    async function _(r) {
-      var u;
-      if (r.stopPropagation(), !((u = t.context) != null && u.recipe) || !i) return;
-      const l = !e.value;
-      e.value = l;
+    async function _(c) {
+      var d;
+      if (c.stopPropagation(), !((d = t.context) != null && d.recipe) || !i) return;
+      const r = !e.value;
+      e.value = r;
       try {
-        l ? await i.post("/api/x/shortlist", { recipe_id: t.context.recipe.id }) : await i.delete(`/api/x/shortlist/${t.context.recipe.id}`), a("change", l);
+        r ? await i.post("/api/x/shortlist", { recipe_id: t.context.recipe.id }) : await i.delete(`/api/x/shortlist/${t.context.recipe.id}`), a("change", r);
       } catch {
-        e.value = !l;
+        e.value = !r;
       }
     }
-    return (r, l) => (n(), c("button", {
+    return (c, r) => (n(), l("button", {
       type: "button",
-      class: S(["btn-shortlist", { active: e.value }]),
+      class: b(["btn-shortlist", { active: e.value }]),
       title: e.value ? "Remove from shortlist" : "Add to shortlist",
       onClick: _
     }, " ★ ", 10, $));
   }
-}), h = (o, s) => {
+}), v = (o, s) => {
   const t = o.__vccOpts || o;
   for (const [a, i] of s)
     t[a] = i;
   return t;
-}, I = /* @__PURE__ */ h(A, [["__scopeId", "data-v-44c8490b"]]), w = /* @__PURE__ */ d({
+}, B = /* @__PURE__ */ v(w, [["__scopeId", "data-v-bb8c2dd6"]]), C = /* @__PURE__ */ u({
   __name: "ShortlistFilter",
   props: {
     context: {}
   },
   emits: ["toggle"],
   setup(o, { emit: s }) {
-    const t = o, a = s;
-    return (i, e) => {
+    const t = o, a = s, i = f(!1);
+    function e() {
       var _;
-      return n(), c(
+      a("toggle"), (_ = t.context) != null && _.toggle ? t.context.toggle() : i.value = !i.value;
+    }
+    return (_, h) => {
+      var p;
+      return n(), l(
         "button",
         {
           type: "button",
-          class: S(["shortlist-filter-chip", { active: (_ = t.context) == null ? void 0 : _.active }]),
-          onClick: e[0] || (e[0] = (p) => a("toggle"))
+          class: b(["shortlist-filter-chip", { active: ((p = t.context) == null ? void 0 : p.active) ?? i.value }]),
+          onClick: e
         },
         " ★ Shortlist ",
         2
@@ -60,54 +64,54 @@ const $ = ["title"], A = /* @__PURE__ */ d({
       );
     };
   }
-}), B = /* @__PURE__ */ h(w, [["__scopeId", "data-v-8165a361"]]), C = { class: "shortlist-sidebar" }, F = {
+}), F = /* @__PURE__ */ v(C, [["__scopeId", "data-v-aa2b8f83"]]), P = { class: "shortlist-sidebar" }, E = {
   key: 0,
   class: "sidebar-list"
-}, P = ["href"], E = {
+}, N = ["href"], R = {
   key: 1,
   class: "empty-hint"
-}, N = /* @__PURE__ */ d({
+}, j = /* @__PURE__ */ u({
   __name: "ShortlistSidebar",
   props: {
     context: {}
   },
   setup(o) {
-    const s = f("__SS_API__"), t = x([]);
-    return y(async () => {
+    const s = S("__SS_API__"), t = f([]);
+    return k(async () => {
       if (s)
         try {
           t.value = await s.get("/api/x/shortlist");
         } catch {
         }
-    }), (a, i) => (n(), c("div", C, [
-      m(
+    }), (a, i) => (n(), l("div", P, [
+      x(
         "h4",
         null,
-        "Shortlist (" + v(t.value.length) + ")",
+        "Shortlist (" + g(t.value.length) + ")",
         1
         /* TEXT */
       ),
-      t.value.length ? (n(), c("ul", F, [
-        (n(!0), c(
-          b,
+      t.value.length ? (n(), l("ul", E, [
+        (n(!0), l(
+          A,
           null,
-          k(t.value, (e) => (n(), c("li", {
+          I(t.value, (e) => (n(), l("li", {
             key: e.id
           }, [
-            m("a", {
+            x("a", {
               href: `#/recipes/${e.recipe_id}`
-            }, v(e.recipe_title || "Recipe"), 9, P)
+            }, g(e.recipe_title || "Recipe"), 9, N)
           ]))),
           128
           /* KEYED_FRAGMENT */
         ))
-      ])) : (n(), c("p", E, "No shortlisted recipes."))
+      ])) : (n(), l("p", R, "No shortlisted recipes."))
     ]));
   }
-}), R = /* @__PURE__ */ h(N, [["__scopeId", "data-v-9ef50431"]]);
-function D(o) {
-  o.slot("recipe.card.actions", I, { order: 10 }), o.slot("recipe.list.filters", B, { order: 10 }), o.slot("timeline.sidebar", R, { order: 20 });
+}), z = /* @__PURE__ */ v(j, [["__scopeId", "data-v-9ef50431"]]);
+function M(o) {
+  o.slot("recipe.card.actions", B, { order: 10 }), o.slot("recipe.list.filters", F, { order: 10 }), o.slot("timeline.sidebar", z, { order: 20 });
 }
 export {
-  D as default
+  M as default
 };

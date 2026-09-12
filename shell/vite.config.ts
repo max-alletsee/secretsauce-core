@@ -19,5 +19,8 @@ export default defineConfig({
   build: {
     outDir: '../secretsauce/static',
     emptyOutDir: false,
+    rollupOptions: {
+      external: ['vue', 'pinia', 'vue-router'],
+    },
   },
 })

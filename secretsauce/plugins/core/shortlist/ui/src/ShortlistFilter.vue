@@ -1,21 +1,35 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 const props = defineProps<{
   context?: {
     active?: boolean
+    toggle?: () => void
   }
 }>()
 
 const emit = defineEmits<{
   toggle: []
 }>()
+
+const localActive = ref(false)
+
+function onToggle() {
+  emit('toggle')
+  if (props.context?.toggle) {
+    props.context.toggle()
+  } else {
+    localActive.value = !localActive.value
+  }
+}
 </script>
 
 <template>
   <button
     type="button"
     class="shortlist-filter-chip"
-    :class="{ active: props.context?.active }"
-    @click="emit('toggle')"
+    :class="{ active: props.context?.active ?? localActive }"
+    @click="onToggle"
   >
     ★ Shortlist
   </button>

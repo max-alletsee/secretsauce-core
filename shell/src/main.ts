@@ -78,6 +78,7 @@ intents.registerHub({ id: 'share:receive', title: 'Handle Shared URL/Text' })
 function makeSecretSauceUI(pluginId: string): SecretSauceUI {
   return {
     pluginId,
+    navigate: (p: string) => router.push(p),
     route: (def) => routes.register(pluginId, def),
     slot: (name, comp, opts) => slots.register(pluginId, name, comp, opts),
     intent: {
@@ -122,15 +123,18 @@ app.provide('__SS_INTENT_REGISTRY__', intents)
 app.provide('__SS_SETTINGS_REGISTRY__', settings)
 app.provide('__SS_THEME_REGISTRY__', themes)
 app.provide('__SS_PLUGIN_LOADER__', pluginLoader)
+app.provide('__SS_NAVIGATE__', (path: string) => router.push(path))
 
 app.use(PrimeVue, { theme: { preset: Aura } })
 app.use(ToastService)
 app.use(ConfirmationService)
 
 const router = buildRouter(meta.base_path)
+routes.bindRouter(router)
 app.use(router)
 
 let storesFetched = false
+let pluginsLoaded = false
 
 router.beforeEach(async (to, _from, next) => {
   let needsSetup = false
@@ -164,6 +168,7 @@ router.beforeEach(async (to, _from, next) => {
 
   if (!isAuthenticated) {
     storesFetched = false
+    pluginsLoaded = false
     stream.disconnect()
     if (to.path !== '/login') {
       return next('/login')
@@ -181,10 +186,20 @@ router.beforeEach(async (to, _from, next) => {
     stream.connect()
   }
 
+  if (!pluginsLoaded) {
+    pluginsLoaded = true
+    await pluginLoader.loadActivePlugins(api)
+    if (to.matched.length === 0) {
+      return next(to.fullPath)
+    }
+  }
+
   if (!storesFetched) {
     storesFetched = true
-    householdStore.fetchHousehold(api)
-    memberStore.fetchMembers(api)
+    await Promise.all([
+      householdStore.fetchHousehold(api),
+      memberStore.fetchMembers(api),
+    ])
   }
 
   next()

@@ -1,17 +1,33 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, computed, inject } from 'vue'
 import IngredientRowList from '../components/IngredientRowList.vue'
 import StepList from '../components/StepList.vue'
 
 const props = defineProps<{
   recipeId?: string
+  id?: string
 }>()
 
 const emit = defineEmits<{
   saved: [any]
 }>()
 
+const navigate = inject<(path: string) => void>('__SS_NAVIGATE__', (path: string) => {
+  window.location.href = path
+})
 const api = inject<any>('__SS_API__')
+
+const targetId = computed(() => {
+  if (props.id) return props.id
+  if (props.recipeId) return props.recipeId
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/recipes/')) {
+    const parts = window.location.pathname.split('/')
+    if (parts.length >= 3 && parts[parts.length - 1] === 'edit') {
+      return parts[parts.length - 2]
+    }
+  }
+  return ''
+})
 
 const title = ref('')
 const description = ref('')
@@ -26,9 +42,9 @@ const steps = ref<any[]>([])
 const revision = ref(1)
 
 onMounted(async () => {
-  if (props.recipeId && api) {
+  if (targetId.value && api) {
     try {
-      const existing = await api.get(`/api/recipes/${props.recipeId}`)
+      const existing = await api.get(`/api/recipes/${targetId.value}`)
       title.value = existing.title || ''
       description.value = existing.description || ''
       language.value = existing.language || 'en'
@@ -73,18 +89,28 @@ async function save() {
   }
 
   let res: any
-  if (props.recipeId) {
-    res = await api.patch(`/api/recipes/${props.recipeId}`, { ...payload, revision: revision.value })
+  if (targetId.value) {
+    res = await api.patch(`/api/recipes/${targetId.value}`, { ...payload, revision: revision.value })
   } else {
     res = await api.post('/api/recipes', payload)
   }
   emit('saved', res)
+  if (res?.id) {
+    navigate(`/recipes/${res.id}`)
+  }
+}
+
+function cancel() {
+  navigate(targetId.value ? `/recipes/${targetId.value}` : '/recipes')
 }
 </script>
 
 <template>
   <div class="recipe-edit-page">
-    <h2>{{ props.recipeId ? 'Edit Recipe' : 'New Recipe' }}</h2>
+    <div class="edit-top-bar">
+      <h2>{{ targetId ? 'Edit Recipe' : 'New Recipe' }}</h2>
+      <button type="button" class="btn-cancel" @click="cancel">Cancel</button>
+    </div>
     <div class="form-section">
       <div class="form-group">
         <label>Title</label>

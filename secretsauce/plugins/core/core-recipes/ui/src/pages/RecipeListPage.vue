@@ -7,11 +7,45 @@ const emit = defineEmits<{
   openRecipe: [string]
 }>()
 
+const navigate = inject<(path: string) => void>('__SS_NAVIGATE__', (path: string) => {
+  window.location.href = path
+})
 const api = inject<any>('__SS_API__')
 const recipes = ref<any[]>([])
 const search = ref('')
 const activeTag = ref<string | null>(null)
 const sortBy = ref('title')
+
+function openRecipe(id: string) {
+  emit('openRecipe', id)
+  navigate(`/recipes/${id}`)
+}
+
+const shortlistOnly = ref(false)
+const shortlistedIds = ref<Set<string>>(new Set())
+
+async function loadShortlist() {
+  if (!api) return
+  try {
+    const res = await api.get('/api/x/shortlist')
+    const ids = new Set<string>()
+    if (Array.isArray(res)) {
+      for (const item of res) {
+        if (item.recipe_id) ids.add(item.recipe_id)
+      }
+    }
+    shortlistedIds.value = ids
+  } catch {
+    // offline or shortlist not enabled
+  }
+}
+
+async function toggleShortlistFilter() {
+  shortlistOnly.value = !shortlistOnly.value
+  if (shortlistOnly.value) {
+    await loadShortlist()
+  }
+}
 
 async function loadRecipes() {
   if (!api) return
@@ -23,7 +57,10 @@ async function loadRecipes() {
   }
 }
 
-onMounted(loadRecipes)
+onMounted(() => {
+  loadRecipes()
+  loadShortlist()
+})
 
 const allTags = computed(() => {
   const set = new Set<string>()
@@ -34,7 +71,13 @@ const allTags = computed(() => {
 })
 
 const filteredRecipes = computed(() => {
-  let list = [...recipes.value]
+  let list = recipes.value.map((r) => ({
+    ...r,
+    is_shortlisted: shortlistedIds.value.has(r.id),
+  }))
+  if (shortlistOnly.value) {
+    list = list.filter((r) => shortlistedIds.value.has(r.id))
+  }
   if (activeTag.value) {
     list = list.filter((r) => r.tags?.includes(activeTag.value))
   }
@@ -49,6 +92,7 @@ const filteredRecipes = computed(() => {
 
 <template>
   <div class="recipe-list-page">
+    <h1 class="page-title">Recipes</h1>
     <div class="intent-header-bar">
       <div class="search-box">
         <input
@@ -65,7 +109,7 @@ const filteredRecipes = computed(() => {
     </div>
 
     <div class="filter-sort-bar">
-      <Slot name="recipe.list.filters" />
+      <Slot name="recipe.list.filters" :context="{ active: shortlistOnly, toggle: toggleShortlistFilter }" />
       <div v-if="allTags.length" class="tag-chips">
         <button
           v-for="t in allTags"
@@ -88,7 +132,7 @@ const filteredRecipes = computed(() => {
         v-for="r in filteredRecipes"
         :key="r.id"
         :recipe="r"
-        @select="(id) => emit('openRecipe', id)"
+        @select="openRecipe"
       />
     </div>
 

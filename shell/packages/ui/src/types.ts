@@ -4,6 +4,7 @@ export const API_VERSION = 1
 
 export interface SecretSauceUI {
   pluginId: string
+  navigate?(path: string): void
   route(def: RouteDef): void
   slot(name: string, component: Component, opts?: { order?: number }): void
   intent: { hub(def: IntentHub): void; provider(def: IntentProvider): void }

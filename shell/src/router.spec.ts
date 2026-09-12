@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { buildRouter } from './router'
 
 describe('Router Configuration', () => {
-  it('defines core routes and redirects / to /plugins', async () => {
+  it('defines core routes and redirects / to /recipes', async () => {
     const router = buildRouter('/')
     const routes = router.getRoutes()
 
@@ -15,6 +15,6 @@ describe('Router Configuration', () => {
     expect(paths).toContain('/share')
 
     await router.push('/')
-    expect(router.currentRoute.value.path).toBe('/plugins')
+    expect(router.currentRoute.value.path).toBe('/recipes')
   })
 })

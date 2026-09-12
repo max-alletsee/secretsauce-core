@@ -13,10 +13,12 @@ const emit = defineEmits<{
 }>()
 
 const api = inject<any>('__SS_API__')
-const favorited = ref(Boolean(props.context?.isShortlisted))
+const favorited = ref(Boolean(props.context?.isShortlisted || (props.context?.recipe as any)?.is_shortlisted))
 
-watch(() => props.context?.isShortlisted, (val) => {
-  favorited.value = Boolean(val)
+watch(() => props.context?.isShortlisted ?? (props.context?.recipe as any)?.is_shortlisted, (val) => {
+  if (val !== undefined) {
+    favorited.value = Boolean(val)
+  }
 })
 
 async function toggle(e: Event) {

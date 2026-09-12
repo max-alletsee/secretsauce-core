@@ -25,6 +25,33 @@ describe('Shell Registries', () => {
     expect(reg.getRoutes()[0].component).toBe(CompCore)
   })
 
+  it('dynamically adds routes to bound router', () => {
+    const added: any[] = []
+    const removed: string[] = []
+    const mockRouter: any = {
+      hasRoute: (name: string) => added.some((r) => r.name === name),
+      addRoute: (r: any) => added.push(r),
+      removeRoute: (name: string) => {
+        removed.push(name)
+        const idx = added.findIndex((r) => r.name === name)
+        if (idx !== -1) added.splice(idx, 1)
+      },
+    }
+
+    const reg = createRouteRegistry()
+    reg.bindRouter(mockRouter)
+
+    const Comp = defineComponent({ render: () => h('div', 'Test') })
+    reg.register('core-recipes', { path: '/recipes', component: Comp })
+
+    expect(added).toHaveLength(1)
+    expect(added[0].path).toBe('/recipes')
+
+    reg.unregister('core-recipes')
+    expect(removed).toContain('/recipes')
+    expect(added).toHaveLength(0)
+  })
+
   it('holds intent providers until hub is registered', () => {
     const reg = createIntentRegistry()
     reg.registerProvider('plugin-a', {

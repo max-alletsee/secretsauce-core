@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, inject } from 'vue'
+import { ref, onMounted, computed, inject, watch } from 'vue'
 import { Slot, IntentTrigger } from '@secretsauce/ui'
 
 const props = defineProps<{
   recipeId?: string
+  id?: string
 }>()
 
 const emit = defineEmits<{
@@ -11,18 +12,56 @@ const emit = defineEmits<{
   addTranslation: [any]
 }>()
 
+const navigate = inject<(path: string) => void>('__SS_NAVIGATE__', (path: string) => {
+  window.location.href = path
+})
 const api = inject<any>('__SS_API__')
 const recipe = ref<any>(null)
 const currentServings = ref(2)
 const checkedIngredients = ref<Record<string, boolean>>({})
 
+const effectiveId = computed(() => {
+  if (props.id) return props.id
+  if (props.recipeId) return props.recipeId
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/recipes/')) {
+    const parts = window.location.pathname.split('/')
+    return parts[parts.length - 1] || ''
+  }
+  return ''
+})
+
+const isShortlisted = ref(false)
+
+async function checkShortlist() {
+  if (!api || !effectiveId.value) return
+  try {
+    const res = await api.get('/api/x/shortlist')
+    if (Array.isArray(res)) {
+      isShortlisted.value = res.some((item) => item.recipe_id === effectiveId.value)
+    }
+  } catch {}
+}
+
 async function loadRecipe() {
-  if (!api || !props.recipeId) return
-  recipe.value = await api.get(`/api/recipes/${props.recipeId}`)
+  if (!api || !effectiveId.value) return
+  recipe.value = await api.get(`/api/recipes/${effectiveId.value}`)
   currentServings.value = recipe.value?.servings || 2
+  await checkShortlist()
 }
 
 onMounted(loadRecipe)
+watch(effectiveId, () => {
+  loadRecipe()
+})
+
+function switchLanguage(targetId: string) {
+  emit('switchLanguage', targetId)
+  navigate(`/recipes/${targetId}`)
+}
+
+function goBack() {
+  navigate('/recipes')
+}
 
 const scaleMultiplier = computed(() => {
   if (!recipe.value || !recipe.value.servings) return 1
@@ -46,6 +85,10 @@ function scaleUp() {
 
 <template>
   <div v-if="recipe" class="recipe-detail-page">
+    <div class="nav-back-bar">
+      <button type="button" class="btn-back" @click="goBack">← All Recipes</button>
+    </div>
+
     <div class="lang-bar" v-if="recipe.languages?.length > 1">
       <span class="lang-label">Languages:</span>
       <button
@@ -53,7 +96,7 @@ function scaleUp() {
         :key="l"
         class="lang-tab"
         :class="{ active: l === recipe.language }"
-        @click="emit('switchLanguage', `${recipe.group_id}_${l}`)"
+        @click="switchLanguage(`${recipe.group_id}_${l}`)"
       >
         {{ l.toUpperCase() }}
       </button>
@@ -66,6 +109,7 @@ function scaleUp() {
         <p v-if="recipe.description" class="description">{{ recipe.description }}</p>
       </div>
       <div class="detail-actions">
+        <Slot name="recipe.card.actions" :context="{ recipe, isShortlisted }" />
         <IntentTrigger hub="recipe:actions" :context="{ recipe }" label="Actions" />
       </div>
     </div>

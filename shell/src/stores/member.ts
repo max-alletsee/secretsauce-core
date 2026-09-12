@@ -27,8 +27,9 @@ export const useMemberStore = defineStore('member', () => {
 
   async function fetchMembers(api: ApiClient) {
     try {
-      const res = await api.get<{ items: Member[] }>('/api/members')
-      setMembers(res.items || [])
+      const res = await api.get<any>('/api/members')
+      const list = Array.isArray(res) ? res : res?.items || []
+      setMembers(list)
     } catch {
       // offline fallback
     }

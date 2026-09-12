@@ -2,7 +2,7 @@
   <div class="p-4 space-y-4">
     <div class="flex items-center justify-between">
       <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-0">Recurring Meals</h3>
-      <Button label="Materialize Now" icon="pi pi-refresh" severity="secondary" @click="triggerMaterialize" />
+      <button class="btn btn-secondary" @click="triggerMaterialize">Materialize Now</button>
     </div>
     <div v-if="loading" class="text-surface-500">Loading rules...</div>
     <div v-else-if="rules.length === 0" class="text-surface-500">No recurring rules configured.</div>
@@ -17,7 +17,7 @@
           <span class="ml-2 text-sm text-surface-500">{{ rule.meal_type }}:</span>
           <span class="ml-1 text-sm font-semibold">{{ rule.recipe_title }}</span>
         </div>
-        <Button icon="pi pi-trash" severity="danger" text @click="deleteRule(rule.id)" />
+        <button class="btn btn-danger" @click="deleteRule(rule.id)">Delete</button>
       </div>
     </div>
   </div>
@@ -25,7 +25,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import Button from 'primevue/button'
 import type { SecretSauceUI } from '@secretsauce/ui'
 
 const props = defineProps<{ ss: SecretSauceUI }>()
