@@ -31,6 +31,13 @@ async function buildPlugins() {
         root: pluginDir,
         configFile: false,
         plugins: [vue()],
+        resolve: {
+          alias: {
+            '@': path.resolve(__dirname, '../src'),
+            '@secretsauce/ui': path.resolve(__dirname, '../packages/ui/src/index.ts'),
+            '@secretsauce/units': path.resolve(__dirname, '../packages/units/src/index.ts'),
+          },
+        },
         build: {
           lib: {
             entry: uiSrc,
