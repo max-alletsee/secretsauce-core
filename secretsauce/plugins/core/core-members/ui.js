@@ -1,104 +1,104 @@
-import { ref as p, defineComponent as A, inject as I, openBlock as u, createElementBlock as d, unref as g, normalizeStyle as $, toDisplayString as b, createCommentVNode as h, createElementVNode as t, Fragment as S, renderList as C, withDirectives as y, vModelText as M } from "vue";
-import { defineStore as R } from "pinia";
-const U = R("member", () => {
-  const l = p([]), n = p(null);
-  function a(s) {
-    l.value = s;
+import { ref as p, defineComponent as I, inject as $, openBlock as u, createElementBlock as d, unref as f, normalizeStyle as U, toDisplayString as b, createCommentVNode as h, createElementVNode as t, Fragment as S, renderList as C, withDirectives as y, vModelText as M } from "vue";
+import { defineStore as B } from "pinia";
+const V = B("member", () => {
+  const l = p([]), s = p(null);
+  function a(n) {
+    l.value = n;
     const o = localStorage.getItem("ss-current-member");
-    o ? n.value = s.find((v) => v.id === o) || s[0] || null : s.length > 0 && (n.value = s[0], localStorage.setItem("ss-current-member", s[0].id));
+    o ? s.value = n.find((v) => v.id === o) || n[0] || null : n.length > 0 && (s.value = n[0], localStorage.setItem("ss-current-member", n[0].id));
   }
-  function c(s) {
-    const o = l.value.find((v) => v.id === s);
-    o && (n.value = o, localStorage.setItem("ss-current-member", s));
+  function m(n) {
+    const o = l.value.find((v) => v.id === n);
+    o && (s.value = o, localStorage.setItem("ss-current-member", n));
   }
-  async function m(s) {
+  async function c(n) {
     try {
-      const o = await s.get("/api/members");
+      const o = await n.get("/api/members");
       a(o.items || []);
     } catch {
     }
   }
-  function f(s) {
-    l.value.push(s), n.value || (n.value = s);
+  function g(n) {
+    l.value.push(n), s.value || (s.value = n);
   }
-  function i(s) {
+  function i(n) {
     var o;
-    l.value = l.value.filter((v) => v.id !== s), ((o = n.value) == null ? void 0 : o.id) === s && (n.value = l.value[0] || null);
+    l.value = l.value.filter((v) => v.id !== n), ((o = s.value) == null ? void 0 : o.id) === n && (s.value = l.value[0] || null);
   }
-  return { members: l, currentMember: n, setMembers: a, setCurrentMember: c, addMember: f, removeMember: i, fetchMembers: m };
-}), B = { class: "ss-member-picker" }, H = ["value"], L = ["value"], P = /* @__PURE__ */ A({
+  return { members: l, currentMember: s, setMembers: a, setCurrentMember: m, addMember: g, removeMember: i, fetchMembers: c };
+}), H = { class: "ss-member-picker" }, L = ["value"], P = ["value"], E = /* @__PURE__ */ I({
   __name: "MemberPicker",
   setup(l) {
-    const n = U(), a = I("__SS_API__");
-    function c(m) {
-      const i = m.target.value;
-      i && (n.setCurrentMember(i), localStorage.setItem("secretsauce:current_member_id", i), a && typeof a.setDefaultHeader == "function" && a.setDefaultHeader("x-actor-member", i));
+    const s = V(), a = $("__SS_API__");
+    function m(c) {
+      const i = c.target.value;
+      i && (s.setCurrentMember(i), localStorage.setItem("secretsauce:current_member_id", i), a && typeof a.setDefaultHeader == "function" && a.setDefaultHeader("x-actor-member", i));
     }
-    return (m, f) => {
+    return (c, g) => {
       var i;
-      return u(), d("div", B, [
-        g(n).currentMember ? (u(), d(
+      return u(), d("div", H, [
+        f(s).currentMember ? (u(), d(
           "div",
           {
             key: 0,
             class: "member-avatar",
-            style: $({ backgroundColor: g(n).currentMember.avatar_color || "#0284c7" })
+            style: U({ backgroundColor: f(s).currentMember.avatar_color || "#0284c7" })
           },
-          b(g(n).currentMember.name ? g(n).currentMember.name.slice(0, 1).toUpperCase() : "?"),
+          b(f(s).currentMember.name ? f(s).currentMember.name.slice(0, 1).toUpperCase() : "?"),
           5
           /* TEXT, STYLE */
         )) : h("v-if", !0),
         t("select", {
           class: "member-select",
-          value: (i = g(n).currentMember) == null ? void 0 : i.id,
-          onChange: c
+          value: (i = f(s).currentMember) == null ? void 0 : i.id,
+          onChange: m
         }, [
           (u(!0), d(
             S,
             null,
-            C(g(n).members, (s) => (u(), d("option", {
-              key: s.id,
-              value: s.id
-            }, b(s.name), 9, L))),
+            C(f(s).members, (n) => (u(), d("option", {
+              key: n.id,
+              value: n.id
+            }, b(n.name), 9, P))),
             128
             /* KEYED_FRAGMENT */
           ))
-        ], 40, H)
+        ], 40, L)
       ]);
     };
   }
-}), V = (l, n) => {
+}), D = (l, s) => {
   const a = l.__vccOpts || l;
-  for (const [c, m] of n)
-    a[c] = m;
+  for (const [m, c] of s)
+    a[m] = c;
   return a;
-}, E = /* @__PURE__ */ V(P, [["__scopeId", "data-v-301436c6"]]), j = { class: "ss-member-settings" }, z = { class: "header-row" }, F = { class: "members-grid" }, O = { class: "member-card-header" }, T = { class: "subtext" }, q = ["onClick"], G = {
+}, j = /* @__PURE__ */ D(E, [["__scopeId", "data-v-301436c6"]]), z = { class: "ss-member-settings" }, F = { class: "header-row" }, O = { class: "members-grid" }, T = { class: "member-card-header" }, q = { class: "subtext" }, G = ["onClick"], J = {
   key: 0,
   class: "tags"
-}, J = {
+}, K = {
   key: 0,
   class: "modal-backdrop"
-}, K = { class: "modal" }, Q = { class: "form-group" }, W = { class: "form-row" }, X = { class: "form-group" }, Y = { class: "form-group" }, Z = { class: "form-group" }, ee = { class: "form-group" }, te = { class: "form-group" }, re = { class: "modal-actions" }, se = /* @__PURE__ */ A({
+}, Q = { class: "modal" }, W = { class: "form-group" }, X = { class: "form-row" }, Y = { class: "form-group" }, Z = { class: "form-group" }, ee = { class: "form-group" }, te = { class: "form-group" }, re = { class: "form-group" }, se = { class: "modal-actions" }, ne = /* @__PURE__ */ I({
   __name: "MemberSettings",
   setup(l) {
-    const n = U(), a = I("__SS_API__"), c = p(!1), m = p(""), f = p("en"), i = p("#0284c7"), s = p(1), o = p(""), v = p("");
-    async function D() {
-      if (!m.value.trim() || !a) return;
+    const s = V(), a = $("__SS_API__"), m = p(!1), c = p(""), g = p("en"), i = p("#0284c7"), n = p(1), o = p(""), v = p("");
+    async function N() {
+      if (!c.value.trim() || !a) return;
       const k = {
-        name: m.value.trim(),
-        preferred_language: f.value,
+        name: c.value.trim(),
+        preferred_language: g.value,
         avatar_color: i.value,
-        serving_ratio: Number(s.value) || 1,
+        serving_ratio: Number(n.value) || 1,
         dietary_restrictions: o.value.split(",").map((r) => r.trim()).filter(Boolean),
         allergies: v.value.split(",").map((r) => r.trim()).filter(Boolean)
       }, e = await a.post("/api/members", k);
-      n.addMember(e), m.value = "", o.value = "", v.value = "", c.value = !1;
+      s.addMember(e), c.value = "", o.value = "", v.value = "", m.value = !1;
     }
-    async function N(k, e) {
-      !confirm("Are you sure you want to remove this member?") || !a || (await a.delete(`/api/members/${k}?revision=${e}`), n.removeMember(k));
+    async function R(k, e) {
+      !confirm("Are you sure you want to remove this member?") || !a || (await a.delete(`/api/members/${k}?revision=${e}`), s.removeMember(k));
     }
-    return (k, e) => (u(), d("div", j, [
-      t("div", z, [
+    return (k, e) => (u(), d("div", z, [
+      t("div", F, [
         e[8] || (e[8] = t(
           "p",
           { class: "description" },
@@ -108,25 +108,25 @@ const U = R("member", () => {
         )),
         t("button", {
           class: "btn-primary",
-          onClick: e[0] || (e[0] = (r) => c.value = !0)
+          onClick: e[0] || (e[0] = (r) => m.value = !0)
         }, "+ Add Member")
       ]),
-      t("div", F, [
+      t("div", O, [
         (u(!0), d(
           S,
           null,
-          C(g(n).members, (r) => {
+          C(f(s).members, (r) => {
             var w, x;
             return u(), d("div", {
               key: r.id,
               class: "member-card"
             }, [
-              t("div", O, [
+              t("div", T, [
                 t(
                   "div",
                   {
                     class: "avatar",
-                    style: $({ backgroundColor: r.avatar_color || "#0284c7" })
+                    style: U({ backgroundColor: r.avatar_color || "#0284c7" })
                   },
                   b(r.name ? r.name.slice(0, 1).toUpperCase() : "?"),
                   5
@@ -142,7 +142,7 @@ const U = R("member", () => {
                   ),
                   t(
                     "div",
-                    T,
+                    q,
                     "Lang: " + b(r.preferred_language) + " · Ratio: " + b(r.serving_ratio) + "x",
                     1
                     /* TEXT */
@@ -150,10 +150,10 @@ const U = R("member", () => {
                 ]),
                 t("button", {
                   class: "btn-danger",
-                  onClick: (_) => N(r.id, r.revision)
-                }, "Delete", 8, q)
+                  onClick: (_) => R(r.id, r.revision)
+                }, "Delete", 8, G)
               ]),
-              (w = r.dietary_restrictions) != null && w.length || (x = r.allergies) != null && x.length ? (u(), d("div", G, [
+              (w = r.dietary_restrictions) != null && w.length || (x = r.allergies) != null && x.length ? (u(), d("div", J, [
                 (u(!0), d(
                   S,
                   null,
@@ -193,8 +193,8 @@ const U = R("member", () => {
           /* KEYED_FRAGMENT */
         ))
       ]),
-      c.value ? (u(), d("div", J, [
-        t("div", K, [
+      m.value ? (u(), d("div", K, [
+        t("div", Q, [
           e[15] || (e[15] = t(
             "h3",
             null,
@@ -202,7 +202,7 @@ const U = R("member", () => {
             -1
             /* CACHED */
           )),
-          t("div", Q, [
+          t("div", W, [
             e[9] || (e[9] = t(
               "label",
               null,
@@ -213,7 +213,7 @@ const U = R("member", () => {
             y(t(
               "input",
               {
-                "onUpdate:modelValue": e[1] || (e[1] = (r) => m.value = r),
+                "onUpdate:modelValue": e[1] || (e[1] = (r) => c.value = r),
                 type: "text",
                 placeholder: "Name",
                 class: "input"
@@ -222,11 +222,11 @@ const U = R("member", () => {
               512
               /* NEED_PATCH */
             ), [
-              [M, m.value]
+              [M, c.value]
             ])
           ]),
-          t("div", W, [
-            t("div", X, [
+          t("div", X, [
+            t("div", Y, [
               e[10] || (e[10] = t(
                 "label",
                 null,
@@ -237,7 +237,7 @@ const U = R("member", () => {
               y(t(
                 "input",
                 {
-                  "onUpdate:modelValue": e[2] || (e[2] = (r) => f.value = r),
+                  "onUpdate:modelValue": e[2] || (e[2] = (r) => g.value = r),
                   type: "text",
                   placeholder: "en, de, etc.",
                   class: "input"
@@ -246,10 +246,10 @@ const U = R("member", () => {
                 512
                 /* NEED_PATCH */
               ), [
-                [M, f.value]
+                [M, g.value]
               ])
             ]),
-            t("div", Y, [
+            t("div", Z, [
               e[11] || (e[11] = t(
                 "label",
                 null,
@@ -260,7 +260,7 @@ const U = R("member", () => {
               y(t(
                 "input",
                 {
-                  "onUpdate:modelValue": e[3] || (e[3] = (r) => s.value = r),
+                  "onUpdate:modelValue": e[3] || (e[3] = (r) => n.value = r),
                   type: "number",
                   step: "0.1",
                   min: "0.1",
@@ -270,11 +270,11 @@ const U = R("member", () => {
                 512
                 /* NEED_PATCH */
               ), [
-                [M, s.value]
+                [M, n.value]
               ])
             ])
           ]),
-          t("div", Z, [
+          t("div", ee, [
             e[12] || (e[12] = t(
               "label",
               null,
@@ -296,7 +296,7 @@ const U = R("member", () => {
               [M, i.value]
             ])
           ]),
-          t("div", ee, [
+          t("div", te, [
             e[13] || (e[13] = t(
               "label",
               null,
@@ -319,7 +319,7 @@ const U = R("member", () => {
               [M, o.value]
             ])
           ]),
-          t("div", te, [
+          t("div", re, [
             e[14] || (e[14] = t(
               "label",
               null,
@@ -342,27 +342,28 @@ const U = R("member", () => {
               [M, v.value]
             ])
           ]),
-          t("div", re, [
+          t("div", se, [
             t("button", {
               class: "btn-secondary",
-              onClick: e[7] || (e[7] = (r) => c.value = !1)
+              onClick: e[7] || (e[7] = (r) => m.value = !1)
             }, "Cancel"),
             t("button", {
               class: "btn-primary",
-              onClick: D
+              onClick: N
             }, "Save Member")
           ])
         ])
       ])) : h("v-if", !0)
     ]));
   }
-}), ne = /* @__PURE__ */ V(se, [["__scopeId", "data-v-fc0cca3a"]]);
+}), A = /* @__PURE__ */ D(ne, [["__scopeId", "data-v-fc0cca3a"]]);
 function ae(l) {
-  l.slot("shell.header.right", E, { order: 10 }), l.settings.section({
+  var s;
+  l.slot("shell.header.right", j, { order: 10 }), (s = l.settings) != null && s.section ? l.settings.section({
     id: "members",
     title: "Household Members",
-    component: ne
-  });
+    component: A
+  }) : l.slot("settings.content", A, { order: 10 });
 }
 export {
   ae as default
