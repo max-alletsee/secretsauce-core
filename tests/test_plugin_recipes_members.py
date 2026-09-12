@@ -11,3 +11,9 @@ async def test_core_members_discovery(tmp_path: Path):
         assert p["state"] == "active"
         assert p["name"] == "Household Members"
         assert p["ui"] == "ui.js"
+
+        r = await k.plugins.get_plugin("core-recipes")
+        assert r is not None
+        assert r["state"] == "active"
+        assert r["name"] == "Recipes"
+        assert r["ui"] == "ui.js"
