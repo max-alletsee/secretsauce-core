@@ -210,10 +210,26 @@ export interface SecretSauceUI {
 - Multiple plugins contributing to the same slot are rendered sorted by `order` (default 50).
 - If no contributions exist, `<Slot>` renders its default template fallback.
 
+Common slots established across the application:
+| Slot Name | Provider | Context | Description |
+|---|---|---|---|
+| `shell.header.right` | Shell (`AppHeader.vue`) | `{}` | Header actions & member picker. |
+| `settings.tab.members` | Shell (`SettingsPage.vue`) | `{}` | Member profiles & household settings. |
+| `recipe.card.actions` | Core Recipes (`RecipeCard.vue`) | `{ recipe, isShortlisted }` | Action buttons on recipe cards. |
+| `recipe.list.filters` | Core Recipes (`RecipeListPage.vue`) | `{ filterShortlist, toggleShortlist }` | Filter chips in recipe list. |
+| `timeline.day.actions` | Core Timeline (`TimelinePage.vue`) | `{ date }` | Quick shortcuts on day headers. |
+| `timeline.entry.badge` | Core Timeline (`ScheduleCard.vue`) | `{ entry }` | Status badges on schedule cards (e.g. `CookedBadge`). |
+| `timeline.entry.actions`| Core Timeline (`ScheduleCard.vue`) | `{ entry }` | Contextual action buttons on scheduled meals. |
+| `journal.entry.footer` | Cook Tracker (`JournalPage.vue`) | `{ entry }` | Feedback and voting on cooked entries (e.g. `VoteRating`). |
+
 ### Cross-Plugin Intent Dispatch
-- Hubs declare points of user choice (e.g. `share:receive`, `recipe:create`).
+- Hubs declare points of user choice (e.g. `share:receive`, `entry:create`, `entry:interact`).
 - Providers register actions against hubs.
 - `<IntentTrigger>` provides an accessible modal picker when multiple providers exist or executes immediately when only one provider is registered.
+
+Standard intent hubs:
+- `entry:create`: Dispatches meal planning dialog with recipe search, shortlist, and suggestions.
+- `entry:interact`: Contextual operations on scheduled meals (e.g. `mark-cooked`, recipe detail navigation).
 
 ---
 

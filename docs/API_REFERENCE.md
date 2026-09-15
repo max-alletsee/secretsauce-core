@@ -265,7 +265,15 @@ Schedules a meal.
 - **Status:** `201 Created`
 
 ### `GET /api/journal`
-Lists cook journal entries. Query parameters: `from`, `to`, `limit`, `offset`.
+Lists cook journal entries.
+- **Query Parameters:**
+  - `from` (optional, string, `YYYY-MM-DD`): Start date. Defaults to 30 days ago (`today - 30d`).
+  - `to` (optional, string, `YYYY-MM-DD`): End date. Defaults to today (`today`).
+  - `lang` (optional, string): Preferred language for recipe titles.
+  - `attr` (optional, list[str]): Entity attribute keys to include.
+  - `sort` (optional, string): Sort order (`date`, default).
+- **Status:** `200 OK`
+- **Response:** Array of cook journal entries.
 
 ### `POST /api/journal`
 Logs a cooked meal or converts a scheduled entry.
