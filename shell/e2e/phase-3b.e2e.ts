@@ -16,7 +16,9 @@ test.describe('Phase 3B End-to-End Browser Tests', () => {
     await page.fill('input[type="password"]', 'secretpassphrase')
     await page.click('button[type="submit"]')
 
-    // 3. Authenticated session lands on /recipes
+    // 3. Authenticated session lands; navigate to /recipes
+    await page.waitForURL(/(timeline|recipes)/, { timeout: 10_000 })
+    await page.locator('nav a', { hasText: 'Recipes' }).click()
     await expect(page).toHaveURL(/.*\/recipes/, { timeout: 10_000 })
     await expect(page.locator('.household-title')).toHaveText('SecretSauce E2E House')
 

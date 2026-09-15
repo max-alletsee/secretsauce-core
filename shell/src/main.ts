@@ -189,9 +189,21 @@ router.beforeEach(async (to, _from, next) => {
   if (!pluginsLoaded) {
     pluginsLoaded = true
     await pluginLoader.loadActivePlugins(api)
-    if (to.matched.length === 0) {
-      return next(to.fullPath)
+  }
+
+  if (to.path === '/' || to.redirectedFrom?.path === '/') {
+    const preferred = typeof localStorage !== 'undefined' ? localStorage.getItem('secretsauce:default_start_page') : null
+    if (preferred === '/timeline' || preferred === '/recipes') {
+      if (to.path !== preferred) return next(preferred)
+    } else {
+      const isTimelineActive = router.getRoutes().some((r) => r.path === '/timeline')
+      const target = isTimelineActive ? '/timeline' : '/recipes'
+      if (to.path !== target) return next(target)
     }
+  }
+
+  if (to.matched.length === 0) {
+    return next(to.fullPath)
   }
 
   if (!storesFetched) {
