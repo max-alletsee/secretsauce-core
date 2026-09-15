@@ -161,7 +161,7 @@ Under Settings, add a "Default Start Page" selector:
 Default provider for `entry:create` presents 4 tabs:
 1. **Recipe Search:** Live trigram FTS search against `/api/recipes?q=...`, thumbnail preview, and instant add.
 2. **Shortlist:** Direct list of active member's shortlisted recipes from `/api/x/shortlist`.
-3. **AI Suggestions:** Hook for `timeline:assist` with a fallback placeholder.
+3. **AI Suggestions:** Dynamically executes the `timeline:assist` intent hub if providers are registered (such as `meal-planner` in Phase 3E), or displays an informational card explaining that automated suggestions become available when an AI planning plugin is enabled.
 4. **Custom Note / Category:** Category chips ("Dining Out", "Leftovers", "Takeout", "Quick Note") with optional notes, assigned cook selection, and servings override.
 
 ### 4.6 Move / Reassign Action

@@ -1,5 +1,7 @@
 # SecretSauce Core
 
+Secret Sauce is a minimal extensible meal planning app that can be modified easily. It is heavily inspired by the pi coding agent.
+
 Local-first, extensible recipe and meal management kernel with plugin runtime, SQLite WAL persistence, FTS5 trigram search, transactional event dispatching, and Vue 3 + PrimeVue PWA application shell.
 
 ---
