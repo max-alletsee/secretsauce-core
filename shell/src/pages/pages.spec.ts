@@ -3,6 +3,8 @@ import { mount } from '@vue/test-utils'
 import SetupPage from './SetupPage.vue'
 import LoginPage from './LoginPage.vue'
 import SharePage from './SharePage.vue'
+import SettingsPage from './SettingsPage.vue'
+import { createPinia } from 'pinia'
 
 describe('Shell Core Pages', () => {
   it('submits setup flow form', async () => {
@@ -41,5 +43,26 @@ describe('Shell Core Pages', () => {
     expect(postMock).toHaveBeenCalledWith('/api/auth/login', {
       passphrase: 'my-passphrase',
     })
+  })
+
+  it('updates default start page in settings', async () => {
+    const pinia = createPinia()
+    const wrapper = mount(SettingsPage, {
+      global: {
+        plugins: [pinia],
+        provide: {
+          __SS_API__: { get: vi.fn(), post: vi.fn() },
+          __SS_SETTINGS_REGISTRY__: { getSections: () => [] },
+          __SS_THEME_REGISTRY__: { getThemes: () => [], currentTheme: { value: 'light' }, setTheme: vi.fn() },
+        },
+      },
+    })
+    const select = wrapper.find('#default-start-page')
+    expect(select.exists()).toBe(true)
+    await select.setValue('/timeline')
+    expect(localStorage.getItem('secretsauce:default_start_page')).toBe('/timeline')
+
+    await select.setValue('auto')
+    expect(localStorage.getItem('secretsauce:default_start_page')).toBeNull()
   })
 })

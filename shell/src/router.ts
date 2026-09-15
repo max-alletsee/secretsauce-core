@@ -6,23 +6,43 @@ import PluginManagerPage from './pages/PluginManagerPage.vue'
 import SharePage from './pages/SharePage.vue'
 
 export function buildRouter(basePath: string = '/') {
-  return createRouter({
+  let router: any
+
+  const routes = [
+    {
+      path: '/',
+      redirect: () => {
+        if (typeof localStorage !== 'undefined') {
+          const preferred = localStorage.getItem('secretsauce:default_start_page')
+          if (preferred === '/timeline' || preferred === '/recipes') {
+            return preferred
+          }
+        }
+        if (router && router.getRoutes().some((r: any) => r.path === '/timeline')) {
+          return '/timeline'
+        }
+        return '/recipes'
+      },
+    },
+    { path: '/setup', component: SetupPage },
+    { path: '/login', component: LoginPage },
+    {
+      path: '/settings',
+      component: SettingsPage,
+      nav: { label: 'Settings', icon: 'cog', order: 900 } as any,
+    },
+    {
+      path: '/plugins',
+      component: PluginManagerPage,
+      nav: { label: 'Plugins', icon: 'box', order: 910 } as any,
+    },
+    { path: '/share', component: SharePage },
+  ]
+
+  router = createRouter({
     history: createWebHistory(basePath),
-    routes: [
-      { path: '/', redirect: '/recipes' },
-      { path: '/setup', component: SetupPage },
-      { path: '/login', component: LoginPage },
-      {
-        path: '/settings',
-        component: SettingsPage,
-        nav: { label: 'Settings', icon: 'cog', order: 900 } as any,
-      },
-      {
-        path: '/plugins',
-        component: PluginManagerPage,
-        nav: { label: 'Plugins', icon: 'box', order: 910 } as any,
-      },
-      { path: '/share', component: SharePage },
-    ],
+    routes,
   })
+
+  return router
 }

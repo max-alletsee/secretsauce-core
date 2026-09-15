@@ -17,4 +17,13 @@ describe('Router Configuration', () => {
     await router.push('/')
     expect(router.currentRoute.value.path).toBe('/recipes')
   })
+
+  it('dynamically redirects / based on start page preference and active plugins', async () => {
+    localStorage.setItem('secretsauce:default_start_page', '/timeline')
+    const router = buildRouter('/')
+    await router.push('/')
+    expect(router.currentRoute.value.path).toBe('/timeline')
+
+    localStorage.removeItem('secretsauce:default_start_page')
+  })
 })

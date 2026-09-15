@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { ref, inject } from 'vue'
 import type { ApiClient } from '@secretsauce/ui'
 import { useHouseholdStore } from '../stores/household'
 import { createThemeRegistry } from '../theme'
@@ -10,11 +10,41 @@ const householdStore = useHouseholdStore()
 const themeReg = inject<ReturnType<typeof createThemeRegistry>>('__SS_THEME_REGISTRY__')!
 
 const sections = settingsRegistry ? settingsRegistry.getSections() : []
+
+const defaultStartPage = ref(
+  (typeof localStorage !== 'undefined' && localStorage.getItem('secretsauce:default_start_page')) || 'auto'
+)
+
+function saveDefaultStartPage() {
+  if (typeof localStorage !== 'undefined') {
+    if (defaultStartPage.value === 'auto') {
+      localStorage.removeItem('secretsauce:default_start_page')
+    } else {
+      localStorage.setItem('secretsauce:default_start_page', defaultStartPage.value)
+    }
+  }
+}
 </script>
 
 <template>
   <div class="ss-settings-page">
     <h2>Household Settings</h2>
+    <div class="settings-section">
+      <h3>General</h3>
+      <div class="setting-row">
+        <label for="default-start-page">Default Start Page</label>
+        <select
+          id="default-start-page"
+          v-model="defaultStartPage"
+          @change="saveDefaultStartPage"
+        >
+          <option value="auto">Automatic (Timeline when active, else Recipes)</option>
+          <option value="/timeline">Timeline</option>
+          <option value="/recipes">Recipes</option>
+        </select>
+      </div>
+    </div>
+
     <div class="settings-section" v-if="themeReg">
       <h3>Appearance</h3>
       <label>Theme</label>
