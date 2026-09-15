@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 from fastapi import APIRouter, Query, Request, Response
 
@@ -10,12 +10,17 @@ router = APIRouter(prefix="/api/journal", tags=["journal"])
 @router.get("")
 async def list_journal(
     request: Request,
-    from_date: str = Query(..., alias="from"),
-    to_date: str = Query(..., alias="to"),
+    from_date: str | None = Query(default=None, alias="from"),
+    to_date: str | None = Query(default=None, alias="to"),
     lang: str | None = None,
     attr: list[str] | None = Query(default=None),
     sort: str = "date",
 ):
+    if not to_date:
+        to_date = date.today().isoformat()
+    if not from_date:
+        from_date = (date.today() - timedelta(days=30)).isoformat()
+
     try:
         d_from = date.fromisoformat(from_date)
         d_to = date.fromisoformat(to_date)

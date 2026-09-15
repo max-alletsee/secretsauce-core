@@ -4,7 +4,11 @@ test.describe('Phase 3B End-to-End Browser Tests', () => {
   test('authenticates, boots plugins, verifies member picker, recipe scaling, shortlisting, and creation', async ({
     page,
   }) => {
-    page.on('console', (msg) => console.log('PAGE LOG:', msg.type(), msg.text()))
+    page.on('console', (msg) => {
+      // Expected unauthenticated session probe during initial landing
+      if (msg.text().includes('401 (Unauthorized)')) return
+      console.log('PAGE LOG:', msg.type(), msg.text())
+    })
     page.on('pageerror', (err) => console.log('PAGE ERROR:', err))
 
     // 1. Visit root - redirects unauthenticated user to /login

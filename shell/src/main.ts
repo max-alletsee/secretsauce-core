@@ -136,7 +136,7 @@ app.use(router)
 let storesFetched = false
 let pluginsLoaded = false
 
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach(async (to, from, next) => {
   let needsSetup = false
   try {
     const setupStatus = await api.get<{ needs_setup?: boolean; setup_required?: boolean }>('/api/setup')
@@ -159,11 +159,16 @@ router.beforeEach(async (to, _from, next) => {
 
   // Check auth session
   let isAuthenticated = false
-  try {
-    const session = await api.get<{ authenticated: boolean }>('/api/auth/session')
-    isAuthenticated = Boolean(session?.authenticated)
-  } catch {
+  if (to.path === '/login' && from.path === '/') {
+    // Just redirected from root because unauthenticated; skip duplicate session probe
     isAuthenticated = false
+  } else {
+    try {
+      const session = await api.get<{ authenticated: boolean }>('/api/auth/session')
+      isAuthenticated = Boolean(session?.authenticated)
+    } catch {
+      isAuthenticated = false
+    }
   }
 
   if (!isAuthenticated) {

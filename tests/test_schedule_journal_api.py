@@ -114,6 +114,11 @@ async def test_schedule_and_journal_api(tmp_path):
         assert len(j_list.json()) == 1
         assert j_list.json()[0]["id"] == j_id
 
+        # GET journal list with default date range (no from/to provided)
+        j_list_default = await k.client.get("/api/journal")
+        assert j_list_default.status_code == 200
+        assert isinstance(j_list_default.json(), list)
+
         # 7. GET single journal entry
         single_j = await k.client.get(f"/api/journal/{j_id}")
         assert single_j.status_code == 200

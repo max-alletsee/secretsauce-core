@@ -137,7 +137,7 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
   },
   emits: ["close", "created"],
   setup(e, { emit: v }) {
-    const a = e, r = v, o = U("__SS_API__"), i = b("search"), m = b(""), h = b([]), g = b([]), f = b(""), S = b("Dinner"), C = b(2);
+    const a = e, r = v, o = U("__SS_API__", null), i = b("search"), m = b(""), h = b([]), g = b([]), f = b(""), S = b("Dinner"), C = b(2);
     async function w() {
       if (!o || !m.value.trim()) {
         h.value = [];
@@ -388,13 +388,13 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
       ])
     ]));
   }
-}), $e = /* @__PURE__ */ P(ge, [["__scopeId", "data-v-0782d0da"]]), ke = { class: "timeline-page" }, Se = { class: "timeline-toolbar" }, Te = { class: "nav-controls" }, Ce = { class: "range-display" }, we = { class: "timeline-container" }, De = { class: "timeline-grid" }, Ie = { class: "day-header" }, Ae = { class: "day-label" }, Me = {
+}), $e = /* @__PURE__ */ P(ge, [["__scopeId", "data-v-8a4e6253"]]), ke = { class: "timeline-page" }, Se = { class: "timeline-toolbar" }, Te = { class: "nav-controls" }, Ce = { class: "range-display" }, we = { class: "timeline-container" }, De = { class: "timeline-grid" }, Ie = { class: "day-header" }, Ae = { class: "day-label" }, Me = {
   key: 0,
   class: "today-badge"
 }, Ne = { class: "day-slots" }, Pe = { class: "day-footer" }, Ee = { class: "timeline-sidebar-wrapper" }, Re = /* @__PURE__ */ N({
   __name: "TimelinePage",
   setup(e) {
-    const v = U("__SS_API__"), a = U("__SS_INTENT__"), r = b(/* @__PURE__ */ new Date()), o = b([]), i = b(null), m = ["Dinner"];
+    const v = U("__SS_API__", null), a = U("__SS_INTENT__", null), r = b(/* @__PURE__ */ new Date()), o = b([]), i = b(null), m = ["Dinner"];
     function h(n) {
       const u = n.getFullYear(), d = String(n.getMonth() + 1).padStart(2, "0"), $ = String(n.getDate()).padStart(2, "0");
       return `${u}-${d}-${$}`;
@@ -538,7 +538,7 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
       }, null, 8, ["date", "meal-type"])) : y("v-if", !0)
     ]));
   }
-}), xe = /* @__PURE__ */ P(Re, [["__scopeId", "data-v-b882bc9d"]]);
+}), xe = /* @__PURE__ */ P(Re, [["__scopeId", "data-v-2634aee0"]]);
 function Le(e) {
   e.route({
     path: "/timeline",

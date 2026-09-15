@@ -4,8 +4,8 @@ import { Slot } from '@secretsauce/ui'
 import MealSlot from '../components/MealSlot.vue'
 import AddEntryModal from '../components/AddEntryModal.vue'
 
-const api = inject<any>('__SS_API__')
-const intentRunner = inject<any>('__SS_INTENT__')
+const api = inject<any>('__SS_API__', null)
+const intentRunner = inject<any>('__SS_INTENT__', null)
 
 const anchorDate = ref(new Date())
 const scheduleEntries = ref<any[]>([])

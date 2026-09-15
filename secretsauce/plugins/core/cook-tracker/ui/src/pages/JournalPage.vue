@@ -2,13 +2,23 @@
 import { ref, onMounted, inject } from 'vue'
 import { Slot } from '@secretsauce/ui'
 
-const api = inject<any>('__SS_API__')
+const api = inject<any>('__SS_API__', null)
 const entries = ref<any[]>([])
+
+function toDateString(d: Date): string {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 async function loadJournal() {
   if (!api) return
   try {
-    const res = await api.get('/api/journal')
+    const end = new Date()
+    const start = new Date()
+    start.setDate(end.getDate() - 30)
+    const res = await api.get(`/api/journal?from=${toDateString(start)}&to=${toDateString(end)}`)
     entries.value = Array.isArray(res) ? res : []
   } catch {
     entries.value = []

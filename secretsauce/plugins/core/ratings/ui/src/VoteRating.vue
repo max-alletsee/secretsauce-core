@@ -7,8 +7,8 @@ const props = defineProps<{
   }
 }>()
 
-const api = inject<any>('__SS_API__')
-const currentMember = inject<any>('__SS_CURRENT_MEMBER__')
+const api = inject<any>('__SS_API__', null)
+const currentMember = inject<any>('__SS_CURRENT_MEMBER__', null)
 
 const netScore = ref(0)
 const myVote = ref<number | null>(null)

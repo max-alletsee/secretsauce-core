@@ -11,7 +11,7 @@ const emit = defineEmits<{
   (e: 'created'): void
 }>()
 
-const api = inject<any>('__SS_API__')
+const api = inject<any>('__SS_API__', null)
 
 const activeTab = ref<'search' | 'shortlist' | 'ai' | 'custom'>('search')
 const searchQuery = ref('')
