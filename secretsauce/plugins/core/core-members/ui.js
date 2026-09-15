@@ -83,7 +83,7 @@ const U = R("member", () => {
   for (const [v, m] of s)
     a[v] = m;
   return a;
-}, j = /* @__PURE__ */ V(E, [["__scopeId", "data-v-b5a94e2c"]]), z = { class: "ss-member-settings" }, F = { class: "header-row" }, O = { class: "members-grid" }, T = { class: "member-card-header" }, q = { class: "subtext" }, G = ["onClick"], J = {
+}, j = /* @__PURE__ */ V(E, [["__scopeId", "data-v-00866ebb"]]), z = { class: "ss-member-settings" }, F = { class: "header-row" }, O = { class: "members-grid" }, T = { class: "member-card-header" }, q = { class: "subtext" }, G = ["onClick"], J = {
   key: 0,
   class: "tags"
 }, K = {
@@ -367,7 +367,7 @@ const U = R("member", () => {
       ])) : w("v-if", !0)
     ]));
   }
-}), A = /* @__PURE__ */ V(ne, [["__scopeId", "data-v-fc0cca3a"]]);
+}), A = /* @__PURE__ */ V(ne, [["__scopeId", "data-v-15c8a3d9"]]);
 function ae(o) {
   var s;
   o.slot("shell.header.right", j, { order: 10 }), (s = o.settings) != null && s.section ? o.settings.section({

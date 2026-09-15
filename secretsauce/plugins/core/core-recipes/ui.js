@@ -96,7 +96,7 @@ const X = { class: "cover-image" }, Y = ["src"], ee = {
   for (const [k, s] of $)
     l[k] = s;
   return l;
-}, re = /* @__PURE__ */ E(ue, [["__scopeId", "data-v-ae9aec13"]]), ce = { class: "recipe-list-page" }, de = { class: "intent-header-bar" }, pe = { class: "search-box" }, ve = { class: "intent-area" }, me = { class: "filter-sort-bar" }, _e = {
+}, re = /* @__PURE__ */ E(ue, [["__scopeId", "data-v-a2bc69f0"]]), ce = { class: "recipe-list-page" }, de = { class: "intent-header-bar" }, pe = { class: "search-box" }, ve = { class: "intent-area" }, me = { class: "filter-sort-bar" }, _e = {
   key: 0,
   class: "tag-chips"
 }, ge = ["onClick"], fe = {
@@ -269,7 +269,7 @@ const X = { class: "cover-image" }, Y = ["src"], ee = {
       ]))
     ]));
   }
-}), ye = /* @__PURE__ */ E(he, [["__scopeId", "data-v-6e5e9801"]]), $e = {
+}), ye = /* @__PURE__ */ E(he, [["__scopeId", "data-v-383feb63"]]), $e = {
   key: 0,
   class: "recipe-detail-page"
 }, ke = {
@@ -542,7 +542,7 @@ const X = { class: "cover-image" }, Y = ["src"], ee = {
       ])) : A("v-if", !0);
     };
   }
-}), Be = /* @__PURE__ */ E(Je, [["__scopeId", "data-v-fd8900e8"]]), qe = { class: "ingredient-row-list" }, Fe = { class: "rows-container" }, ze = { class: "reorder-btns" }, Ge = ["disabled", "onClick"], je = ["disabled", "onClick"], Qe = ["onUpdate:modelValue"], We = ["onUpdate:modelValue"], Ze = ["value"], He = ["onUpdate:modelValue"], Ke = ["onUpdate:modelValue"], Xe = ["onClick"], Ye = /* @__PURE__ */ D({
+}), Be = /* @__PURE__ */ E(Je, [["__scopeId", "data-v-430b7c8c"]]), qe = { class: "ingredient-row-list" }, Fe = { class: "rows-container" }, ze = { class: "reorder-btns" }, Ge = ["disabled", "onClick"], je = ["disabled", "onClick"], Qe = ["onUpdate:modelValue"], We = ["onUpdate:modelValue"], Ze = ["value"], He = ["onUpdate:modelValue"], Ke = ["onUpdate:modelValue"], Xe = ["onClick"], Ye = /* @__PURE__ */ D({
   __name: "IngredientRowList",
   props: {
     modelValue: {}
@@ -692,7 +692,7 @@ const X = { class: "cover-image" }, Y = ["src"], ee = {
       }, "+ Add Ingredient")
     ]));
   }
-}), et = /* @__PURE__ */ E(Ye, [["__scopeId", "data-v-127646c1"]]), tt = { class: "step-list" }, it = { class: "steps-container" }, nt = { class: "step-num" }, lt = { class: "step-inputs" }, st = ["onUpdate:modelValue"], ot = { class: "timer-row" }, at = ["onUpdate:modelValue"], ut = ["onClick"], rt = /* @__PURE__ */ D({
+}), et = /* @__PURE__ */ E(Ye, [["__scopeId", "data-v-771b10ea"]]), tt = { class: "step-list" }, it = { class: "steps-container" }, nt = { class: "step-num" }, lt = { class: "step-inputs" }, st = ["onUpdate:modelValue"], ot = { class: "timer-row" }, at = ["onUpdate:modelValue"], ut = ["onClick"], rt = /* @__PURE__ */ D({
   __name: "StepList",
   props: {
     modelValue: {}
@@ -788,7 +788,7 @@ const X = { class: "cover-image" }, Y = ["src"], ee = {
       }, "+ Add Step")
     ]));
   }
-}), ct = /* @__PURE__ */ E(rt, [["__scopeId", "data-v-1a9cf01e"]]), dt = { class: "recipe-edit-page" }, pt = { class: "edit-top-bar" }, vt = { class: "form-section" }, mt = { class: "form-group" }, _t = { class: "form-group" }, gt = { class: "form-row" }, ft = { class: "form-group" }, bt = { class: "form-group" }, ht = { class: "form-group" }, yt = { class: "form-group" }, $t = { class: "form-group" }, kt = { class: "form-group" }, wt = { class: "editor-section" }, Vt = { class: "editor-section" }, St = /* @__PURE__ */ D({
+}), ct = /* @__PURE__ */ E(rt, [["__scopeId", "data-v-844a7a4d"]]), dt = { class: "recipe-edit-page" }, pt = { class: "edit-top-bar" }, vt = { class: "form-section" }, mt = { class: "form-group" }, _t = { class: "form-group" }, gt = { class: "form-row" }, ft = { class: "form-group" }, bt = { class: "form-group" }, ht = { class: "form-group" }, yt = { class: "form-group" }, $t = { class: "form-group" }, kt = { class: "form-group" }, wt = { class: "editor-section" }, Vt = { class: "editor-section" }, St = /* @__PURE__ */ D({
   __name: "RecipeEditPage",
   props: {
     recipeId: {},
@@ -1093,7 +1093,7 @@ const X = { class: "cover-image" }, Y = ["src"], ee = {
       ])
     ]));
   }
-}), j = /* @__PURE__ */ E(St, [["__scopeId", "data-v-d40adcf4"]]);
+}), j = /* @__PURE__ */ E(St, [["__scopeId", "data-v-24bda58c"]]);
 function Rt(r) {
   r.route({ path: "/recipes", component: ye, nav: { label: "Recipes", icon: "book", order: 10 } }), r.route({ path: "/recipes/new", component: j }), r.route({ path: "/recipes/:id", component: Be }), r.route({ path: "/recipes/:id/edit", component: j }), r.intent.hub({ id: "recipe:create", title: "Add or Import Recipe" }), r.intent.provider({
     hub: "recipe:create",

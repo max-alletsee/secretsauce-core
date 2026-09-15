@@ -37,7 +37,7 @@ const $ = ["title"], w = /* @__PURE__ */ u({
   for (const [a, i] of s)
     t[a] = i;
   return t;
-}, B = /* @__PURE__ */ v(w, [["__scopeId", "data-v-bb8c2dd6"]]), C = /* @__PURE__ */ u({
+}, B = /* @__PURE__ */ v(w, [["__scopeId", "data-v-b46835af"]]), C = /* @__PURE__ */ u({
   __name: "ShortlistFilter",
   props: {
     context: {}
@@ -64,7 +64,7 @@ const $ = ["title"], w = /* @__PURE__ */ u({
       );
     };
   }
-}), F = /* @__PURE__ */ v(C, [["__scopeId", "data-v-aa2b8f83"]]), P = { class: "shortlist-sidebar" }, E = {
+}), F = /* @__PURE__ */ v(C, [["__scopeId", "data-v-387e17b7"]]), P = { class: "shortlist-sidebar" }, E = {
   key: 0,
   class: "sidebar-list"
 }, N = ["href"], R = {
@@ -108,7 +108,7 @@ const $ = ["title"], w = /* @__PURE__ */ u({
       ])) : (n(), l("p", R, "No shortlisted recipes."))
     ]));
   }
-}), z = /* @__PURE__ */ v(j, [["__scopeId", "data-v-9ef50431"]]);
+}), z = /* @__PURE__ */ v(j, [["__scopeId", "data-v-4df3f96d"]]);
 function M(o) {
   o.slot("recipe.card.actions", B, { order: 10 }), o.slot("recipe.list.filters", F, { order: 10 }), o.slot("timeline.sidebar", z, { order: 20 });
 }
