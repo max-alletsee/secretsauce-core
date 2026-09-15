@@ -302,9 +302,22 @@ The shell and core domain plugins expose slot locations where plugins can contri
 | `settings.tab.members` | Shell (`SettingsPage.vue`) | `{}` | Member profiles & credentials. |
 | `recipe.card.actions` | Core Recipes (`RecipeCard.vue`) | `{ recipe, isShortlisted }` | Action buttons on recipe cards (e.g. `shortlist` star button). |
 | `recipe.list.filters` | Core Recipes (`RecipeListPage.vue`) | `{ filterShortlist, toggleShortlist }` | Filter chips in the recipe list. |
+| `timeline.day.actions` | Core Timeline (`TimelinePage.vue`) | `{ date }` | Header action buttons for days (e.g. quick entry shortcuts). |
+| `timeline.entry.badge` | Core Timeline (`ScheduleCard.vue`) | `{ entry }` | Status badge contributions on schedule cards (e.g. `cook-tracker` checkmark). |
+| `timeline.entry.actions`| Core Timeline (`ScheduleCard.vue`) | `{ entry }` | Contextual action buttons on scheduled meals. |
 | `timeline.sidebar` | Core Timeline | `{ date }` | Quick-access drawers and widgets (e.g. `shortlist` drawer). |
+| `journal.entry.footer` | Cook Tracker (`JournalPage.vue`) | `{ entry }` | Metadata and rating controls on cooking journal entries (e.g. `ratings` thumbs up/down). |
 
-### 6.3 The `activate(ss)` Function
+### 6.3 Standard Intent Hubs
+
+Core domain plugins establish standard intent hubs to coordinate cross-plugin workflows:
+
+| Hub ID | Context Contract | Description |
+|---|---|---|
+| `entry:create` | `{ date: string, mealType?: string }` | Opens modal or workflow to plan/add a scheduled meal (recipe search, shortlist, AI suggestions). |
+| `entry:interact`| `{ entry: ScheduleEntry }` | Dispatches contextual operations on scheduled meals (e.g. `mark-cooked`, recipe view). |
+
+### 6.4 The `activate(ss)` Function
 The entry point of `ui.js` must default export an activation function receiving `SecretSauceUI`:
 
 ```ts

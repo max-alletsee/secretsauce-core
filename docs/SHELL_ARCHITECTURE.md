@@ -265,7 +265,7 @@ The shell router manages unauthenticated visitors, dynamic plugin routing, and o
 3. **Session Authentication Check**: Queries `GET /api/auth/session`.
    - If unauthenticated (401), disconnects the SSE event stream and redirects navigation to `/login`.
    - If authenticated, visiting `/login` redirects to `/`.
-4. **Root Route Redirection**: Navigating to `/` redirects authenticated users to `/recipes` (falling back to `/plugins` if `core-recipes` is not installed).
+4. **Root Route Redirection & Default Start Page**: Authenticated navigation to `/` dynamically redirects to `/timeline` when `core-timeline` is active, falling back to `/recipes` (or `/plugins` if neither is active). Users can configure their start page preference (`Auto`, `Timeline`, or `Recipes`) in Household Settings (`/settings`), stored in `localStorage` under `secretsauce:default_start_page`.
 5. **Data Hydration**: Populates `householdStore` and `memberStore` upon successful authentication.
 6. **SSE Stream Lifecycle**: `stream.connect()` is only initiated when an authenticated session exists, preventing unauthenticated SSE 401 connection retries.
 

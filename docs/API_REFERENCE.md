@@ -404,6 +404,53 @@ Removes an entry from the shortlist by shortlist entry ID.
 
 ---
 
+### Ratings Plugin (`/api/x/ratings`)
+
+#### `GET /api/x/ratings`
+Retrieves binary rating votes recorded across cooking journal entries.
+- **Query Parameters:**
+  - `journal_id` (optional, string): Filter by a specific journal entry ID.
+  - `recipe_id` (optional, string): Filter by a specific recipe ID.
+  - `member_id` (optional, string): Filter by a specific household member ID.
+- **Status:** `200 OK`
+- **Response:**
+  ```json
+  [
+    {
+      "id": "e492bb1c-5ad4-41fc-a92c-674519965d9e",
+      "journal_id": "jrn_1a2b3c",
+      "member_id": "mem_4d5e6f",
+      "score": 1,
+      "created_at": "2026-09-13T18:30:00Z"
+    }
+  ]
+  ```
+
+#### `POST /api/x/ratings`
+Records a binary upvote (`+1`), downvote (`-1`), or clears a previous vote (`0`) for a cooked journal entry.
+- **Headers:** `X-Actor-Member: <member_id>` (optional if `member_id` is supplied in body).
+- **Body:**
+  ```json
+  {
+    "journal_id": "jrn_1a2b3c",
+    "member_id": "mem_4d5e6f",
+    "score": 1
+  }
+  ```
+- **Status:** `200 OK`
+- **Response:**
+  ```json
+  {
+    "ok": true,
+    "journal_id": "jrn_1a2b3c",
+    "member_id": "mem_4d5e6f",
+    "score": 1
+  }
+  ```
+- **Entity Attribute Mirroring:** Every vote automatically recomputes and mirrors the aggregate recipe score into `entity_attributes` under key `ratings.score` for the recipe associated with `journal_id`. If all votes are cleared or net score becomes zero, the attribute is cleaned up.
+
+---
+
 ### Recurring Meals Plugin (`/api/x/recurring`)
 
 #### `GET /api/x/recurring/rules`

@@ -134,7 +134,7 @@ The kernel uses a single Master Key stored at `/data/secret.key` (with strict `0
 
 ### 4.4 Assets & Entity Attributes (`secretsauce/nouns/assets.py`, `attributes.py`)
 - `assets`: Binary assets stored on disk at `uploads/{id}.{ext}`, recorded with entity type, entity ID, and optional `sub_id` (e.g., photo tied to an ingredient ID).
-- `entity_attributes`: Scoped key-value store enabling plugins to annotate core nouns (e.g. `ratings.score`, `nutrition.calories`) with fast numeric or string lookups and indexed sorting.
+- `entity_attributes`: Scoped key-value store enabling plugins to annotate core nouns (e.g. `ratings.score`, `nutrition.calories`) with fast numeric or string lookups and indexed sorting. `AttributesRepo` provides `get_attribute`, `set_attribute`, and `delete_attribute`.
 
 ---
 
@@ -236,7 +236,7 @@ The kernel includes a localized culinary units parsing, conversion, and formatti
 
 1. **Dual Search Paths**:
    - The kernel discovers built-in core plugins (`secretsauce/plugins/core/`) and external runtime plugins (`data/plugins/`).
-   - Core plugins (`units`, `recurring`, `core-members`, `core-recipes`, `shortlist`) are pre-installed and activated during boot.
+   - Core plugins (`units`, `recurring`, `core-members`, `core-recipes`, `shortlist`, `core-timeline`, `cook-tracker`, `ratings`) are pre-installed and activated during boot.
 2. **Dynamic Extension Routers (`ctx.routes` / `RouterRegistry`)**:
    - Plugins mount custom FastAPI routers under `/api/x/{plugin_id}/...`.
    - The `RouterRegistry` inserts plugin routes before the SPA catch-all fallback route (`/{full_path:path}`).
