@@ -1,0 +1,6 @@
+{
+  "name": "@secretsauce/plugin-core-timeline",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module"
+}
