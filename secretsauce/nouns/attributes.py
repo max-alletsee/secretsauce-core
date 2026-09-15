@@ -82,6 +82,23 @@ class AttributesRepo:
             async with self.db.transaction() as writer_conn:
                 await _do_set(writer_conn)
 
+    async def delete_attribute(
+        self,
+        plugin_id: str,
+        entity_type: str,
+        entity_id: str,
+        key: str,
+        conn: aiosqlite.Connection | None = None,
+    ) -> None:
+        await self.set_attribute(
+            plugin_id=plugin_id,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            key=key,
+            value=None,
+            conn=conn,
+        )
+
     async def get_attributes(
         self,
         entity_type: str,
