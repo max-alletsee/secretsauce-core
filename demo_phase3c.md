@@ -1,7 +1,7 @@
 # Phase 3C: Timeline & Cooking Workflow Demo
 
-*2026-09-15T21:56:33Z by Showboat 0.6.1*
-<!-- showboat-id: ffb43609-8262-4a43-bcfc-63075124646f -->
+*2026-09-15T22:09:43Z by Showboat 0.6.1*
+<!-- showboat-id: 65a4aa0b-12d4-4f1a-aad1-b971c18621da -->
 
 ## Overview
 
@@ -30,17 +30,12 @@ pnpm --prefix shell test tests/plugins/timeline.spec.ts
 
 [1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/github/secretsauce-core/.worktrees/phase-3c-timeline/shell[39m
 
-[90mstderr[2m | tests/plugins/timeline.spec.ts[2m > [22m[2mTimeline Plugin UI[2m > [22m[2mrenders a rolling 9-day span with 2 compact past days, today, and 6 future days
-[22m[39m[Vue warn]: injection "__SS_INTENT__" not found. 
-  at <TimelinePage ref="VTU_COMPONENT" > 
-  at <VTUROOT>
-
- [32m✓[39m tests/plugins/timeline.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 96[2mms[22m[39m
+ [32m✓[39m tests/plugins/timeline.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 80[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m3 passed[39m[22m[90m (3)[39m
-[2m   Start at [22m 23:56:45
-[2m   Duration [22m 1.94s[2m (transform 289ms, setup 0ms, collect 538ms, tests 96ms, environment 417ms, prepare 268ms)[22m
+[2m   Start at [22m 00:09:49
+[2m   Duration [22m 1.62s[2m (transform 240ms, setup 0ms, collect 438ms, tests 80ms, environment 357ms, prepare 213ms)[22m
 
 ```
 
@@ -70,7 +65,7 @@ collecting ... collected 1 item
 
 tests/test_plugin_cook_tracker.py::test_cook_tracker_boots_and_runs_rebuild PASSED [100%]
 
-============================== 1 passed in 0.71s ==============================
+============================== 1 passed in 1.28s ==============================
 ```
 
 ```bash
@@ -85,12 +80,12 @@ pnpm --prefix shell test tests/plugins/cook-tracker.spec.ts
 
 [1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/github/secretsauce-core/.worktrees/phase-3c-timeline/shell[39m
 
- [32m✓[39m tests/plugins/cook-tracker.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m tests/plugins/cook-tracker.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 35[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m3 passed[39m[22m[90m (3)[39m
-[2m   Start at [22m 23:56:57
-[2m   Duration [22m 1.62s[2m (transform 203ms, setup 0ms, collect 382ms, tests 33ms, environment 399ms, prepare 242ms)[22m
+[2m   Start at [22m 00:10:03
+[2m   Duration [22m 1.86s[2m (transform 184ms, setup 0ms, collect 336ms, tests 35ms, environment 401ms, prepare 257ms)[22m
 
 ```
 
@@ -135,12 +130,12 @@ pnpm --prefix shell test tests/plugins/ratings.spec.ts
 
 [1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/github/secretsauce-core/.worktrees/phase-3c-timeline/shell[39m
 
- [32m✓[39m tests/plugins/ratings.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m✓[39m tests/plugins/ratings.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 49[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m2 passed[39m[22m[90m (2)[39m
-[2m   Start at [22m 23:57:10
-[2m   Duration [22m 1.62s[2m (transform 129ms, setup 0ms, collect 255ms, tests 47ms, environment 464ms, prepare 316ms)[22m
+[2m   Start at [22m 00:10:15
+[2m   Duration [22m 1.38s[2m (transform 115ms, setup 0ms, collect 216ms, tests 49ms, environment 389ms, prepare 206ms)[22m
 
 ```
 
@@ -166,22 +161,17 @@ pnpm --prefix shell test:e2e
 > secretsauce-shell@1.0.0 test:e2e C:\github\secretsauce-core\.worktrees\phase-3c-timeline\shell
 > playwright test
 
-[WebServer] INFO:     Started server process [16148]
+[WebServer] INFO:     Started server process [12868]
 [WebServer] INFO:     Waiting for application startup.
 [WebServer] INFO:     Application startup complete.
 [WebServer] INFO:     Uvicorn running on http://127.0.0.1:8998 (Press CTRL+C to quit)
 
 Running 2 tests using 1 worker
 
-PAGE LOG: error Failed to load resource: the server responded with a status of 401 (Unauthorized)
-PAGE LOG: error Failed to load resource: the server responded with a status of 401 (Unauthorized)
-  ok 1 [chromium] › e2e\phase-3b.e2e.ts:4:3 › Phase 3B End-to-End Browser Tests › authenticates, boots plugins, verifies member picker, recipe scaling, shortlisting, and creation (2.1s)
-PAGE LOG: error Failed to load resource: the server responded with a status of 401 (Unauthorized)
-PAGE LOG: error Failed to load resource: the server responded with a status of 401 (Unauthorized)
-PAGE LOG: error Failed to load resource: the server responded with a status of 422 (Unprocessable Content)
-  ok 2 [chromium] › e2e\phase-3c.e2e.ts:4:3 › Phase 3C End-to-End Browser Tests › authenticates, verifies timeline rolling view, schedules meal, marks cooked, and votes in journal (1.7s)
+  ok 1 [chromium] › e2e\phase-3b.e2e.ts:4:3 › Phase 3B End-to-End Browser Tests › authenticates, boots plugins, verifies member picker, recipe scaling, shortlisting, and creation (3.5s)
+  ok 2 [chromium] › e2e\phase-3c.e2e.ts:4:3 › Phase 3C End-to-End Browser Tests › authenticates, verifies timeline rolling view, schedules meal, marks cooked, and votes in journal (2.7s)
 
-  2 passed (7.0s)
+  2 passed (9.6s)
 ```
 
 ## Summary
@@ -191,5 +181,5 @@ Phase 3C is completely implemented and verified:
 - **`cook-tracker`**: 1-click optimistic cook tracking, carryovers & leftovers schema, checkmark badge, and `/journal` page.
 - **`ratings`**: Binary upvote/downvote scores, attribute mirroring to `ratings.score`, and `VoteRating.vue` in `journal.entry.footer`.
 - **Dynamic Start Page**: Seamless root routing based on active plugins and user preference.
-- **100% Passing Tests**: All 99 Pytest backend tests, 63 Vitest component tests, and 2 Playwright browser suites pass cleanly.
+- **Clean Execution**: All 99 Pytest backend tests, 63 Vitest component tests, and 2 Playwright browser suites pass cleanly with zero console warnings or errors.
 
