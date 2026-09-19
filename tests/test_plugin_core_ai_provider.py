@@ -143,3 +143,114 @@ async def test_ai_provider_usage_and_settings_api(tmp_path: Path):
         assert "total_cost_usd" in usage_data
         assert "month_cost_usd" in usage_data
         assert "breakdown_by_plugin" in usage_data
+
+
+@pytest.mark.asyncio
+async def test_openai_and_openrouter_providers(tmp_path: Path):
+    async with make_kernel(tmp_path, auto_setup=True) as k:
+        svc = k.services.get("core-ai-provider")
+
+        # 1. Test OpenAI
+        await svc.update_settings({
+            "provider": "openai",
+            "model": "gpt-4o-mini",
+            "openai_api_key": "sk-mock-key",
+        })
+
+        mock_openai_response = {
+            "choices": [{
+                "message": {
+                    "role": "assistant",
+                    "content": '{"title": "OpenAI Recipe", "count": 2}',
+                }
+            }],
+            "usage": {
+                "prompt_tokens": 100,
+                "completion_tokens": 50,
+            },
+        }
+
+        with patch("httpx.AsyncClient.post") as mock_post:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_resp.json.return_value = mock_openai_response
+            mock_post.return_value = mock_resp
+
+            res = await svc.complete(
+                schema=ItemSchema,
+                prompt="Parse recipe",
+                call_type="openai_test",
+                calling_plugin="test-plugin",
+            )
+            assert res["title"] == "OpenAI Recipe"
+            assert res["count"] == 2
+            assert "api.openai.com" in mock_post.call_args[0][0]
+
+        # 2. Test OpenRouter
+        await svc.update_settings({
+            "provider": "openrouter",
+            "model": "anthropic/claude-3.5-haiku",
+            "openrouter_api_key": "sk-or-mock-key",
+        })
+
+        mock_or_response = {
+            "choices": [{
+                "message": {
+                    "role": "assistant",
+                    "content": "Raw string response",
+                }
+            }],
+            "usage": {
+                "prompt_tokens": 80,
+                "completion_tokens": 20,
+            },
+        }
+
+        with patch("httpx.AsyncClient.post") as mock_post:
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_resp.json.return_value = mock_or_response
+            mock_post.return_value = mock_resp
+
+            res_raw = await svc.complete(
+                schema=None,
+                prompt="Say hello",
+                call_type="or_test",
+                calling_plugin="test-plugin",
+            )
+            assert res_raw == "Raw string response"
+            assert "openrouter.ai" in mock_post.call_args[0][0]
+
+
+@pytest.mark.asyncio
+async def test_budget_disabled_allows_overage(tmp_path: Path):
+    async with make_kernel(tmp_path, auto_setup=True) as k:
+        svc = k.services.get("core-ai-provider")
+
+        await svc.update_settings({
+            "enforce_budget": False,
+            "monthly_budget": 0.001,
+        })
+
+        # Insert high historical usage
+        now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        await k.db.write(
+            """
+            INSERT INTO plugin_core_ai_provider_usage
+            (id, timestamp, calling_plugin, provider, model, call_type, input_tokens, output_tokens, estimated_cost_usd)
+            VALUES ('u2', ?, 'test', 'gemini', 'gemini-3.8-flash', 'test', 100000, 50000, 10.0)
+            """,
+            (now_iso,),
+        )
+
+        mock_response = MagicMock()
+        mock_response.text = "OK"
+        mock_response.usage_metadata = MagicMock(prompt_token_count=10, candidates_token_count=5)
+        mock_client = MagicMock()
+        mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
+
+        with patch("google.genai.Client", return_value=mock_client):
+            # Should NOT raise an exception because enforce_budget is False
+            res = await svc.complete(schema=None, prompt="Test", call_type="test")
+            assert res == "OK"
+
