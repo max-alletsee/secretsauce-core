@@ -132,6 +132,9 @@ async def _save_recipe_draft(ctx: PluginContext, draft: dict[str, Any]) -> str:
         "tags": draft.get("tags", []),
         "origin": "plugin:core-recipe-importer",
     })
+    draft["id"] = saved["id"]
+    draft["group_id"] = saved["group_id"]
+    draft["recipe_id"] = saved["id"]
     return saved["id"]
 
 
