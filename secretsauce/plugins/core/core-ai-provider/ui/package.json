@@ -1,0 +1,6 @@
+{
+  "name": "@secretsauce/plugin-core-ai-provider",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module"
+}
