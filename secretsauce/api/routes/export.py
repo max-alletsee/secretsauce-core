@@ -84,6 +84,39 @@ async def create_export_zip(
         return None
 
 
+def restore_from_zip(backup_path: Path | str, target_data_dir: Path | str) -> None:
+    """
+    Restores an export zip into target_data_dir.
+    Validates:
+    - zip file exists and is valid
+    - contains 'secretsauce.db'
+    - protects against zip-slip vulnerabilities
+    """
+    backup = Path(backup_path)
+    if not backup.is_file():
+        raise FileNotFoundError(f"Backup file not found: {backup}")
+
+    target_dir = Path(target_data_dir).resolve()
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    with zipfile.ZipFile(backup, "r") as zf:
+        namelist = zf.namelist()
+        if "secretsauce.db" not in namelist:
+            raise ValueError("Invalid backup archive: missing 'secretsauce.db'")
+
+        for member in zf.infolist():
+            dest_path = (target_dir / member.filename).resolve()
+            if not dest_path.is_relative_to(target_dir):
+                raise ValueError(f"Malicious path in zip archive: {member.filename}")
+
+            if member.is_dir() or member.filename.endswith("/"):
+                dest_path.mkdir(parents=True, exist_ok=True)
+            else:
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(member, "r") as source, open(dest_path, "wb") as target:
+                    target.write(source.read())
+
+
 @router.get("/api/health")
 async def health(request: Request):
     kernel = getattr(request.app.state, "kernel", None)

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import VoteRating from '../../../secretsauce/plugins/core/ratings/ui/src/VoteRating.vue'
-import activate from '../../../secretsauce/plugins/core/ratings/ui/src/index'
+import VoteRating from '../../../secretsauce/plugins/core/core-ratings/ui/src/VoteRating.vue'
+import activate from '../../../secretsauce/plugins/core/core-ratings/ui/src/index'
 
 describe('VoteRating.vue', () => {
   it('renders upvote and downvote buttons and handles click toggle', async () => {
@@ -31,7 +31,7 @@ describe('VoteRating.vue', () => {
     expect(wrapper.text()).toContain('2')
 
     await wrapper.find('.upvote-btn').trigger('click')
-    expect(mockApi.put).toHaveBeenCalledWith('/api/x/ratings', {
+    expect(mockApi.put).toHaveBeenCalledWith('/api/x/core-ratings', {
       journal_id: 'journal-1',
       member_id: 'member-1',
       score: 1,

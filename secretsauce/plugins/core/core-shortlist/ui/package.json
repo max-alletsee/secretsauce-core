@@ -1,5 +1,5 @@
 {
-  "name": "@secretsauce/plugin-shortlist",
+  "name": "@secretsauce/plugin-core-shortlist",
   "version": "1.0.0",
   "private": true,
   "type": "module"

@@ -8,7 +8,7 @@ import { createSlotRegistry } from '../../src/registries/slots'
 import { createIntentRegistry } from '../../src/registries/intents'
 
 import activateMembers from '../../../secretsauce/plugins/core/core-members/ui/src/index'
-import activateShortlist from '../../../secretsauce/plugins/core/shortlist/ui/src/index'
+import activateShortlist from '../../../secretsauce/plugins/core/core-shortlist/ui/src/index'
 import activateRecipes from '../../../secretsauce/plugins/core/core-recipes/ui/src/index'
 
 import RecipeListPage from '../../../secretsauce/plugins/core/core-recipes/ui/src/pages/RecipeListPage.vue'
@@ -59,7 +59,7 @@ describe('Phase 3B End-to-End Integration', () => {
             ],
           })
         }
-        if (url.startsWith('/api/x/shortlist')) {
+        if (url.startsWith('/api/x/core-shortlist')) {
           return Promise.resolve([])
         }
         return Promise.resolve({})
@@ -89,7 +89,7 @@ describe('Phase 3B End-to-End Integration', () => {
 
     // Activate plugins
     activateMembers(makePluginSS('core-members'))
-    activateShortlist(makePluginSS('shortlist'))
+    activateShortlist(makePluginSS('core-shortlist'))
     activateRecipes(makePluginSS('core-recipes'))
 
     const memberStore = useMemberStore(pinia)
@@ -139,7 +139,7 @@ describe('Phase 3B End-to-End Integration', () => {
 
     // Toggle Shortlist action
     await listWrapper.find('button.btn-shortlist').trigger('click')
-    expect(mockApi.post).toHaveBeenCalledWith('/api/x/shortlist', { recipe_id: 'r1' })
+    expect(mockApi.post).toHaveBeenCalledWith('/api/x/core-shortlist', { recipe_id: 'r1' })
 
     // 3. Verify RecipeDetailPage serving scaler
     const detailWrapper = mount(RecipeDetailPage, {

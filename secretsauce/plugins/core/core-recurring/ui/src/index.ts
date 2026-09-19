@@ -3,7 +3,7 @@ import RecurringSettings from './RecurringSettings.vue'
 
 export default function activate(ss: SecretSauceUI) {
   ss.settings.section({
-    id: 'recurring',
+    id: 'core-recurring',
     title: 'Recurring Meals',
     component: RecurringSettings
   })

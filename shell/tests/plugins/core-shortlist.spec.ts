@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import ShortlistAction from '../../../secretsauce/plugins/core/shortlist/ui/src/ShortlistAction.vue'
-import ShortlistFilter from '../../../secretsauce/plugins/core/shortlist/ui/src/ShortlistFilter.vue'
-import ShortlistSidebar from '../../../secretsauce/plugins/core/shortlist/ui/src/ShortlistSidebar.vue'
-import activate from '../../../secretsauce/plugins/core/shortlist/ui/src/index'
+import ShortlistAction from '../../../secretsauce/plugins/core/core-shortlist/ui/src/ShortlistAction.vue'
+import ShortlistFilter from '../../../secretsauce/plugins/core/core-shortlist/ui/src/ShortlistFilter.vue'
+import ShortlistSidebar from '../../../secretsauce/plugins/core/core-shortlist/ui/src/ShortlistSidebar.vue'
+import activate from '../../../secretsauce/plugins/core/core-shortlist/ui/src/index'
 
 describe('Shortlist UI Components', () => {
   it('ShortlistAction toggles favorite state and calls API', async () => {
@@ -30,7 +30,7 @@ describe('Shortlist UI Components', () => {
     expect(btn.exists()).toBe(true)
     await btn.trigger('click')
 
-    expect(mockApi.post).toHaveBeenCalledWith('/api/x/shortlist', { recipe_id: 'r1_en' })
+    expect(mockApi.post).toHaveBeenCalledWith('/api/x/core-shortlist', { recipe_id: 'r1_en' })
   })
 
   it('ShortlistFilter renders active filter chip and emits toggle', async () => {

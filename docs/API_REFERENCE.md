@@ -60,6 +60,8 @@ Generates and downloads a complete system backup as a zip file.
 - **Status:** `200 OK`
 - **Headers:** `Content-Type: application/zip`, `Content-Disposition: attachment; filename="secretsauce-backup.zip"`
 - **Contents:** `secretsauce.db` (hot `VACUUM INTO` copy), `uploads/`, `plugins/`, `site/`, `config.json`.
+- **System Restoration:** To restore a generated backup archive into an instance, execute:
+  `uv run secretsauce restore <backup.zip> [--data-dir /path/to/data]`
 
 ### `GET /api/export/json`
 Exports all kernel nouns as a JSON payload for interop.

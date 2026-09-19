@@ -27,7 +27,7 @@ const shortlistedIds = ref<Set<string>>(new Set())
 async function loadShortlist() {
   if (!api) return
   try {
-    const res = await api.get('/api/x/shortlist')
+    const res = await api.get('/api/x/core-shortlist')
     const ids = new Set<string>()
     if (Array.isArray(res)) {
       for (const item of res) {

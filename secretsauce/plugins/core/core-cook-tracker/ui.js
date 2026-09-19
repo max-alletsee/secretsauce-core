@@ -20,7 +20,7 @@ const $ = {
   for (const [t, s] of i)
     o[t] = s;
   return o;
-}, J = /* @__PURE__ */ v(x, [["__scopeId", "data-v-3947505b"]]), M = { class: "journal-page" }, w = {
+}, J = /* @__PURE__ */ v(x, [["__scopeId", "data-v-2331e973"]]), M = { class: "journal-page" }, w = {
   key: 0,
   class: "journal-list"
 }, I = { class: "entry-header" }, B = { class: "entry-date" }, L = { class: "entry-servings" }, N = { class: "entry-body" }, P = { class: "recipe-title" }, A = {
@@ -114,7 +114,7 @@ const $ = {
       ])) : (l(), u("p", q, "No meals recorded in journal yet."))
     ]));
   }
-}), F = /* @__PURE__ */ v(E, [["__scopeId", "data-v-077ff918"]]);
+}), F = /* @__PURE__ */ v(E, [["__scopeId", "data-v-201a14da"]]);
 function T(e) {
   var i;
   e.route({

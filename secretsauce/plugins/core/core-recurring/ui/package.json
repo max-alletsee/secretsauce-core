@@ -1,5 +1,5 @@
 {
-  "name": "@secretsauce/plugin-recurring-ui",
+  "name": "@secretsauce/plugin-core-recurring",
   "version": "1.0.0",
   "private": true
 }

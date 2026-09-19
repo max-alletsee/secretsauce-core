@@ -37,7 +37,7 @@ async function searchRecipes() {
 async function loadShortlist() {
   if (!api) return
   try {
-    shortlistEntries.value = await api.get('/api/x/shortlist')
+    shortlistEntries.value = await api.get('/api/x/core-shortlist')
   } catch {
     shortlistEntries.value = []
   }

@@ -48,20 +48,20 @@ function weekdayName(day: number): string {
 async function loadRules() {
   loading.value = true
   try {
-    rules.value = await props.ss.api.get<Rule[]>('/api/x/recurring/rules')
+    rules.value = await props.ss.api.get<Rule[]>('/api/x/core-recurring/rules')
   } finally {
     loading.value = false
   }
 }
 
 async function deleteRule(id: string) {
-  await props.ss.api.delete(`/api/x/recurring/rules/${id}`)
+  await props.ss.api.delete(`/api/x/core-recurring/rules/${id}`)
   await loadRules()
 }
 
 async function triggerMaterialize() {
   props.ss.notify({ level: 'info', message: 'Materializing recurring meals...' })
-  await props.ss.api.post('/api/x/recurring/materialize', {})
+  await props.ss.api.post('/api/x/core-recurring/materialize', {})
   props.ss.notify({ level: 'success', message: 'Schedule updated.' })
 }
 

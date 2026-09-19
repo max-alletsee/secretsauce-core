@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import CookedBadge from '../../../secretsauce/plugins/core/cook-tracker/ui/src/components/CookedBadge.vue'
-import JournalPage from '../../../secretsauce/plugins/core/cook-tracker/ui/src/pages/JournalPage.vue'
-import activate from '../../../secretsauce/plugins/core/cook-tracker/ui/src/index'
+import CookedBadge from '../../../secretsauce/plugins/core/core-cook-tracker/ui/src/components/CookedBadge.vue'
+import JournalPage from '../../../secretsauce/plugins/core/core-cook-tracker/ui/src/pages/JournalPage.vue'
+import activate from '../../../secretsauce/plugins/core/core-cook-tracker/ui/src/index'
 
-describe('cook-tracker UI', () => {
+describe('core-cook-tracker UI', () => {
   it('CookedBadge displays checkmark when entry is marked cooked', () => {
     const wrapper = mount(CookedBadge, {
       props: {

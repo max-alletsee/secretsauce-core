@@ -119,7 +119,7 @@ const X = { class: "cover-image" }, Y = ["src"], ee = {
     async function y() {
       if (s)
         try {
-          const m = await s.get("/api/x/shortlist"), u = /* @__PURE__ */ new Set();
+          const m = await s.get("/api/x/core-shortlist"), u = /* @__PURE__ */ new Set();
           if (Array.isArray(m))
             for (const i of m)
               i.recipe_id && u.add(i.recipe_id);
@@ -269,7 +269,7 @@ const X = { class: "cover-image" }, Y = ["src"], ee = {
       ]))
     ]));
   }
-}), ye = /* @__PURE__ */ E(he, [["__scopeId", "data-v-383feb63"]]), $e = {
+}), ye = /* @__PURE__ */ E(he, [["__scopeId", "data-v-872b4821"]]), $e = {
   key: 0,
   class: "recipe-detail-page"
 }, ke = {
@@ -306,7 +306,7 @@ const X = { class: "cover-image" }, Y = ["src"], ee = {
     async function c() {
       if (!(!_ || !I.value))
         try {
-          const i = await _.get("/api/x/shortlist");
+          const i = await _.get("/api/x/core-shortlist");
           Array.isArray(i) && (h.value = i.some((w) => w.recipe_id === I.value));
         } catch {
         }
@@ -542,7 +542,7 @@ const X = { class: "cover-image" }, Y = ["src"], ee = {
       ])) : A("v-if", !0);
     };
   }
-}), Be = /* @__PURE__ */ E(Je, [["__scopeId", "data-v-430b7c8c"]]), qe = { class: "ingredient-row-list" }, Fe = { class: "rows-container" }, ze = { class: "reorder-btns" }, Ge = ["disabled", "onClick"], je = ["disabled", "onClick"], Qe = ["onUpdate:modelValue"], We = ["onUpdate:modelValue"], Ze = ["value"], He = ["onUpdate:modelValue"], Ke = ["onUpdate:modelValue"], Xe = ["onClick"], Ye = /* @__PURE__ */ D({
+}), Be = /* @__PURE__ */ E(Je, [["__scopeId", "data-v-055414e7"]]), qe = { class: "ingredient-row-list" }, Fe = { class: "rows-container" }, ze = { class: "reorder-btns" }, Ge = ["disabled", "onClick"], je = ["disabled", "onClick"], Qe = ["onUpdate:modelValue"], We = ["onUpdate:modelValue"], Ze = ["value"], He = ["onUpdate:modelValue"], Ke = ["onUpdate:modelValue"], Xe = ["onClick"], Ye = /* @__PURE__ */ D({
   __name: "IngredientRowList",
   props: {
     modelValue: {}

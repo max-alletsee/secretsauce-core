@@ -35,7 +35,7 @@ const isShortlisted = ref(false)
 async function checkShortlist() {
   if (!api || !effectiveId.value) return
   try {
-    const res = await api.get('/api/x/shortlist')
+    const res = await api.get('/api/x/core-shortlist')
     if (Array.isArray(res)) {
       isShortlisted.value = res.some((item) => item.recipe_id === effectiveId.value)
     }

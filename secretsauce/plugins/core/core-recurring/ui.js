@@ -13,24 +13,24 @@ const b = { class: "p-4 space-y-4" }, h = {
   props: {
     ss: {}
   },
-  setup(r) {
-    const a = r, c = f([]), o = f(!0), p = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  setup(i) {
+    const a = i, c = f([]), o = f(!0), p = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     function y(n) {
       return p[n] || `Day ${n}`;
     }
     async function u() {
       o.value = !0;
       try {
-        c.value = await a.ss.api.get("/api/x/recurring/rules");
+        c.value = await a.ss.api.get("/api/x/core-recurring/rules");
       } finally {
         o.value = !1;
       }
     }
     async function g(n) {
-      await a.ss.api.delete(`/api/x/recurring/rules/${n}`), await u();
+      await a.ss.api.delete(`/api/x/core-recurring/rules/${n}`), await u();
     }
     async function m() {
-      a.ss.notify({ level: "info", message: "Materializing recurring meals..." }), await a.ss.api.post("/api/x/recurring/materialize", {}), a.ss.notify({ level: "success", message: "Schedule updated." });
+      a.ss.notify({ level: "info", message: "Materializing recurring meals..." }), await a.ss.api.post("/api/x/core-recurring/materialize", {}), a.ss.notify({ level: "success", message: "Schedule updated." });
     }
     return v(() => {
       u();
@@ -52,36 +52,36 @@ const b = { class: "p-4 space-y-4" }, h = {
         (t(!0), s(
           x,
           null,
-          k(c.value, (i) => (t(), s("div", {
-            key: i.id,
+          k(c.value, (r) => (t(), s("div", {
+            key: r.id,
             class: "flex items-center justify-between p-3 border rounded border-surface-200 dark:border-surface-700"
           }, [
             e("div", null, [
               e(
                 "span",
                 S,
-                l(y(i.weekday)),
+                l(y(r.weekday)),
                 1
                 /* TEXT */
               ),
               e(
                 "span",
                 R,
-                l(i.meal_type) + ":",
+                l(r.meal_type) + ":",
                 1
                 /* TEXT */
               ),
               e(
                 "span",
                 z,
-                l(i.recipe_title),
+                l(r.recipe_title),
                 1
                 /* TEXT */
               )
             ]),
             e("button", {
               class: "btn btn-danger",
-              onClick: (E) => g(i.id)
+              onClick: (E) => g(r.id)
             }, "Delete", 8, C)
           ]))),
           128
@@ -91,9 +91,9 @@ const b = { class: "p-4 space-y-4" }, h = {
     ]));
   }
 });
-function $(r) {
-  r.settings.section({
-    id: "recurring",
+function $(i) {
+  i.settings.section({
+    id: "core-recurring",
     title: "Recurring Meals",
     component: D
   });

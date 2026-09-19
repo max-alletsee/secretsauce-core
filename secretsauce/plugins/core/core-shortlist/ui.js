@@ -1,4 +1,4 @@
-import { defineComponent as u, inject as S, ref as f, watch as y, openBlock as n, createElementBlock as l, normalizeClass as b, onMounted as k, createElementVNode as x, toDisplayString as g, Fragment as A, renderList as I } from "vue";
+import { defineComponent as u, inject as S, ref as v, watch as y, openBlock as n, createElementBlock as l, normalizeClass as b, onMounted as k, createElementVNode as x, toDisplayString as g, Fragment as A, renderList as I } from "vue";
 const $ = ["title"], w = /* @__PURE__ */ u({
   __name: "ShortlistAction",
   props: {
@@ -7,7 +7,7 @@ const $ = ["title"], w = /* @__PURE__ */ u({
   emits: ["change"],
   setup(o, { emit: s }) {
     var h, p, m;
-    const t = o, a = s, i = S("__SS_API__"), e = f(!!((h = t.context) != null && h.isShortlisted || (m = (p = t.context) == null ? void 0 : p.recipe) != null && m.is_shortlisted));
+    const t = o, a = s, i = S("__SS_API__"), e = v(!!((h = t.context) != null && h.isShortlisted || (m = (p = t.context) == null ? void 0 : p.recipe) != null && m.is_shortlisted));
     y(() => {
       var c, r, d;
       return ((c = t.context) == null ? void 0 : c.isShortlisted) ?? ((d = (r = t.context) == null ? void 0 : r.recipe) == null ? void 0 : d.is_shortlisted);
@@ -20,7 +20,7 @@ const $ = ["title"], w = /* @__PURE__ */ u({
       const r = !e.value;
       e.value = r;
       try {
-        r ? await i.post("/api/x/shortlist", { recipe_id: t.context.recipe.id }) : await i.delete(`/api/x/shortlist/${t.context.recipe.id}`), a("change", r);
+        r ? await i.post("/api/x/core-shortlist", { recipe_id: t.context.recipe.id }) : await i.delete(`/api/x/core-shortlist/${t.context.recipe.id}`), a("change", r);
       } catch {
         e.value = !r;
       }
@@ -32,19 +32,19 @@ const $ = ["title"], w = /* @__PURE__ */ u({
       onClick: _
     }, " ★ ", 10, $));
   }
-}), v = (o, s) => {
+}), f = (o, s) => {
   const t = o.__vccOpts || o;
   for (const [a, i] of s)
     t[a] = i;
   return t;
-}, B = /* @__PURE__ */ v(w, [["__scopeId", "data-v-b46835af"]]), C = /* @__PURE__ */ u({
+}, B = /* @__PURE__ */ f(w, [["__scopeId", "data-v-49e76ba8"]]), C = /* @__PURE__ */ u({
   __name: "ShortlistFilter",
   props: {
     context: {}
   },
   emits: ["toggle"],
   setup(o, { emit: s }) {
-    const t = o, a = s, i = f(!1);
+    const t = o, a = s, i = v(!1);
     function e() {
       var _;
       a("toggle"), (_ = t.context) != null && _.toggle ? t.context.toggle() : i.value = !i.value;
@@ -64,7 +64,7 @@ const $ = ["title"], w = /* @__PURE__ */ u({
       );
     };
   }
-}), F = /* @__PURE__ */ v(C, [["__scopeId", "data-v-387e17b7"]]), P = { class: "shortlist-sidebar" }, E = {
+}), F = /* @__PURE__ */ f(C, [["__scopeId", "data-v-387e17b7"]]), P = { class: "shortlist-sidebar" }, E = {
   key: 0,
   class: "sidebar-list"
 }, N = ["href"], R = {
@@ -76,11 +76,11 @@ const $ = ["title"], w = /* @__PURE__ */ u({
     context: {}
   },
   setup(o) {
-    const s = S("__SS_API__"), t = f([]);
+    const s = S("__SS_API__"), t = v([]);
     return k(async () => {
       if (s)
         try {
-          t.value = await s.get("/api/x/shortlist");
+          t.value = await s.get("/api/x/core-shortlist");
         } catch {
         }
     }), (a, i) => (n(), l("div", P, [
@@ -108,7 +108,7 @@ const $ = ["title"], w = /* @__PURE__ */ u({
       ])) : (n(), l("p", R, "No shortlisted recipes."))
     ]));
   }
-}), z = /* @__PURE__ */ v(j, [["__scopeId", "data-v-4df3f96d"]]);
+}), z = /* @__PURE__ */ f(j, [["__scopeId", "data-v-99b85d8b"]]);
 function M(o) {
   o.slot("recipe.card.actions", B, { order: 10 }), o.slot("recipe.list.filters", F, { order: 10 }), o.slot("timeline.sidebar", z, { order: 20 });
 }

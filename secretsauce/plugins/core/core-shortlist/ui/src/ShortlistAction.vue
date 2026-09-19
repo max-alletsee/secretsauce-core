@@ -30,9 +30,9 @@ async function toggle(e: Event) {
 
   try {
     if (next) {
-      await api.post('/api/x/shortlist', { recipe_id: props.context.recipe.id })
+      await api.post('/api/x/core-shortlist', { recipe_id: props.context.recipe.id })
     } else {
-      await api.delete(`/api/x/shortlist/${props.context.recipe.id}`)
+      await api.delete(`/api/x/core-shortlist/${props.context.recipe.id}`)
     }
     emit('change', next)
   } catch (err) {

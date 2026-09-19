@@ -11,7 +11,7 @@ const entries = ref<any[]>([])
 onMounted(async () => {
   if (api) {
     try {
-      entries.value = await api.get('/api/x/shortlist')
+      entries.value = await api.get('/api/x/core-shortlist')
     } catch {
       // offline fallback
     }

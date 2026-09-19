@@ -17,7 +17,7 @@ Local-first, extensible recipe and meal management kernel with plugin runtime, S
 - **Server-Sent Events Stream**: Live SSE event bus with `event: hello`, historical catch-up via `Last-Event-ID`, and live push notifications.
 - **Background Jobs**: Asynchronous job tracker with real-time numeric progress, cancellation signals, and automatic recovery on server reboot.
 - **Plugin Architecture**: Manifest validation, dependency sorting, scoped database context, entity attributes, synchronous pre-commit policy hooks, and inter-plugin services.
-- **CLI & Backup**: SQLite hot backup via `VACUUM INTO` bundling database, uploads, plugins, and config into portable zip archives.
+- **CLI & Backup**: SQLite hot backup via `VACUUM INTO` bundling database, uploads, plugins, and config into portable zip archives, and safe offline restoration (`secretsauce export` / `secretsauce restore`).
 
 ### Frontend Shell & PWA
 - **Progressive Web App (PWA)**: Standalone installation support, dynamic manifest generation with household name, and Service Worker offline caching.
@@ -54,13 +54,16 @@ pnpm --prefix shell build
 ```
 
 ### Running Tests
-Execute the complete automated test suite (106 tests total):
+Execute the complete automated test suite (166 tests total + Playwright E2E):
 ```bash
-# Run backend kernel & PWA serving tests (75 tests)
+# Run backend kernel & plugin tests (103 tests)
 uv run pytest
 
-# Run frontend shell & component tests (31 tests across 13 suites)
+# Run frontend shell & plugin tests (63 tests across 24 suites)
 pnpm --prefix shell test
+
+# Run browser end-to-end Playwright tests
+pnpm --prefix shell test:e2e
 ```
 
 ---
@@ -76,11 +79,14 @@ uv run secretsauce --help
 # 1. Run database migrations on a data directory
 uv run secretsauce migrate --data-dir ./data
 
-# 2. Export a full system backup (VACUUM INTO snapshot + uploads + config)
+# 2. Export a full system backup (VACUUM INTO snapshot + uploads + plugins + config)
 uv run secretsauce export --data-dir ./data --output backup.zip
 
-# 3. Start the FastAPI server (serves REST API, SSE stream, and PWA shell)
-uv run secretsauce serve --host 0.0.0.0 --port 8000 --data-dir ./data
+# 3. Restore a system backup archive
+uv run secretsauce restore backup.zip --data-dir ./data
+
+# 4. Start the FastAPI server (serves REST API, SSE stream, and PWA shell; default port 8080)
+uv run secretsauce serve --host 0.0.0.0 --port 8080 --data-dir ./data
 ```
 
 ---
@@ -93,6 +99,9 @@ uv run secretsauce serve --host 0.0.0.0 --port 8000 --data-dir ./data
 - [Plugin Developer Guide](docs/PLUGIN_DEVELOPER_GUIDE.md) - Backend Python plugins and frontend `ui.js` ES module development with `@secretsauce/ui`.
 - [Phase 1: Kernel Implementation Plan](docs/superpowers/plans/2026-09-09-kernel-implementation-plan.md) - Phase 1 build steps and status (21/21 completed).
 - [Phase 2: Frontend Shell Implementation Plan](docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md) - Phase 2 SPA shell, service worker, and PWA serving plan (13/13 completed).
+- [Phase 3A: Units Engine & Initial Plugins](docs/superpowers/plans/2026-09-11-phase-3a-units-and-stage-6-plugins.md) - Units parser/converter, `units` and `recurring` core plugins (8/8 completed).
+- [Phase 3B: Core Recipe & Member Domain](docs/superpowers/plans/2026-09-12-phase-3b-core-recipe-and-member-domain.md) - `core-members`, `core-recipes`, `shortlist` plugins (8/8 completed).
+- [Phase 3C: Timeline & Cooking Workflow](docs/superpowers/plans/2026-09-13-phase-3c-timeline-and-cooking-workflow.md) - `core-timeline`, `cook-tracker`, `ratings` plugins (9/9 completed).
 
 ---
 

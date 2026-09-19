@@ -6,11 +6,11 @@ import { createSlotRegistry } from '../../src/registries/slots'
 import { createIntentRegistry } from '../../src/registries/intents'
 
 import activateTimeline from '../../../secretsauce/plugins/core/core-timeline/ui/src/index'
-import activateCookTracker from '../../../secretsauce/plugins/core/cook-tracker/ui/src/index'
-import activateRatings from '../../../secretsauce/plugins/core/ratings/ui/src/index'
+import activateCookTracker from '../../../secretsauce/plugins/core/core-cook-tracker/ui/src/index'
+import activateRatings from '../../../secretsauce/plugins/core/core-ratings/ui/src/index'
 
 import TimelinePage from '../../../secretsauce/plugins/core/core-timeline/ui/src/pages/TimelinePage.vue'
-import JournalPage from '../../../secretsauce/plugins/core/cook-tracker/ui/src/pages/JournalPage.vue'
+import JournalPage from '../../../secretsauce/plugins/core/core-cook-tracker/ui/src/pages/JournalPage.vue'
 import { Slot } from '@secretsauce/ui'
 
 describe('Phase 3C End-to-End Integration Flow', () => {
@@ -48,7 +48,7 @@ describe('Phase 3C End-to-End Integration Flow', () => {
       get: vi.fn((url: string) => {
         if (url.includes('/api/schedule')) return Promise.resolve(mockSchedule)
         if (url.includes('/api/journal')) return Promise.resolve(mockJournal)
-        if (url.includes('/api/x/ratings')) {
+        if (url.includes('/api/x/core-ratings')) {
           return Promise.resolve({ scores: [], net_score: 1 })
         }
         return Promise.resolve([])
@@ -74,8 +74,8 @@ describe('Phase 3C End-to-End Integration Flow', () => {
 
     // 1. Activate Phase 3C plugins
     activateTimeline(makePluginSS('core-timeline'))
-    activateCookTracker(makePluginSS('cook-tracker'))
-    activateRatings(makePluginSS('ratings'))
+    activateCookTracker(makePluginSS('core-cook-tracker'))
+    activateRatings(makePluginSS('core-ratings'))
 
     // 2. Mount TimelinePage
     const timelineWrapper = mount(TimelinePage, {
@@ -119,7 +119,7 @@ describe('Phase 3C End-to-End Integration Flow', () => {
 
     // Click upvote button
     await journalWrapper.find('.upvote-btn').trigger('click')
-    expect(mockApi.put).toHaveBeenCalledWith('/api/x/ratings', {
+    expect(mockApi.put).toHaveBeenCalledWith('/api/x/core-ratings', {
       journal_id: 'j-1',
       member_id: 'm-1',
       score: 1,

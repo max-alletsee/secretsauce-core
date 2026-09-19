@@ -258,11 +258,14 @@ An hourly background task cleans lazy references:
 
 ---
 
-## 10. Backup & Export (`secretsauce/api/routes/export.py`)
+## 10. Backup, Export & Restore (`secretsauce/api/routes/export.py`)
 
 - **Full System Backup (`GET /api/export` / `secretsauce export`)**:
   - Uses SQLite `VACUUM INTO` outside active transactions for zero-downtime hot backup.
   - Bundles `secretsauce.db`, `uploads/`, `plugins/`, `site/` (if present), and `config.json` into an `application/zip` archive.
+- **System Restore (`secretsauce restore <backup.zip>`)**:
+  - Safely extracts backup archive into the target `data_dir`.
+  - Validates archive integrity (presence of `secretsauce.db`) and enforces Zip Slip path traversal defenses.
 - **Data Interop (`GET /api/export/json`)**:
   - Exports all kernel nouns (`recipes`, `schedule_entries`, `cook_journal`, `household_members`, `assets`, `household_config`) as a JSON payload for migration or external tools.
 
@@ -286,4 +289,19 @@ All API routers interact with the kernel through `request.app.state.kernel`:
 - `kernel.plugins` / `kernel.registry`: `PluginRegistry` instance for listing, enabling, configuring, and inspecting plugins.
 - `kernel.loader`: `PluginLoader` for dynamic backend plugin activation.
 - `kernel.broadcaster`: `EventBroadcaster` for SSE clients.
+
+---
+
+## 12. Command-Line Interface (`secretsauce/cli.py`)
+
+The kernel entry point provides four core operational subcommands:
+
+- **`serve`**: Starts the single-worker Uvicorn ASGI server with proxy headers and forwarded IPs enabled.
+  - Arguments: `--host` (default `0.0.0.0`), `--port` (default from config or `8080`), `--data-dir`.
+  - Environment: Respects `PORT`, `DATA_DIR`, `FORWARDED_ALLOW_IPS`, and `LOG_LEVEL`.
+- **`migrate`**: Runs pending database schema migrations on `secretsauce.db`.
+- **`export`**: Takes a hot backup snapshot of the system into an archive zip file.
+  - Arguments: `--output` (target zip path), `--data-dir`.
+- **`restore`**: Restores database, uploads, plugins, and configuration from an export zip file into `data_dir`.
+  - Arguments: `backup` (positional path to zip file), `--data-dir`.
 

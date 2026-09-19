@@ -1,9 +1,9 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 3A: Units Engine & Stage 6 Core Plugins completed (all 8 tasks done, 35 Vitest tests & 92 Pytest tests passing)  
-**Active Plan:** `docs/superpowers/plans/2026-09-11-phase-3a-units-and-stage-6-plugins.md`  
-**Architecture Spec:** `docs/superpowers/specs/2026-09-11-phase-3a-units-and-stage-6-plugins-design.md`  
-**Last Updated:** 2026-09-11  
+**Current Status:** Phase 3C: Timeline & Cooking Workflow completed (99 Pytest tests & 63 Vitest tests passing, Playwright E2E suites passing)  
+**Active Plan:** Pending creation of Phase 3D implementation plan (`ai-provider`, `recipe-importer`, `translator`)  
+**Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md`  
+**Last Updated:** 2026-09-16  
 
 ---
 
@@ -166,15 +166,76 @@ When starting a new Pi session to continue development:
 - [x] **Task 8: End-to-End Build & Test Suite Verification**
   - Verification: 92 Pytest passing, 35 Vitest passing, full PWA and plugin production build succeeding
 
+## Phase 3B: Core Recipe & Member Domain (Stage 7 Part 1)
+
+- [x] **Task 1: AppHeader Shell Decoupling** - Commit: `89da97e`
+  - Files: `shell/src/components/AppHeader.vue`
+  - Tests: `shell/src/components/components.spec.ts`
+- [x] **Task 2: core-members Core Plugin (Backend & Frontend UI)** - Commit: `9ae9279`
+  - Files: `secretsauce/plugins/core/core-members/`, `secretsauce/nouns/members.py`
+  - Tests: `tests/test_plugin_recipes_members.py`, `shell/tests/plugins/member-picker.spec.ts`
+- [x] **Task 3: shortlist Backend Plugin & SQLite Migration** - Commit: `631d992`
+  - Files: `secretsauce/plugins/core/shortlist/`, `secretsauce/nouns/recipes.py`
+  - Tests: `tests/test_plugin_shortlist.py`
+- [x] **Task 4: shortlist Frontend UI Bundle** - Commit: `2ceb30a`
+  - Files: `secretsauce/plugins/core/shortlist/ui/`
+  - Tests: `shell/tests/plugins/shortlist.spec.ts`
+- [x] **Task 5: core-recipes Backend Manifest & Sub-Components** - Commit: `d666b99`
+  - Files: `secretsauce/plugins/core/core-recipes/`
+  - Tests: `tests/test_plugin_recipes_members.py`, `shell/tests/plugins/recipe-components.spec.ts`
+- [x] **Task 6: core-recipes Pages & Manifest Activator** - Commit: `c458df8`
+  - Files: `secretsauce/plugins/core/core-recipes/ui/src/pages/`
+  - Tests: `shell/tests/plugins/recipe-pages.spec.ts`
+- [x] **Task 7: Plugin UI Bundling & Serving Pipeline** - Commit: `c9ebf62`
+  - Files: `shell/scripts/build-plugins.ts`, compiled bundles in `secretsauce/plugins/core/`
+  - Tests: `tests/test_plugin_ui_routes.py`
+- [x] **Task 8: End-to-End Build & Full Test Suite Verification** - Commits: `859cdf4`, `581f037`
+  - Verification: 94 Pytest passing, 47 Vitest passing, Playwright Phase 3B E2E green
+
+## Phase 3C: Timeline & Cooking Workflow (Stage 7 Part 2)
+
+- [x] **Task 1: Dynamic Route Redirection & Default Start Page Settings** - Commit: `86c8d9f`
+  - Files: `shell/src/router.ts`, `shell/src/stores/household.ts`, `shell/src/pages/SettingsPage.vue`
+  - Tests: `shell/src/router.spec.ts`, `shell/src/pages/pages.spec.ts`
+- [x] **Task 2: core-timeline Backend Plugin Manifest & Setup** - Commit: `a4d19b6`
+  - Files: `secretsauce/plugins/core/core-timeline/`
+  - Tests: `tests/test_plugin_timeline.py`
+- [x] **Task 3: core-timeline Frontend Components & Rolling 9-Day View** - Commit: `e400262`
+  - Files: `secretsauce/plugins/core/core-timeline/ui/`
+  - Tests: `shell/tests/plugins/timeline.spec.ts`
+- [x] **Task 4: cook-tracker Backend Plugin, Migrations & Rebuild Command** - Commit: `4ccac36`
+  - Files: `secretsauce/plugins/core/cook-tracker/`
+  - Tests: `tests/test_plugin_cook_tracker.py`
+- [x] **Task 5: cook-tracker Frontend Bundle (entry:interact Providers & /journal Page)** - Commit: `7529dfc`
+  - Files: `secretsauce/plugins/core/cook-tracker/ui/`
+  - Tests: `shell/tests/plugins/cook-tracker.spec.ts`
+- [x] **Task 6: ratings Backend Plugin, Migrations, Endpoints & Attribute Mirroring** - Commit: `82bf3b2`
+  - Files: `secretsauce/plugins/core/ratings/`, `secretsauce/api/routes/journal.py`
+  - Tests: `tests/test_plugin_ratings.py`, `tests/test_schedule_journal_api.py`
+- [x] **Task 7: ratings Frontend Vote Component (VoteRating.vue)** - Commit: `32d8219`
+  - Files: `secretsauce/plugins/core/ratings/ui/`
+  - Tests: `shell/tests/plugins/ratings.spec.ts`
+- [x] **Task 8: Plugin UI Bundling & Build Pipeline Verification** - Commit: `76b39bd`
+  - Files: `shell/scripts/build-plugins.ts`, compiled bundles in `secretsauce/plugins/core/`
+  - Tests: `tests/test_plugin_ui_routes.py`
+- [x] **Task 9: End-to-End Integration & Full Suite Verification** - Commits: `5262558`, `c2b9ec8`
+  - Verification: 99 Pytest passing, 63 Vitest passing, Playwright Phase 3C E2E green
+
 ---
 
 ## Upcoming Phases (Roadmap)
-- **Phase 2: Shell & PWA Frontend (Stage 5)**
-  - Vue 3 + PrimeVue SPA shell, dynamic import map, module loader for `/api/plugins/{id}/ui.js`, slot & intent registries, service worker, offline outbox write queue.
-- **Phase 3: Units & Core Plugins (Stages 6 – 7)**
-  - Units engine (`secretsauce/units/`), `units` plugin, `recurring` plugin, and all 11 core plugins (`core-members` through `shopping-list`).
-- **Phase 4: Podman Packaging & Verification (Stage 8)**
-  - Multi-stage `Containerfile`, automated healthcheck, zip export/restore, and Playwright smoke test.
+- **Phase 3D: AI Foundation & Importers/Translators (Stage 7 Part 3)**
+  - `ai-provider` plugin: Gemini-backed structured outputs, usage logging (`plugin_ai_provider_calls`), monthly budget limits, settings section.
+  - `recipe-importer` plugin: URL and photo import background jobs, `share:receive` handler.
+  - `translator` plugin: Automated multi-language translation on `recipe:created`/`updated`, provenance rules, `retranslate-all` command.
+- **Phase 3E: Meal Planner & Shopping List (Stage 7 Part 4)**
+  - `meal-planner` plugin: Member restriction/allergy aware suggestions, `suggest-week` on `timeline:assist`.
+  - `shopping-list` plugin: Aggregated list page `/shopping`, offline outbox check-offs, `rebuild` command, markdown/print export.
+- **Phase 4: Podman Packaging & E2E Smoke Verification (Stage 8)**
+  - Multi-stage `Containerfile` (`node:22` shell build -> `python:3.12-slim` kernel).
+  - Container healthcheck (`/api/health`).
+  - Backup restore CLI command (`secretsauce restore`).
+  - End-to-end Playwright smoke test covering online and offline operation against the built image.
 
 ---
 
@@ -224,3 +285,24 @@ When starting a new Pi session to continue development:
 - **Phase 3A Task 5: units Core Plugin Implementation** - Commit: `e7c4f4a` (feat(plugins): implement core units plugin and recipe normalization hooks)
 - **Phase 3A Task 6: recurring Core Plugin Backend & Materializer** - Commit: `3c0d285` (feat(recurring): implement recurring meals plugin with rules table and materializer)
 - **Phase 3A Task 7: Plugin UI Build Pipeline & recurring UI Bundle** - Commit: `2d2d594` (feat(recurring): add recurring settings UI bundle and plugin build script)
+
+### Phase 3B: Core Recipe & Member Domain (Stage 7 Part 1)
+- **Phase 3B Task 1: AppHeader Shell Decoupling** - Commit: `89da97e` (refactor(shell): decouple AppHeader member select into shell.header.right slot)
+- **Phase 3B Task 2: core-members Core Plugin (Backend & Frontend UI)** - Commit: `9ae9279` (feat(members): implement core-members plugin with header picker and settings section)
+- **Phase 3B Task 3: shortlist Backend Plugin & SQLite Migration** - Commit: `631d992` (feat(shortlist): implement shortlist plugin with SQLite schema and REST endpoints)
+- **Phase 3B Task 4: shortlist Frontend UI Bundle** - Commit: `2ceb30a` (feat(shortlist): implement shortlist UI bundle with card actions, filter chip, and sidebar)
+- **Phase 3B Task 5: core-recipes Backend Manifest & Sub-Components** - Commit: `d666b99` (feat(recipes): implement recipe sub-components: IngredientRowList, StepList, and RecipeCard)
+- **Phase 3B Task 6: core-recipes Pages & Manifest Activator** - Commit: `c458df8` (feat(recipes): implement recipe pages: list with intent area, detail with scaler, and structured edit)
+- **Phase 3B Task 7: Plugin UI Bundling & Serving Pipeline** - Commit: `c9ebf62` (feat(plugins): bundle core-members, core-recipes, and shortlist UI assets and verify static serving)
+- **Phase 3B Task 8: End-to-End Build & Full Test Suite Verification** - Commits: `859cdf4` (test(integration): add Phase 3B end-to-end integration test), `581f037` (feat(phase-3b): complete runtime plugin integration, ESM vendor pipeline, and live Playwright E2E suite)
+
+### Phase 3C: Timeline & Cooking Workflow (Stage 7 Part 2)
+- **Phase 3C Task 1: Dynamic Route Redirection & Default Start Page Settings** - Commit: `86c8d9f` (feat(shell): dynamic root navigation and default start page setting)
+- **Phase 3C Task 2: core-timeline Backend Plugin Manifest & Setup** - Commit: `a4d19b6` (feat(timeline): core-timeline plugin backend manifest)
+- **Phase 3C Task 3: core-timeline Frontend Components & Rolling 9-Day View** - Commit: `e400262` (feat(timeline): core-timeline components and rolling 9-day view)
+- **Phase 3C Task 4: cook-tracker Backend Plugin, Migrations & Rebuild Command** - Commit: `4ccac36` (feat(cook-tracker): backend plugin, migrations, and rebuild command)
+- **Phase 3C Task 5: cook-tracker Frontend Bundle (entry:interact Providers & /journal Page)** - Commit: `7529dfc` (feat(cook-tracker): UI bundle with mark-cooked, badges, and journal page)
+- **Phase 3C Task 6: ratings Backend Plugin, Migrations, Endpoints & Attribute Mirroring** - Commit: `82bf3b2` (feat(ratings): backend votes schema, API, and attribute mirroring)
+- **Phase 3C Task 7: ratings Frontend Vote Component (VoteRating.vue)** - Commit: `32d8219` (feat(ratings): VoteRating UI component in journal.entry.footer)
+- **Phase 3C Task 8: Plugin UI Bundling & Build Pipeline Verification** - Commit: `76b39bd` (build: compile Phase 3C plugin UI bundles and verify routes)
+- **Phase 3C Task 9: End-to-End Integration & Full Suite Verification** - Commits: `5262558` (test: Phase 3C end-to-end integration test suite), `c2b9ec8` (feat(e2e): compile production shell assets and add Phase 3C Playwright tests)

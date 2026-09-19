@@ -55,7 +55,7 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
   for (const [r, o] of v)
     a[r] = o;
   return a;
-}, K = /* @__PURE__ */ P(J, [["__scopeId", "data-v-21c0f879"]]), W = { class: "slot-header" }, X = { class: "slot-name" }, Z = { class: "entries-list" }, ee = {
+}, K = /* @__PURE__ */ P(J, [["__scopeId", "data-v-77c6af5a"]]), W = { class: "slot-header" }, X = { class: "slot-name" }, Z = { class: "entries-list" }, ee = {
   key: 0,
   class: "empty-slot"
 }, te = /* @__PURE__ */ N({
@@ -114,7 +114,7 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
       /* CLASS */
     ));
   }
-}), ne = /* @__PURE__ */ P(te, [["__scopeId", "data-v-c6914249"]]), ae = { class: "modal-dialog" }, ie = { class: "modal-header" }, oe = { class: "modal-tabs" }, se = { class: "modal-body" }, le = {
+}), ne = /* @__PURE__ */ P(te, [["__scopeId", "data-v-678d52a3"]]), ae = { class: "modal-dialog" }, ie = { class: "modal-header" }, oe = { class: "modal-tabs" }, se = { class: "modal-body" }, le = {
   key: 0,
   class: "tab-pane"
 }, re = { class: "search-box" }, ce = {
@@ -153,7 +153,7 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
     async function E() {
       if (o)
         try {
-          g.value = await o.get("/api/x/shortlist");
+          g.value = await o.get("/api/x/core-shortlist");
         } catch {
           g.value = [];
         }
@@ -388,7 +388,7 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
       ])
     ]));
   }
-}), $e = /* @__PURE__ */ P(ge, [["__scopeId", "data-v-8a4e6253"]]), ke = { class: "timeline-page" }, Se = { class: "timeline-toolbar" }, Te = { class: "nav-controls" }, Ce = { class: "range-display" }, we = { class: "timeline-container" }, De = { class: "timeline-grid" }, Ie = { class: "day-header" }, Ae = { class: "day-label" }, Me = {
+}), $e = /* @__PURE__ */ P(ge, [["__scopeId", "data-v-fcc49ba9"]]), ke = { class: "timeline-page" }, Se = { class: "timeline-toolbar" }, Te = { class: "nav-controls" }, Ce = { class: "range-display" }, we = { class: "timeline-container" }, De = { class: "timeline-grid" }, Ie = { class: "day-header" }, Ae = { class: "day-label" }, Me = {
   key: 0,
   class: "today-badge"
 }, Ne = { class: "day-slots" }, Pe = { class: "day-footer" }, Ee = { class: "timeline-sidebar-wrapper" }, Re = /* @__PURE__ */ N({
@@ -538,7 +538,7 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
       }, null, 8, ["date", "meal-type"])) : y("v-if", !0)
     ]));
   }
-}), xe = /* @__PURE__ */ P(Re, [["__scopeId", "data-v-2634aee0"]]);
+}), xe = /* @__PURE__ */ P(Re, [["__scopeId", "data-v-ee77abe4"]]);
 function Le(e) {
   e.route({
     path: "/timeline",

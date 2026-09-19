@@ -10,7 +10,7 @@ const $ = { class: "vote-rating" }, j = { class: "net-score" }, k = /* @__PURE__
       var t, e, l;
       if (!(!n || !((e = (t = i.context) == null ? void 0 : t.entry) != null && e.id)))
         try {
-          const r = await n.get(`/api/x/ratings?journal_id=${i.context.entry.id}`);
+          const r = await n.get(`/api/x/core-ratings?journal_id=${i.context.entry.id}`);
           o.value = r.net_score ?? 0;
           const u = (l = a == null ? void 0 : a.value) == null ? void 0 : l.id;
           if (u && Array.isArray(r.scores)) {
@@ -25,9 +25,9 @@ const $ = { class: "vote-rating" }, j = { class: "net-score" }, k = /* @__PURE__
       if (!n || !((r = (l = i.context) == null ? void 0 : l.entry) != null && r.id)) return;
       const e = ((u = a == null ? void 0 : a.value) == null ? void 0 : u.id) || "anonymous";
       if (s.value === t)
-        n.delete && await n.delete(`/api/x/ratings?journal_id=${i.context.entry.id}&member_id=${e}`), s.value = null, o.value -= t;
+        n.delete && await n.delete(`/api/x/core-ratings?journal_id=${i.context.entry.id}&member_id=${e}`), s.value = null, o.value -= t;
       else {
-        const _ = s.value, v = await n.put("/api/x/ratings", {
+        const _ = s.value, v = await n.put("/api/x/core-ratings", {
           journal_id: i.context.entry.id,
           member_id: e,
           score: t
@@ -74,7 +74,7 @@ const $ = { class: "vote-rating" }, j = { class: "net-score" }, k = /* @__PURE__
   for (const [a, o] of i)
     n[a] = o;
   return n;
-}, C = /* @__PURE__ */ w(k, [["__scopeId", "data-v-3b4ec6bc"]]);
+}, C = /* @__PURE__ */ w(k, [["__scopeId", "data-v-97366ee4"]]);
 function I(c) {
   c.slot("journal.entry.footer", C, { order: 10 });
 }

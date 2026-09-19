@@ -16,7 +16,7 @@ const myVote = ref<number | null>(null)
 async function loadRatings() {
   if (!api || !props.context?.entry?.id) return
   try {
-    const res = await api.get(`/api/x/ratings?journal_id=${props.context.entry.id}`)
+    const res = await api.get(`/api/x/core-ratings?journal_id=${props.context.entry.id}`)
     netScore.value = res.net_score ?? 0
     const mId = currentMember?.value?.id
     if (mId && Array.isArray(res.scores)) {
@@ -34,13 +34,13 @@ async function castVote(score: number) {
   if (myVote.value === score) {
     // Toggle off
     if (api.delete) {
-      await api.delete(`/api/x/ratings?journal_id=${props.context.entry.id}&member_id=${mId}`)
+      await api.delete(`/api/x/core-ratings?journal_id=${props.context.entry.id}&member_id=${mId}`)
     }
     myVote.value = null
     netScore.value -= score
   } else {
     const prevVote = myVote.value
-    const res = await api.put('/api/x/ratings', {
+    const res = await api.put('/api/x/core-ratings', {
       journal_id: props.context.entry.id,
       member_id: mId,
       score,
