@@ -1,4 +1,4 @@
-CREATE TABLE plugin_ratings_scores (
+CREATE TABLE plugin_core_ratings_scores (
     journal_id TEXT NOT NULL REFERENCES cook_journal(id) ON DELETE CASCADE,
     member_id TEXT NOT NULL REFERENCES household_members(id) ON DELETE CASCADE,
     score INTEGER NOT NULL CHECK (score IN (-1, 1)),

@@ -1,8 +1,8 @@
 """Cook tracker plugin: records meal execution, carryovers, leftovers, and journal."""
 
 PLUGIN = {
-    "id": "cook-tracker",
-    "name": "Cook Tracker",
+    "id": "core-cook-tracker",
+    "name": "core-cook-tracker",
     "version": "1.0.0",
     "description": "Meal execution tracking, leftovers, carryovers, and cooking journal",
     "schema": 1,
@@ -14,14 +14,14 @@ PLUGIN = {
 async def rebuild(ctx):
     await ctx.db.write(
         """
-        DELETE FROM plugin_cook_tracker_leftovers
+        DELETE FROM plugin_core_cook_tracker_leftovers
         WHERE schedule_entry_id NOT IN (SELECT id FROM schedule_entries)
            OR journal_id NOT IN (SELECT id FROM cook_journal)
         """
     )
     await ctx.db.write(
         """
-        DELETE FROM plugin_cook_tracker_carryovers
+        DELETE FROM plugin_core_cook_tracker_carryovers
         WHERE journal_id NOT IN (SELECT id FROM cook_journal)
         """
     )

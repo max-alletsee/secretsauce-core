@@ -9,9 +9,9 @@ from secretsauce.units import (
 )
 
 PLUGIN = {
-    "id": "units",
+    "id": "core-units",
     "version": "1.0.0",
-    "name": "Units & Measurement",
+    "name": "core-units",
     "description": "Standardized unit conversion and ingredient parsing engine",
     "ui": "ui.js",
     "config_schema": {
@@ -88,14 +88,14 @@ def _convert_single_ingredient(
 
 async def setup(ctx: PluginContext) -> None:
     # 1. Register service
-    ctx.services.register("units", UnitsService())
+    ctx.services.register("core-units", UnitsService())
 
     # 2. Register recipe hooks
     async def process_recipe_ingredients(
         draft: dict[str, Any], current: Any = None, hook_ctx: Any = None
     ) -> dict[str, Any]:
-        # If origin is plugin:units (e.g. reconvert-all), bypass to avoid double conversion
-        if draft.get("origin") == "plugin:units":
+        # If origin is plugin:core-units (e.g. reconvert-all), bypass to avoid double conversion
+        if draft.get("origin") == "plugin:core-units":
             return draft
 
         ingredients = draft.get("ingredients")
@@ -159,7 +159,7 @@ async def setup(ctx: PluginContext) -> None:
                 revision=full_recipe["revision"],
                 data={
                     "ingredients": new_ingredients,
-                    "origin": "plugin:units",
+                    "origin": "plugin:core-units",
                 },
             )
             if handle:

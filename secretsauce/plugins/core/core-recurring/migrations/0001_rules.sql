@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS plugin_recurring_rules (
+CREATE TABLE IF NOT EXISTS plugin_core_recurring_rules (
     id TEXT PRIMARY KEY,
     weekday INTEGER NOT NULL,
     meal_type TEXT NOT NULL,
@@ -6,4 +6,4 @@ CREATE TABLE IF NOT EXISTS plugin_recurring_rules (
     created_at TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_recurring_rules_weekday ON plugin_recurring_rules(weekday);
+CREATE INDEX IF NOT EXISTS idx_core_recurring_rules_weekday ON plugin_core_recurring_rules(weekday);

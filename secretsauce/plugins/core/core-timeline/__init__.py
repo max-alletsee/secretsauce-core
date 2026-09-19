@@ -2,7 +2,7 @@
 
 PLUGIN = {
     "id": "core-timeline",
-    "name": "Timeline",
+    "name": "core-timeline",
     "version": "1.0.0",
     "description": "Rolling household meal timeline, schedule management, and offline cache warming",
     "core": True,

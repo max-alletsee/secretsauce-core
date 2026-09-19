@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 PLUGIN = {
-    "id": "ratings",
-    "name": "Ratings",
+    "id": "core-ratings",
+    "name": "core-ratings",
     "version": "1.0.0",
     "description": "Household member meal votes (upvote/downvote) and recipe rating indexing",
     "schema": 1,
@@ -41,7 +41,7 @@ async def update_recipe_score_mirror(ctx, journal_id: str) -> None:
     row = await ctx.db.read_one(
         """
         SELECT SUM(r.score) as net_score, COUNT(r.score) as total_votes
-        FROM plugin_ratings_scores r
+        FROM plugin_core_ratings_scores r
         JOIN cook_journal j ON r.journal_id = j.id
         JOIN recipes rec ON j.recipe_id = rec.id
         WHERE rec.group_id = ?
@@ -58,7 +58,7 @@ async def rebuild(ctx) -> dict[str, Any]:
     rows = await ctx.db.read_all(
         """
         SELECT rec.group_id, SUM(r.score) as net_score
-        FROM plugin_ratings_scores r
+        FROM plugin_core_ratings_scores r
         JOIN cook_journal j ON r.journal_id = j.id
         JOIN recipes rec ON j.recipe_id = rec.id
         GROUP BY rec.group_id
@@ -70,12 +70,12 @@ async def rebuild(ctx) -> dict[str, Any]:
 
 
 async def setup(ctx):
-    router = APIRouter(prefix="/api/x/ratings", tags=["ratings"])
+    router = APIRouter(prefix="/api/x/core-ratings", tags=["core-ratings"])
 
     @router.get("")
     async def get_ratings(journal_id: str = Query(...)):
         rows = await ctx.db.read_all(
-            "SELECT member_id, score FROM plugin_ratings_scores WHERE journal_id = ?",
+            "SELECT member_id, score FROM plugin_core_ratings_scores WHERE journal_id = ?",
             (journal_id,),
         )
         scores = [dict(r) for r in rows]
@@ -89,7 +89,7 @@ async def setup(ctx):
         now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         await ctx.db.write(
             """
-            INSERT INTO plugin_ratings_scores (journal_id, member_id, score, created_at)
+            INSERT INTO plugin_core_ratings_scores (journal_id, member_id, score, created_at)
             VALUES (?, ?, ?, ?)
             ON CONFLICT(journal_id, member_id) DO UPDATE SET score = excluded.score, created_at = excluded.created_at
             """,
@@ -97,7 +97,7 @@ async def setup(ctx):
         )
         await update_recipe_score_mirror(ctx, draft.journal_id)
         rows = await ctx.db.read_all(
-            "SELECT score FROM plugin_ratings_scores WHERE journal_id = ?",
+            "SELECT score FROM plugin_core_ratings_scores WHERE journal_id = ?",
             (draft.journal_id,),
         )
         return {"status": "ok", "net_score": sum(r["score"] for r in rows)}
@@ -105,7 +105,7 @@ async def setup(ctx):
     @router.delete("")
     async def delete_vote(journal_id: str = Query(...), member_id: str = Query(...)):
         await ctx.db.write(
-            "DELETE FROM plugin_ratings_scores WHERE journal_id = ? AND member_id = ?",
+            "DELETE FROM plugin_core_ratings_scores WHERE journal_id = ? AND member_id = ?",
             (journal_id, member_id),
         )
         await update_recipe_score_mirror(ctx, journal_id)

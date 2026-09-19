@@ -7,15 +7,15 @@ from fastapi import APIRouter, HTTPException, Request
 from secretsauce.plugins.context import PluginContext
 
 PLUGIN = {
-    "id": "recurring",
-    "name": "Recurring Meals",
+    "id": "core-recurring",
+    "name": "core-recurring",
     "version": "1.0.0",
     "description": "Weekly recurring meal planning and scheduling",
     "schema": 1,
     "ui": "ui.js",
 }
 
-router = APIRouter(prefix="/api/x/recurring", tags=["recurring"])
+router = APIRouter(prefix="/api/x/core-recurring", tags=["core-recurring"])
 
 
 @router.get("/rules")
@@ -23,7 +23,7 @@ async def list_rules(request: Request) -> list[dict[str, Any]]:
     kernel = request.app.state.kernel
     rows = await kernel.db.read_all(
         """SELECT r.id, r.weekday, r.meal_type, r.recipe_id, r.created_at, rec.title as recipe_title
-           FROM plugin_recurring_rules r
+           FROM plugin_core_recurring_rules r
            JOIN recipes rec ON r.recipe_id = rec.id
            ORDER BY r.weekday, r.meal_type"""
     )
@@ -45,7 +45,7 @@ async def create_rule(data: dict[str, Any], request: Request) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
     await kernel.db.write(
-        """INSERT INTO plugin_recurring_rules (id, weekday, meal_type, recipe_id, created_at)
+        """INSERT INTO plugin_core_recurring_rules (id, weekday, meal_type, recipe_id, created_at)
            VALUES (?, ?, ?, ?, ?)""",
         (rule_id, weekday, meal_type, recipe_id, now),
     )
@@ -63,7 +63,7 @@ async def create_rule(data: dict[str, Any], request: Request) -> dict[str, Any]:
 async def delete_rule(rule_id: str, request: Request) -> dict[str, bool]:
     kernel = request.app.state.kernel
     await kernel.db.write(
-        "DELETE FROM plugin_recurring_rules WHERE id = ?", (rule_id,)
+        "DELETE FROM plugin_core_recurring_rules WHERE id = ?", (rule_id,)
     )
     return {"ok": True}
 
@@ -71,13 +71,13 @@ async def delete_rule(rule_id: str, request: Request) -> dict[str, bool]:
 @router.post("/materialize")
 async def trigger_materialize(request: Request) -> dict[str, Any]:
     kernel = request.app.state.kernel
-    ctx = kernel.ctx_for("recurring")
+    ctx = kernel.ctx_for("core-recurring")
     await materialize_rules(ctx)
     return {"ok": True}
 
 
 async def materialize_rules(ctx: PluginContext) -> None:
-    rules = await ctx.db.read_all("SELECT * FROM plugin_recurring_rules")
+    rules = await ctx.db.read_all("SELECT * FROM plugin_core_recurring_rules")
     if not rules:
         return
 
@@ -98,7 +98,7 @@ async def materialize_rules(ctx: PluginContext) -> None:
                             "date": target_iso,
                             "meal_type": rule["meal_type"],
                             "recipe_id": rule["recipe_id"],
-                            "origin": "plugin:recurring",
+                            "origin": "plugin:core-recurring",
                         }
                     )
                     planned_meals.add(rule["meal_type"])
