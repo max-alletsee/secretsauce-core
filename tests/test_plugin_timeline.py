@@ -8,5 +8,5 @@ async def test_core_timeline_plugin_boots_cleanly(tmp_path: Path):
         p = await k.plugins.get_plugin("core-timeline")
         assert p is not None
         assert p["state"] == "active"
-        assert p["name"] == "Timeline"
+        assert p["name"] == "core-timeline"
         assert p["ui"] == "ui.js"

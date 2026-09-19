@@ -8,13 +8,13 @@ from secretsauce.testing import make_kernel
 async def test_recurring_plugin_backend_and_materializer(tmp_path: Path):
     async with make_kernel(tmp_path, auto_setup=True) as k:
         # Verify plugin is discovered and enabled
-        p = await k.plugins.get_plugin("recurring")
+        p = await k.plugins.get_plugin("core-recurring")
         assert p is not None
         assert p["state"] == "active"
 
         # 1. Verify migration applied
         table_check = await k.db.fetch_one(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='plugin_recurring_rules'"
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='plugin_core_recurring_rules'"
         )
         assert table_check is not None
 
@@ -35,7 +35,7 @@ async def test_recurring_plugin_backend_and_materializer(tmp_path: Path):
         # 3. Create a recurring rule for Wednesday
         target_weekday = 2  # Wednesday (0=Monday)
         rule_res = await k.client.post(
-            "/api/x/recurring/rules",
+            "/api/x/core-recurring/rules",
             json={
                 "weekday": target_weekday,
                 "meal_type": "dinner",
@@ -48,19 +48,19 @@ async def test_recurring_plugin_backend_and_materializer(tmp_path: Path):
         rule_id = rule_data["id"]
 
         # List rules
-        list_res = await k.client.get("/api/x/recurring/rules")
+        list_res = await k.client.get("/api/x/core-recurring/rules")
         assert list_res.status_code == 200
         rules = list_res.json()
         assert len(rules) == 1
         assert rules[0]["id"] == rule_id
 
         # 4. Materialize rules using the registered command and the API endpoint
-        mat_res = await k.client.post("/api/x/recurring/materialize", json={})
+        mat_res = await k.client.post("/api/x/core-recurring/materialize", json={})
         assert mat_res.status_code == 200
         assert mat_res.json()["ok"] is True
 
-        ctx = k.ctx_for("recurring")
-        materialize_fn = k.services.get_command("recurring", "materialize")
+        ctx = k.ctx_for("core-recurring")
+        materialize_fn = k.services.get_command("core-recurring", "materialize")
         assert materialize_fn is not None
         await materialize_fn(ctx)
 
@@ -89,12 +89,12 @@ async def test_recurring_plugin_backend_and_materializer(tmp_path: Path):
         assert del_res.status_code == 204
 
         rule_after = await k.db.fetch_one(
-            "SELECT * FROM plugin_recurring_rules WHERE id = ?", (rule_id,)
+            "SELECT * FROM plugin_core_recurring_rules WHERE id = ?", (rule_id,)
         )
         assert rule_after is None
 
         # 7. Verify UI bundle is accessible via plugin UI route
-        ui_res = await k.client.get("/api/plugins/recurring/ui.js")
+        ui_res = await k.client.get("/api/plugins/core-recurring/ui.js")
         assert ui_res.status_code == 200
         assert "javascript" in ui_res.headers.get("content-type", "")
-        assert "recurring" in ui_res.text
+        assert "core-recurring" in ui_res.text or "Recurring" in ui_res.text

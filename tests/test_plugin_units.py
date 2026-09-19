@@ -6,15 +6,15 @@ from secretsauce.testing import make_kernel
 @pytest.mark.asyncio
 async def test_units_plugin_manifest_and_services(tmp_path: Path):
     async with make_kernel(tmp_path, auto_setup=True) as k:
-        # Core plugin 'units' should be discovered and active
-        p = await k.plugins.get_plugin("units")
+        # Core plugin 'core-units' should be discovered and active
+        p = await k.plugins.get_plugin("core-units")
         assert p is not None
         assert p["state"] == "active"
-        assert p["name"] == "Units & Measurement"
+        assert p["name"] == "core-units"
         assert p["ui"] == "ui.js"
 
         # Check service registration
-        svc = k.services.get("units")
+        svc = k.services.get("core-units")
         assert svc is not None
         assert svc.canonical("tbsp") == "tbsp"
         parsed = svc.parse("½ cup sugar")
@@ -85,7 +85,7 @@ async def test_units_plugin_reconvert_all(tmp_path: Path):
 
         # Run reconvert job with target system us_customary
         job_id = await k.jobs.create_job(
-            "units", "reconvert-all", input_data={"system": "us_customary"}
+            "core-units", "reconvert-all", input_data={"system": "us_customary"}
         )
         run_res = await k.jobs.run_job(job_id)
         assert run_res["status"] == "done"
@@ -94,7 +94,7 @@ async def test_units_plugin_reconvert_all(tmp_path: Path):
         updated_res = await k.client.get(f"/api/recipes/{recipe_id}")
         assert updated_res.status_code == 200
         recipe = updated_res.json()
-        assert recipe["origin"] == "plugin:units"
+        assert recipe["origin"] == "plugin:core-units"
 
         ing0 = recipe["ingredients"][0]
         # 500g -> ~1.1 lb
