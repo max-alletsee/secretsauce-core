@@ -2,38 +2,79 @@
 
 **Date:** 2026-09-18  
 **Status:** Approved  
-**Scope:** Standardization of all core plugins to use the `core-` prefix for both plugin ID/directory and manifest name, and completion of the remaining 5 Stage 7 core plugins: `core-ai-provider`, `core-translator`, `core-recipe-importer`, `core-meal-planner-ai`, and `core-shopping-list`.
+**Scope:** Complete standardization of all core plugins to use the `core-` prefix (directories, IDs, manifest names, routes, and database tables with zero aliasing), followed by implementation of the remaining 5 Stage 7 core plugins: `core-ai-provider`, `core-translator`, `core-recipe-importer`, `core-meal-planner-ai`, and `core-shopping-list`.
 
 ---
 
-## 1. Executive Summary & Core Plugin Naming Convention
+## 1. Executive Summary & Strict Core Plugin Naming Standard
 
-All core plugins in SecretSauce adhere to a strict naming convention:
-- **Directory & ID:** prefixed with `core-` (e.g. `core-ai-provider`, `core-ratings`, `core-units`).
-- **Manifest Name:** prefixed with `core-` (e.g. `core-ai-provider`, `core-ratings`, `core-units`).
+All core plugins in SecretSauce must adhere strictly and without exception to the `core-` prefix convention:
+- **Directory Path:** `secretsauce/plugins/core/<id>/` where `<id>` starts with `core-`.
+- **Plugin ID (`PLUGIN["id"]`):** starts with `core-`.
+- **Plugin Manifest Name (`PLUGIN["name"]`):** exact match to `core-<id>`.
+- **Plugin Route Prefix:** `/api/x/core-<id>/`.
+- **Plugin Database Tables:** `plugin_core_<id_without_core>_<table_name>` (e.g. `plugin_core_ratings_scores`, `plugin_core_shortlist_entries`).
+- **No Backward Compatibility Aliases:** Since there are no live production users or external callers, all routes, services, and tables are fully reworked directly without compatibility shims or dual mounts.
 
-### Inventory of All Core Plugins
-| Previous ID | Standardized ID | Standardized Name | Status |
-|---|---|---|---|
-| `core-members` | `core-members` | `core-members` | Existing (Phase 3B) |
-| `core-recipes` | `core-recipes` | `core-recipes` | Existing (Phase 3B) |
-| `core-timeline` | `core-timeline` | `core-timeline` | Existing (Phase 3C) |
-| `cook-tracker` | `core-cook-tracker` | `core-cook-tracker` | Existing -> Renamed |
-| `ratings` | `core-ratings` | `core-ratings` | Existing -> Renamed |
-| `shortlist` | `core-shortlist` | `core-shortlist` | Existing -> Renamed |
-| `units` | `core-units` | `core-units` | Existing -> Renamed |
-| `recurring` | `core-recurring` | `core-recurring` | Existing -> Renamed |
-| *(new)* | `core-ai-provider` | `core-ai-provider` | **To Implement** |
-| *(new)* | `core-translator` | `core-translator` | **To Implement** |
-| *(new)* | `core-recipe-importer` | `core-recipe-importer` | **To Implement** |
-| *(new)* | `core-meal-planner-ai` | `core-meal-planner-ai` | **To Implement** |
-| *(new)* | `core-shopping-list` | `core-shopping-list` | **To Implement** |
+### Master Inventory of All 13 Core Plugins
+| Directory & Plugin ID | Manifest Name | Route Prefix | Primary DB Tables | Status |
+|---|---|---|---|---|
+| `core-members` | `core-members` | `/api/x/core-members` | Kernel tables (`members`) | Existing (Rework name) |
+| `core-recipes` | `core-recipes` | `/api/x/core-recipes` | Kernel tables (`recipes`) | Existing (Rework name) |
+| `core-timeline` | `core-timeline` | `/api/x/core-timeline` | Kernel tables (`schedule`) | Existing (Rework name) |
+| `core-cook-tracker` | `core-cook-tracker` | `/api/x/core-cook-tracker` | `plugin_core_cook_tracker_leftovers`, `_carryovers` | **Rework & Rename** |
+| `core-ratings` | `core-ratings` | `/api/x/core-ratings` | `plugin_core_ratings_scores` | **Rework & Rename** |
+| `core-shortlist` | `core-shortlist` | `/api/x/core-shortlist` | `plugin_core_shortlist_entries` | **Rework & Rename** |
+| `core-units` | `core-units` | `/api/x/core-units` | None (In-memory engine) | **Rework & Rename** |
+| `core-recurring` | `core-recurring` | `/api/x/core-recurring` | `plugin_core_recurring_rules` | **Rework & Rename** |
+| `core-ai-provider` | `core-ai-provider` | `/api/x/core-ai-provider` | `plugin_core_ai_provider_calls` | **New Implementation** |
+| `core-translator` | `core-translator` | `/api/x/core-translator` | Kernel tables (`recipes`) | **New Implementation** |
+| `core-recipe-importer` | `core-recipe-importer` | `/api/x/core-recipe-importer` | Background jobs / `entity_attributes` | **New Implementation** |
+| `core-meal-planner-ai` | `core-meal-planner-ai` | `/api/x/core-meal-planner-ai` | None (Generative suggestion pool) | **New Implementation** |
+| `core-shopping-list` | `core-shopping-list` | `/api/x/core-shopping-list` | `plugin_core_shopping_list_lists`, `_items`, `_staples` | **New Implementation** |
 
 ---
 
-## 2. Plugin: `core-ai-provider` (Core AI Engine & Provider Normalization)
+## 2. Phase 0: Explicit Full Rework of Existing Core Plugins
 
-### 2.1 Manifest & Configuration
+Before building the 5 new plugins, the 5 existing non-prefixed core plugins and 3 partially-prefixed plugins are completely reworked to establish a pristine clean base:
+
+### 2.1 Directory & Manifest Reorganization
+1. `secretsauce/plugins/core/cook-tracker/` $\to$ `secretsauce/plugins/core/core-cook-tracker/`
+   - Manifest: `id: "core-cook-tracker"`, `name: "core-cook-tracker"`.
+   - Migrations: `plugin_core_cook_tracker_leftovers`, `plugin_core_cook_tracker_carryovers`.
+   - Router: `/api/x/core-cook-tracker`.
+2. `secretsauce/plugins/core/ratings/` $\to$ `secretsauce/plugins/core/core-ratings/`
+   - Manifest: `id: "core-ratings"`, `name: "core-ratings"`.
+   - Migrations: `plugin_core_ratings_scores`.
+   - Router: `/api/x/core-ratings`.
+   - Mirrored attribute: `core-ratings.score`.
+3. `secretsauce/plugins/core/shortlist/` $\to$ `secretsauce/plugins/core/core-shortlist/`
+   - Manifest: `id: "core-shortlist"`, `name: "core-shortlist"`.
+   - Migrations: `plugin_core_shortlist_entries`.
+   - Router: `/api/x/core-shortlist`.
+4. `secretsauce/plugins/core/units/` $\to$ `secretsauce/plugins/core/core-units/`
+   - Manifest: `id: "core-units"`, `name: "core-units"`.
+   - Registered service: `ctx.services.register("core-units", UnitsService())`.
+5. `secretsauce/plugins/core/recurring/` $\to$ `secretsauce/plugins/core/core-recurring/`
+   - Manifest: `id: "core-recurring"`, `name: "core-recurring"`.
+   - Migrations: `plugin_core_recurring_rules`.
+   - Router: `/api/x/core-recurring`.
+   - Materialize origin: `plugin:core-recurring`.
+6. `core-members`, `core-recipes`, `core-timeline`:
+   - Manifest name updated to exact match: `"core-members"`, `"core-recipes"`, `"core-timeline"`.
+
+### 2.2 Shell & Frontend Alignment
+- Rebuild plugin scripts (`shell/scripts/build-plugins.ts`).
+- Update all UI imports, plugin IDs, router paths, and outbox URLs from `/api/x/<name>` to `/api/x/core-<name>`.
+- Vitest integration tests in `shell/tests/` updated to register with `core-*` IDs.
+- Pytest backend tests renamed and updated to `test_plugin_core_*.py`.
+
+---
+
+## 3. Plugin: `core-ai-provider` (Core AI Engine & Provider Normalization)
+
+### 3.1 Manifest & Configuration
 - **ID:** `core-ai-provider`
 - **Name:** `core-ai-provider`
 - **Version:** `1.0.0`
@@ -41,13 +82,13 @@ All core plugins in SecretSauce adhere to a strict naming convention:
 - **Schema:** `1`
 - **Config Schema:**
   - `provider`: Enum `["gemini", "openai", "openrouter"]`, default `"gemini"`.
-  - `model`: String, default `"gemini-3.8-flash"` (for OpenAI: default `"gpt-4o-mini"`; for OpenRouter: default `"google/gemini-2.5-flash"`).
+  - `model`: String, default `"gemini-3.8-flash"` (for OpenAI: `"gpt-4o-mini"`; for OpenRouter: `"google/gemini-2.5-flash"`).
   - `api_key`: String with `secret: true` (encrypted at rest via `KeyManager`).
-  - `base_url`: String or `null` (optional custom endpoint, defaults to official endpoint per provider).
+  - `base_url`: String or `null` (optional custom endpoint).
   - `monthly_budget`: Number or `null` (default `10.0`, USD limit).
-  - `enforce_budget`: Boolean (default `false`). When `false`, calls proceed even if `monthly_budget` is exceeded, logging usage without blocking.
+  - `enforce_budget`: Boolean (default `false`).
 
-### 2.2 Database Schema (`0001_initial.sql`)
+### 3.2 Database Schema (`0001_initial.sql`)
 ```sql
 CREATE TABLE IF NOT EXISTS plugin_core_ai_provider_calls (
     id TEXT PRIMARY KEY,
@@ -69,10 +110,8 @@ CREATE INDEX IF NOT EXISTS idx_core_ai_provider_calls_created_at
     ON plugin_core_ai_provider_calls(created_at);
 ```
 
-### 2.3 Provider Normalization Architecture (Pi-Inspired)
-Borrowed from Pi's clean multi-provider engine, `core-ai-provider` shields consumers (`core-translator`, `core-recipe-importer`, `core-meal-planner-ai`, `core-shopping-list`) from vendor-specific payload shapes, authentication formats, and response differences.
-
-Registered under `ctx.services.register("core-ai-provider", service)` and aliases `"ai-provider"`, `"ai"`:
+### 3.3 Provider Normalization Architecture (Pi-Inspired)
+Exposes a single unified interface: `ctx.services.register("core-ai-provider", service)`:
 
 ```python
 class AIProviderService:
@@ -90,11 +129,11 @@ class AIProviderService:
 #### Provider Drivers:
 1. **`GeminiDriver` (`provider == "gemini"`):**
    - Uses `google.genai` SDK (`client.aio.models.generate_content`).
-   - Converts schema to `GenerateContentConfig(response_mime_type="application/json", response_schema=schema)`.
+   - Structured output via `types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema)`.
    - Attaches images via `types.Part.from_bytes(data=raw_bytes, mime_type=mime)`.
 2. **`OpenAIDriver` (`provider == "openai"`):**
    - Uses `httpx.AsyncClient` calling `{base_url}/chat/completions` (default `https://api.openai.com/v1/chat/completions`).
-   - Uses Structured Outputs JSON schema:
+   - Structured Outputs JSON schema:
      `response_format: {"type": "json_schema", "json_schema": {"name": "response", "strict": True, "schema": schema_dict}}`.
    - Normalizes images into base64 data URLs: `{"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}}`.
    - Headers: `Authorization: Bearer {api_key}`.
@@ -109,12 +148,12 @@ class AIProviderService:
 3. **Usage Extraction:** Extracts token usage (`input_tokens`, `output_tokens`) from standard provider metadata.
 4. **Cost Estimation:** Calculates estimated USD cost using provider-specific rate table.
 5. **Auditing:** Inserts call record into `plugin_core_ai_provider_calls`.
-6. **Output Parsing:** Returns instance of Pydantic `schema` (or dict).
+6. **Output Parsing:** Returns validated instance of Pydantic `schema` (or dict).
 7. **Mock Driver Support:** Allows injecting a test mock driver for deterministic, offline pytest suites without external keys or network calls.
 
-### 2.4 Endpoints & UI Contribution
+### 3.4 Endpoints & UI Contribution
 - **Endpoints:**
-  - `GET /api/x/core-ai-provider/usage` (alias `/api/x/ai-provider/usage`): Returns monthly spend, token totals, budget limit, and the latest 20 call logs.
+  - `GET /api/x/core-ai-provider/usage`: Returns monthly spend, token totals, budget limit, and the latest 20 call logs.
   - `POST /api/x/core-ai-provider/test`: Verifies configured API credentials and returns connectivity status.
 - **UI Contribution (`AISettings.vue`):**
   - Settings section registered via `ss.settings.section({ id: "core-ai-provider", title: "AI & Intelligence", component: AISettings, order: 20 })`.
@@ -123,9 +162,9 @@ class AIProviderService:
 
 ---
 
-## 3. Plugin: `core-translator` (Automated Recipe Translation)
+## 4. Plugin: `core-translator` (Automated Recipe Translation)
 
-### 3.1 Manifest & Configuration
+### 4.1 Manifest & Configuration
 - **ID:** `core-translator`
 - **Name:** `core-translator`
 - **Version:** `1.0.0`
@@ -134,7 +173,7 @@ class AIProviderService:
 - **Config Schema:**
   - `target_languages`: Array of ISO language strings (e.g. `["de", "es", "fr"]`), default `["de"]`.
 
-### 3.2 Provenance Rules & Event Handlers
+### 4.2 Provenance Rules & Event Handlers
 - **Subscribed Events:** `recipe:created`, `recipe:updated`.
 - **Filtering Rules:**
   - If `event.origin == "plugin:core-translator"`, ignore (prevents recursion).
@@ -152,16 +191,16 @@ class AIProviderService:
 
 ---
 
-## 4. Plugin: `core-recipe-importer` (URL, Photo & Share Import)
+## 5. Plugin: `core-recipe-importer` (URL, Photo & Share Import)
 
-### 4.1 Manifest & Configuration
+### 5.1 Manifest & Configuration
 - **ID:** `core-recipe-importer`
 - **Name:** `core-recipe-importer`
 - **Version:** `1.0.0`
 - **Core:** `true`
 - **Requires:** `["core-ai-provider"]`
 
-### 4.2 Background Jobs & Execution
+### 5.2 Background Jobs & Execution
 1. **URL Scraping Job (`import_url`):**
    - Fetches HTML via `httpx.AsyncClient` with user-agent headers.
    - Calls normalized `ai.complete(RecipeImportSchema, prompt)` with extracted page content.
@@ -173,7 +212,7 @@ class AIProviderService:
    - Calls normalized `ai.complete(RecipeImportSchema, prompt, images=[(image_bytes, mime_type)])`.
    - Emits job progress and creates recipe row.
 
-### 4.3 Intent Hub Providers & Offline Behavior
+### 5.3 Intent Hub Providers & Offline Behavior
 - **Intent Hub `recipe:create`:**
   - Provider `import-url`:
     - `title`: "Import from URL"
@@ -196,9 +235,9 @@ class AIProviderService:
 
 ---
 
-## 5. Plugin: `core-meal-planner-ai` (AI Meal Suggestion Pool Engine)
+## 6. Plugin: `core-meal-planner-ai` (AI Meal Suggestion Pool Engine)
 
-### 5.1 Manifest & Configuration
+### 6.1 Manifest & Configuration
 - **ID:** `core-meal-planner-ai`
 - **Name:** `core-meal-planner-ai`
 - **Version:** `1.0.0`
@@ -208,17 +247,17 @@ class AIProviderService:
   - `system_prompt`: String, default custom family guidance instructions.
   - `suggestion_count`: Integer (default 7, range 1 to 21).
 
-### 5.2 Context Gathering & Synthesis
+### 6.2 Context Gathering & Synthesis
 The suggestion engine gathers:
 1. **Member Preferences:** Dietary restrictions, allergies, disliked foods, favorite cuisines.
 2. **Household Ratios:** Default servings and serving ratios.
-3. **Recipe Library Context:** List of existing recipes (titles, tags, rating scores from `ratings.score`, and shortlisted flags).
+3. **Recipe Library Context:** List of existing recipes (titles, tags, rating scores from `core-ratings.score`, and shortlisted flags).
 4. **AI Generation:** Calls `ai.complete(MealSuggestionsSchema, prompt)`.
    - Returns a clean list of candidate recipe suggestions (`recipe_id`, `title`, suggested meal type, suggested servings).
    - **No justifications or verbose explanations required.**
 5. **Detached Suggestions Pool (No Auto-Scheduling):** Suggestions are **not** automatically locked into date or meal slots. Instead, they form a suggestions pool in their own UI element from which the user selects meals and assigns them to desired days/meals.
 
-### 5.3 Intent Hub & UI Element
+### 6.3 Intent Hub & UI Element
 - **Provider on `timeline:assist`:**
   - `id`: `suggest-week`
   - `title`: "AI Recipe Suggestions"
@@ -231,9 +270,9 @@ The suggestion engine gathers:
 
 ---
 
-## 6. Plugin: `core-shopping-list` (Aggregated Grocery Lists & Outbox Sync)
+## 7. Plugin: `core-shopping-list` (Aggregated Grocery Lists & Outbox Sync)
 
-### 6.1 Manifest & Configuration
+### 7.1 Manifest & Configuration
 - **ID:** `core-shopping-list`
 - **Name:** `core-shopping-list`
 - **Version:** `1.0.0`
@@ -244,13 +283,13 @@ The suggestion engine gathers:
   - `default_days_ahead`: Integer (default 7).
   - `group_by_category`: Boolean (default true).
 
-### 6.2 Data Sources for Aggregation
+### 7.2 Data Sources for Aggregation
 The shopping list aggregates ingredients from two explicit, concrete sources:
 1. **Scheduled Meals (`ScheduleRepo` + `RecipeRepo`):**
    - Queries `schedule` between `date_from` and `date_to`.
    - Includes:
      - Manually scheduled meals (`origin = 'member'`).
-     - Weekly recurring meals materialized by the `core-recurring` plugin (`origin = 'plugin:core-recurring'`, stored in `schedule` from `plugin_recurring_rules`).
+     - Weekly recurring meals materialized by the `core-recurring` plugin (`origin = 'plugin:core-recurring'`, stored in `schedule` from `plugin_core_recurring_rules`).
    - Scales each ingredient quantity by `servings_override / recipe.servings`.
 2. **Household Recurring Pantry Staples (`plugin_core_shopping_list_staples`):**
    - Stored in a dedicated plugin table `plugin_core_shopping_list_staples`:
@@ -258,7 +297,7 @@ The shopping list aggregates ingredients from two explicit, concrete sources:
    - Represents items household members regularly keep in stock (e.g. Milk, Eggs, Butter, Olive Oil).
    - When generating or rebuilding a shopping list, all active staples (`enabled = 1`) are merged into the list.
 
-### 6.3 Database Schema (`0001_initial.sql`)
+### 7.3 Database Schema (`0001_initial.sql`)
 ```sql
 CREATE TABLE IF NOT EXISTS plugin_core_shopping_list_lists (
     id TEXT PRIMARY KEY,
@@ -295,7 +334,7 @@ CREATE TABLE IF NOT EXISTS plugin_core_shopping_list_staples (
 CREATE INDEX IF NOT EXISTS idx_core_shopping_items_list ON plugin_core_shopping_list_items(list_id);
 ```
 
-### 6.4 Aggregation & Normalization Engine
+### 7.4 Aggregation & Normalization Engine
 1. **Schedule & Staples Collection:**
    - Fetches scheduled recipe ingredients for `[date_from, date_to]`.
    - Fetches active staples from `plugin_core_shopping_list_staples`.
@@ -305,7 +344,7 @@ CREATE INDEX IF NOT EXISTS idx_core_shopping_items_list ON plugin_core_shopping_
    - Categorizes into standard supermarket aisles: `Produce`, `Dairy & Eggs`, `Meat & Fish`, `Bakery`, `Pantry`, `Frozen`, `Beverages`, `Other`.
    - If `core-ai-provider` is available, complex/unrecognized ingredients can optionally be normalized using the AI service.
 
-### 6.5 Frontend Route, Outbox & Optimistic UI
+### 7.5 Frontend Route, Outbox & Optimistic UI
 - **Route `/shopping` (`ShoppingPage.vue`):**
   - Navigation registration: `{ label: "Shopping", icon: "shopping-cart", path: "/shopping", order: 25 }`.
   - Renders grocery items grouped by aisle category.
@@ -323,29 +362,11 @@ CREATE INDEX IF NOT EXISTS idx_core_shopping_items_list ON plugin_core_shopping_
 
 ---
 
-## 7. Migration Plan for Existing Core Plugins
-
-To ensure non-breaking backwards compatibility while standardizing to the `core-` prefix:
-1. **Directory & ID Renaming:**
-   - `cook-tracker` $\to$ `core-cook-tracker`
-   - `ratings` $\to$ `core-ratings`
-   - `shortlist` $\to$ `core-shortlist`
-   - `units` $\to$ `core-units`
-   - `recurring` $\to$ `core-recurring`
-2. **Manifest Names:**
-   - Set `name: "core-<id>"` across all core plugins.
-3. **Route & Service Aliases:**
-   - `core-units` registers both `ctx.services.register("core-units", ...)` and `ctx.services.register("units", ...)`.
-   - Routers mounted under `/api/x/core-<id>` also support `/api/x/<id>` routes or backwards compatibility forwards.
-4. **Existing Table Compatibility:**
-   - Tables like `plugin_ratings_scores`, `plugin_shortlist_entries`, `plugin_cook_tracker_leftovers`, `plugin_recurring_rules` remain fully operational and supported.
-
----
-
 ## 8. Testing Strategy (TDD)
 
 ### 8.1 Backend Tests (`uv run pytest`)
-1. Existing core plugin tests updated and passing with `core-` prefixes.
+1. **Phase 0 Regression & Verification Tests:**
+   - All existing tests migrated to `core-` naming (`tests/test_plugin_core_*.py`) and passing without aliases.
 2. `tests/test_plugin_core_ai_provider.py`:
    - Multi-provider drivers (`GeminiDriver`, `OpenAIDriver`, `OpenRouterDriver`).
    - Verification of `complete()` with structured schemas.
@@ -371,13 +392,14 @@ To ensure non-breaking backwards compatibility while standardizing to the `core-
    - Rebuild command execution.
 
 ### 8.2 Frontend Tests (`pnpm --prefix shell test`)
-1. `shell/tests/plugins/core-ai-provider.spec.ts`:
+1. All existing plugin specs updated to `core-*` IDs and passing.
+2. `shell/tests/plugins/core-ai-provider.spec.ts`:
    - AISettings component renders provider selector, usage gauge, budget progress, and audit logs.
-2. `shell/tests/plugins/core-recipe-importer.spec.ts`:
+3. `shell/tests/plugins/core-recipe-importer.spec.ts`:
    - Import URL modal, Import Photo modal, online gating with `ss.store.online`, and `recipe.detail.footer` attribution slot.
-3. `shell/tests/plugins/core-meal-planner-ai.spec.ts`:
+4. `shell/tests/plugins/core-meal-planner-ai.spec.ts`:
    - Suggestions drawer rendering candidate recipes and day assignment trigger.
-4. `shell/tests/plugins/core-shopping-list.spec.ts`:
+5. `shell/tests/plugins/core-shopping-list.spec.ts`:
    - Shopping page rendering, category grouping, outbox enqueue on checkbox toggle, staples management, and export providers.
 
 ---
