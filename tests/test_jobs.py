@@ -74,15 +74,16 @@ async def test_job_cancellation_and_boot_recovery(tmp_path):
     async with db.transaction() as tx:
         await tx.execute("UPDATE jobs SET status = 'running' WHERE id = ?;", (j3,))
 
-    # Boot recovery
+    # Boot recovery: only jobs that were running are lost (spec 6.8); pending
+    # jobs stay queued for the runner once their plugin registers a handler.
     recovered = await jm.recover_stale_jobs_on_boot()
-    assert recovered == 2
+    assert recovered == 1
 
     job2 = await jm.get_job(j2)
-    assert job2["status"] == "failed"
-    assert "Server restarted" in job2["error"]
+    assert job2["status"] == "pending"
 
     job3 = await jm.get_job(j3)
     assert job3["status"] == "failed"
+    assert job3["error"] == "interrupted by restart"
 
     await db.close()

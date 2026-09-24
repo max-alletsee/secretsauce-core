@@ -4,10 +4,11 @@ import re
 from typing import Any
 import uuid
 
-from fastapi import APIRouter, HTTPException, Request
-import httpx
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from secretsauce.plugins.context import PluginContext
+from secretsauce import net
+from secretsauce.errors import SecretSauceError
+from secretsauce.plugins.context import PluginContext, current_ctx
 
 PLUGIN = {
     "id": "core-recipe-importer",
@@ -21,6 +22,11 @@ PLUGIN = {
 }
 
 router = APIRouter(prefix="/api/x/core-recipe-importer", tags=["core-recipe-importer"])
+
+
+class AIUnavailableError(SecretSauceError):
+    code = "unavailable"
+    status_code = 503
 
 
 def _now_iso() -> str:
@@ -95,10 +101,7 @@ async def _extract_recipe_with_ai(
 ) -> dict[str, Any]:
     ai_svc = ctx.services.get("core-ai-provider") or ctx.services.get("ai")
     if not ai_svc:
-        raise HTTPException(
-            status_code=503,
-            detail="AI Provider service ('core-ai-provider') is not available",
-        )
+        raise AIUnavailableError("AI Provider service ('core-ai-provider') is not available")
 
     system_prompt = (
         "You are an expert culinary assistant. Extract the recipe from the provided input into the structured schema. "
@@ -146,187 +149,108 @@ def _strip_html(html: str) -> str:
     return text[:15000]
 
 
-@router.post("/parse-url")
-async def parse_url_endpoint(req: ParseUrlRequest, request: Request):
-    kernel = request.app.state.kernel
-    ctx = kernel.ctx_for("core-recipe-importer")
-
-    try:
-        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-            resp = await client.get(req.url, headers={"User-Agent": "Mozilla/5.0 (compatible; SecretSauce/1.0)"})
-            if resp.status_code >= 400:
-                raise HTTPException(status_code=400, detail=f"Failed to fetch URL: HTTP {resp.status_code}")
-            html = resp.text
-
-        clean_text = _strip_html(html)
-        draft = await _extract_recipe_with_ai(
-            ctx,
-            content_prompt=f"Recipe URL: {req.url}\nWebpage text:\n{clean_text}",
-            call_type="recipe_import_url",
-        )
-
-        recipe_id = None
-        if req.auto_save:
-            recipe_id = await _save_recipe_draft(ctx, draft)
-            draft["recipe_id"] = recipe_id
-
-        await _log_history(
-            ctx,
-            source_type="url",
-            source_url=req.url,
-            title=draft.get("title"),
-            status="success",
-            recipe_id=recipe_id,
-        )
-        return draft
-    except Exception as e:
-        await _log_history(
-            ctx,
-            source_type="url",
-            source_url=req.url,
-            status="failed",
-            error_message=str(e),
-        )
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=500, detail=f"Recipe extraction failed: {e}")
-
-
-@router.post("/parse-text")
-async def parse_text_endpoint(req: ParseTextRequest, request: Request):
-    kernel = request.app.state.kernel
-    ctx = kernel.ctx_for("core-recipe-importer")
-
-    try:
-        draft = await _extract_recipe_with_ai(
-            ctx,
-            content_prompt=f"Text to parse:\n{req.text}",
-            call_type="recipe_import_text",
-        )
-
-        recipe_id = None
-        if req.auto_save:
-            recipe_id = await _save_recipe_draft(ctx, draft)
-            draft["recipe_id"] = recipe_id
-
-        await _log_history(
-            ctx,
-            source_type="text",
-            title=draft.get("title"),
-            status="success",
-            recipe_id=recipe_id,
-        )
-        return draft
-    except Exception as e:
-        await _log_history(
-            ctx,
-            source_type="text",
-            status="failed",
-            error_message=str(e),
-        )
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=500, detail=f"Recipe text extraction failed: {e}")
-
-
-@router.post("/parse-image")
-async def parse_image_endpoint(req: ParseImageRequest, request: Request):
-    kernel = request.app.state.kernel
-    ctx = kernel.ctx_for("core-recipe-importer")
-
-    try:
-        draft = await _extract_recipe_with_ai(
-            ctx,
-            content_prompt="Extract recipe details from this image.",
-            images=[{"base64": req.image_base64, "mime_type": req.mime_type}],
-            call_type="recipe_import_image",
-        )
-
-        recipe_id = None
-        if req.auto_save:
-            recipe_id = await _save_recipe_draft(ctx, draft)
-            draft["recipe_id"] = recipe_id
-
-        await _log_history(
-            ctx,
-            source_type="image",
-            title=draft.get("title"),
-            status="success",
-            recipe_id=recipe_id,
-        )
-        return draft
-    except Exception as e:
-        await _log_history(
-            ctx,
-            source_type="image",
-            status="failed",
-            error_message=str(e),
-        )
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=500, detail=f"Recipe image extraction failed: {e}")
-
-
-@router.get("/history")
-async def list_history_endpoint(request: Request):
-    kernel = request.app.state.kernel
-    rows = await kernel.db.read_all(
-        "SELECT * FROM plugin_core_recipe_importer_history ORDER BY created_at DESC LIMIT 50"
-    )
-    return [dict(r) for r in rows]
-
-
 class RecipeImporterService:
+    """Parses recipes from URLs, text and images; every attempt is logged in history."""
+
     def __init__(self, ctx: PluginContext):
         self.ctx = ctx
 
-    async def parse_url(self, url: str, auto_save: bool = False) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-            resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; SecretSauce/1.0)"})
-            html = resp.text
-        clean_text = _strip_html(html)
-        draft = await _extract_recipe_with_ai(
-            self.ctx,
-            content_prompt=f"Recipe URL: {url}\nWebpage text:\n{clean_text}",
-            call_type="recipe_import_url",
+    async def _import(
+        self,
+        source_type: str,
+        prompt: str,
+        call_type: str,
+        auto_save: bool,
+        source_url: str | None = None,
+        images: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        try:
+            draft = await _extract_recipe_with_ai(
+                self.ctx, content_prompt=prompt, images=images, call_type=call_type
+            )
+            recipe_id = await _save_recipe_draft(self.ctx, draft) if auto_save else None
+            if recipe_id:
+                draft["recipe_id"] = recipe_id
+        except Exception as e:
+            await _log_history(
+                self.ctx, source_type=source_type, source_url=source_url,
+                status="failed", error_message=str(e),
+            )
+            raise
+        await _log_history(
+            self.ctx, source_type=source_type, source_url=source_url,
+            title=draft.get("title"), status="success", recipe_id=recipe_id,
         )
-        if auto_save:
-            draft["recipe_id"] = await _save_recipe_draft(self.ctx, draft)
         return draft
+
+    async def parse_url(self, url: str, auto_save: bool = False) -> dict[str, Any]:
+        try:
+            html = await net.fetch_public_text(url)
+        except Exception as e:
+            await _log_history(
+                self.ctx, source_type="url", source_url=url, status="failed", error_message=str(e)
+            )
+            raise
+        return await self._import(
+            "url",
+            f"Recipe URL: {url}\nWebpage text:\n{_strip_html(html)}",
+            "recipe_import_url",
+            auto_save,
+            source_url=url,
+        )
 
     async def parse_text(self, text: str, auto_save: bool = False) -> dict[str, Any]:
-        draft = await _extract_recipe_with_ai(
-            self.ctx,
-            content_prompt=f"Text to parse:\n{text}",
-            call_type="recipe_import_text",
-        )
-        if auto_save:
-            draft["recipe_id"] = await _save_recipe_draft(self.ctx, draft)
-        return draft
+        return await self._import("text", f"Text to parse:\n{text}", "recipe_import_text", auto_save)
 
-    async def parse_image(self, image_base64: str, mime_type: str = "image/jpeg", auto_save: bool = False) -> dict[str, Any]:
-        draft = await _extract_recipe_with_ai(
-            self.ctx,
-            content_prompt="Extract recipe details from this image.",
+    async def parse_image(
+        self, image_base64: str, mime_type: str = "image/jpeg", auto_save: bool = False
+    ) -> dict[str, Any]:
+        return await self._import(
+            "image",
+            "Extract recipe details from this image.",
+            "recipe_import_image",
+            auto_save,
             images=[{"base64": image_base64, "mime_type": mime_type}],
-            call_type="recipe_import_image",
         )
-        if auto_save:
-            draft["recipe_id"] = await _save_recipe_draft(self.ctx, draft)
-        return draft
+
+
+def _service(ctx: PluginContext) -> RecipeImporterService:
+    return ctx.services.get("core-recipe-importer")
+
+
+@router.post("/parse-url")
+async def parse_url_endpoint(req: ParseUrlRequest, ctx: PluginContext = Depends(current_ctx)):
+    return await _service(ctx).parse_url(req.url, auto_save=req.auto_save)
+
+
+@router.post("/parse-text")
+async def parse_text_endpoint(req: ParseTextRequest, ctx: PluginContext = Depends(current_ctx)):
+    return await _service(ctx).parse_text(req.text, auto_save=req.auto_save)
+
+
+@router.post("/parse-image")
+async def parse_image_endpoint(req: ParseImageRequest, ctx: PluginContext = Depends(current_ctx)):
+    return await _service(ctx).parse_image(
+        req.image_base64, mime_type=req.mime_type, auto_save=req.auto_save
+    )
+
+
+@router.get("/history")
+async def list_history_endpoint(ctx: PluginContext = Depends(current_ctx)):
+    return await ctx.db.fetch_all(
+        "SELECT * FROM plugin_core_recipe_importer_history ORDER BY created_at DESC LIMIT 50"
+    )
 
 
 async def setup(ctx: PluginContext):
     service = RecipeImporterService(ctx)
     ctx.services.register("core-recipe-importer", service)
-    ctx.routes.mount(router)
+    ctx.router(router)
 
     async def import_url_job(input_data: dict[str, Any], handle: Any = None) -> dict[str, Any]:
-        url = input_data["url"]
-        auto_save = input_data.get("auto_save", True)
         if handle:
             await handle.set_progress(10)
-        draft = await service.parse_url(url=url, auto_save=auto_save)
+        draft = await service.parse_url(url=input_data["url"], auto_save=input_data.get("auto_save", True))
         if handle:
             await handle.set_progress(100)
         return draft

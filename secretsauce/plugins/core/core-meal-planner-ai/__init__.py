@@ -3,22 +3,27 @@ import json
 from typing import Any
 import uuid
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from secretsauce.plugins.context import PluginContext
+from secretsauce.errors import ConflictError, NotFoundError, SecretSauceError
+from secretsauce.plugins.context import PluginContext, current_ctx
 
 PLUGIN = {
     "id": "core-meal-planner-ai",
     "name": "core-meal-planner-ai",
     "version": "1.0.0",
     "description": "Smart meal planning and candidate suggestion pool generation using AI and household preferences",
-    "core": True,
     "schema": 1,
     "requires": ["core-ai-provider"],
     "ui": "ui.js",
 }
 
 router = APIRouter(prefix="/api/x/core-meal-planner-ai", tags=["core-meal-planner-ai"])
+
+
+class AIUnavailableError(SecretSauceError):
+    code = "unavailable"
+    status_code = 503
 
 
 class SuggestionSchema(BaseModel):
@@ -36,7 +41,7 @@ class MealPlanSchema(BaseModel):
 
 
 class GeneratePlanRequest(BaseModel):
-    days: int = 7
+    days: int = Field(default=7, ge=1, le=31)
     start_date: str | None = None
     prompt: str | None = None
     meal_types: list[str] = Field(default_factory=lambda: ["dinner"])
@@ -48,33 +53,34 @@ class AcceptSuggestionRequest(BaseModel):
     servings: float | None = None
 
 
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+async def _suggestion(ctx: PluginContext, suggestion_id: str, conn: Any = None) -> dict[str, Any]:
+    row = await ctx.db.read_one(
+        "SELECT * FROM plugin_core_meal_planner_suggestions WHERE id = ?", (suggestion_id,), conn=conn
+    )
+    if row is None:
+        raise NotFoundError("Suggestion not found")
+    return dict(row)
+
+
 @router.post("/generate")
-async def generate_plan_endpoint(req: GeneratePlanRequest, request: Request):
-    kernel = request.app.state.kernel
-    ctx = kernel.ctx_for("core-meal-planner-ai")
+async def generate_plan_endpoint(req: GeneratePlanRequest, ctx: PluginContext = Depends(current_ctx)):
     ai_svc = ctx.services.get("core-ai-provider") or ctx.services.get("ai")
     if not ai_svc:
-        raise HTTPException(status_code=503, detail="AI Provider service ('core-ai-provider') is not available")
+        raise AIUnavailableError("AI Provider service ('core-ai-provider') is not available")
 
-    # Fetch available recipes
-    recipes_res = await ctx.recipes.list_recipes(limit=100)
-    recipes = recipes_res.get("items", []) if isinstance(recipes_res, dict) else recipes_res
+    recipes = (await ctx.recipes.list_recipes(limit=100))["items"]
+    library = {r["id"]: r for r in recipes}
     recipes_summary = [
-        {"id": r["id"], "title": r["title"], "tags": r.get("tags", [])}
-        for r in recipes
+        {"id": r["id"], "title": r["title"], "tags": r.get("tags", [])} for r in recipes
     ]
-
-    # Fetch members info if available
-    members_info = []
-    if hasattr(ctx, "members") and ctx.members:
-        try:
-            m_list = await ctx.members.list_members()
-            members_info = [
-                {"name": m.get("display_name"), "dietary": m.get("dietary_restrictions", [])}
-                for m in m_list
-            ]
-        except Exception:
-            pass
+    members_info = [
+        {"name": m.get("name"), "dietary": m.get("dietary_restrictions", [])}
+        for m in await ctx.members.list_members()
+    ]
 
     ai_prompt = (
         "You are an expert household meal planning assistant.\n"
@@ -85,6 +91,7 @@ async def generate_plan_endpoint(req: GeneratePlanRequest, request: Request):
         f"User guidance: {req.prompt or 'None'}\n"
         f"Household members: {json.dumps(members_info)}\n"
         f"Available recipes in library: {json.dumps(recipes_summary)}\n\n"
+        "Only suggest recipes from the library, by their id. "
         "Return structured meal plan candidates with reasoning and confidence score."
     )
 
@@ -97,48 +104,48 @@ async def generate_plan_endpoint(req: GeneratePlanRequest, request: Request):
     if not isinstance(result, dict):
         result = json.loads(result)
 
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now = _now_iso()
     plan_id = str(uuid.uuid4())
     title = result.get("title") or f"{req.days}-Day Meal Plan Candidates"
-
-    await ctx.db.write(
-        """
-        INSERT INTO plugin_core_meal_planner_plans (id, title, start_date, prompt, created_at)
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        (plan_id, title, req.start_date, req.prompt, now),
-    )
-
     saved_suggestions = []
-    for s in result.get("suggestions", []):
-        s_id = str(uuid.uuid4())
-        r_id = s.get("recipe_id")
-        r_title = s.get("recipe_title") or "Suggested Recipe"
-        m_type = s.get("meal_type") or "dinner"
-        s_date = s.get("suggested_date")
-        reasoning = s.get("reasoning")
-        confidence = float(s.get("confidence", 0.9))
 
-        await ctx.db.write(
+    async with ctx.db.transaction() as tx:
+        await tx.execute(
             """
-            INSERT INTO plugin_core_meal_planner_suggestions
-            (id, plan_id, recipe_id, recipe_title, meal_type, suggested_date, reasoning, confidence, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'suggested', ?)
+            INSERT INTO plugin_core_meal_planner_plans (id, title, start_date, prompt, created_at)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (s_id, plan_id, r_id, r_title, m_type, s_date, reasoning, confidence, now),
+            (plan_id, title, req.start_date, req.prompt, now),
         )
-        saved_suggestions.append({
-            "id": s_id,
-            "plan_id": plan_id,
-            "recipe_id": r_id,
-            "recipe_title": r_title,
-            "meal_type": m_type,
-            "suggested_date": s_date,
-            "reasoning": reasoning,
-            "confidence": confidence,
-            "status": "suggested",
-            "created_at": now,
-        })
+        for s in result.get("suggestions", []):
+            recipe = library.get(s.get("recipe_id"))
+            if recipe is None:
+                ctx.log.info("Dropping suggestion for unknown recipe %r", s.get("recipe_id"))
+                continue
+            suggestion = {
+                "id": str(uuid.uuid4()),
+                "plan_id": plan_id,
+                "recipe_id": recipe["id"],
+                "recipe_title": s.get("recipe_title") or recipe["title"],
+                "meal_type": s.get("meal_type") or "dinner",
+                "suggested_date": s.get("suggested_date"),
+                "reasoning": s.get("reasoning"),
+                "confidence": float(s.get("confidence", 0.9)),
+                "status": "suggested",
+                "created_at": now,
+            }
+            await tx.execute(
+                """
+                INSERT INTO plugin_core_meal_planner_suggestions
+                (id, plan_id, recipe_id, recipe_title, meal_type, suggested_date, reasoning, confidence, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                tuple(suggestion[k] for k in (
+                    "id", "plan_id", "recipe_id", "recipe_title", "meal_type",
+                    "suggested_date", "reasoning", "confidence", "status", "created_at",
+                )),
+            )
+            saved_suggestions.append(suggestion)
 
     return {
         "id": plan_id,
@@ -151,93 +158,67 @@ async def generate_plan_endpoint(req: GeneratePlanRequest, request: Request):
 
 
 @router.get("/plans")
-async def list_plans_endpoint(request: Request):
-    kernel = request.app.state.kernel
-    rows = await kernel.db.read_all(
+async def list_plans_endpoint(ctx: PluginContext = Depends(current_ctx)):
+    return await ctx.db.fetch_all(
         "SELECT * FROM plugin_core_meal_planner_plans ORDER BY created_at DESC LIMIT 20"
     )
-    return [dict(r) for r in rows]
 
 
 @router.get("/plans/{plan_id}")
-async def get_plan_endpoint(plan_id: str, request: Request):
-    kernel = request.app.state.kernel
-    plan_row = await kernel.db.read_one(
-        "SELECT * FROM plugin_core_meal_planner_plans WHERE id = ?", (plan_id,)
-    )
-    if not plan_row:
-        raise HTTPException(status_code=404, detail="Plan not found")
-
-    sug_rows = await kernel.db.read_all(
+async def get_plan_endpoint(plan_id: str, ctx: PluginContext = Depends(current_ctx)):
+    plan = await ctx.db.fetch_one("SELECT * FROM plugin_core_meal_planner_plans WHERE id = ?", (plan_id,))
+    if not plan:
+        raise NotFoundError("Plan not found")
+    plan["suggestions"] = await ctx.db.fetch_all(
         "SELECT * FROM plugin_core_meal_planner_suggestions WHERE plan_id = ? ORDER BY created_at ASC",
         (plan_id,),
     )
-    res = dict(plan_row)
-    res["suggestions"] = [dict(s) for s in sug_rows]
-    return res
+    return plan
 
 
 @router.post("/suggestions/{suggestion_id}/accept")
-async def accept_suggestion_endpoint(suggestion_id: str, req: AcceptSuggestionRequest, request: Request):
-    kernel = request.app.state.kernel
-    ctx = kernel.ctx_for("core-meal-planner-ai")
-
-    sug_row = await kernel.db.read_one(
-        "SELECT * FROM plugin_core_meal_planner_suggestions WHERE id = ?", (suggestion_id,)
-    )
-    if not sug_row:
-        raise HTTPException(status_code=404, detail="Suggestion not found")
-
-    sug = dict(sug_row)
-
-    # Schedule meal
-    sched_entry = await ctx.schedule.create_entry({
-        "date": req.date,
-        "meal_type": req.meal_type,
-        "recipe_id": sug["recipe_id"],
-        "title": sug["recipe_title"],
-        "servings_override": req.servings,
-        "note": f"Accepted AI meal suggestion: {sug.get('reasoning') or ''}".strip(),
-    })
-
-    await kernel.db.write(
-        """
-        UPDATE plugin_core_meal_planner_suggestions
-        SET status = 'accepted', schedule_entry_id = ?
-        WHERE id = ?
-        """,
-        (sched_entry["id"], suggestion_id),
-    )
-
-    sug["status"] = "accepted"
-    sug["schedule_entry_id"] = sched_entry["id"]
+async def accept_suggestion_endpoint(
+    suggestion_id: str, req: AcceptSuggestionRequest, ctx: PluginContext = Depends(current_ctx)
+):
+    # The schedule entry and the suggestion's status commit together or not at all.
+    async with ctx.db.transaction() as tx:
+        sug = await _suggestion(ctx, suggestion_id, conn=tx)
+        if sug["status"] != "suggested":
+            raise ConflictError(f"Suggestion is already {sug['status']}", current=sug)
+        entry = await ctx.schedule.create_entry(
+            {
+                "date": req.date,
+                "meal_type": req.meal_type,
+                "recipe_id": sug["recipe_id"],
+                "title": sug["recipe_title"],
+                "servings_override": req.servings,
+                "note": f"Accepted AI meal suggestion: {sug.get('reasoning') or ''}".strip(),
+            },
+            conn=tx,
+        )
+        await tx.execute(
+            """
+            UPDATE plugin_core_meal_planner_suggestions
+            SET status = 'accepted', schedule_entry_id = ?
+            WHERE id = ?
+            """,
+            (entry["id"], suggestion_id),
+        )
+    sug.update(status="accepted", schedule_entry_id=entry["id"])
     return sug
 
 
 @router.post("/suggestions/{suggestion_id}/dismiss")
-async def dismiss_suggestion_endpoint(suggestion_id: str, request: Request):
-    kernel = request.app.state.kernel
-    sug_row = await kernel.db.read_one(
-        "SELECT * FROM plugin_core_meal_planner_suggestions WHERE id = ?", (suggestion_id,)
-    )
-    if not sug_row:
-        raise HTTPException(status_code=404, detail="Suggestion not found")
-
-    await kernel.db.write(
-        "UPDATE plugin_core_meal_planner_suggestions SET status = 'dismissed' WHERE id = ?",
-        (suggestion_id,),
-    )
-    sug = dict(sug_row)
+async def dismiss_suggestion_endpoint(suggestion_id: str, ctx: PluginContext = Depends(current_ctx)):
+    async with ctx.db.transaction() as tx:
+        sug = await _suggestion(ctx, suggestion_id, conn=tx)
+        await tx.execute(
+            "UPDATE plugin_core_meal_planner_suggestions SET status = 'dismissed' WHERE id = ?",
+            (suggestion_id,),
+        )
     sug["status"] = "dismissed"
     return sug
 
 
-class MealPlannerAiService:
-    def __init__(self, ctx: PluginContext):
-        self.ctx = ctx
-
-
 async def setup(ctx: PluginContext):
-    service = MealPlannerAiService(ctx)
-    ctx.services.register("core-meal-planner-ai", service)
-    ctx.routes.mount(router)
+    ctx.router(router)

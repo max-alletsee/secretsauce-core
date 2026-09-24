@@ -111,5 +111,5 @@ async def setup(ctx):
         await update_recipe_score_mirror(ctx, journal_id)
         return {"status": "ok"}
 
-    ctx.routes.mount(router)
+    ctx.router(router)
     ctx.command("rebuild", rebuild, title="Recompute all recipe rating scores in entity_attributes")

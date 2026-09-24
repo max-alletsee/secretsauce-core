@@ -12,6 +12,16 @@ from itsdangerous import URLSafeTimedSerializer
 MASK_STRING = "••••••••"
 
 
+def schema_properties(schema: dict[str, Any] | None) -> dict[str, Any]:
+    """Property map of a config schema; accepts {"properties": {...}} or a bare property map."""
+    if not schema:
+        return {}
+    props = schema.get("properties")
+    if isinstance(props, dict):
+        return props
+    return {k: v for k, v in schema.items() if isinstance(v, dict)}
+
+
 class KeyManager:
     def __init__(self, key_path: Path | str = "/data/secret.key"):
         self.key_path = Path(key_path)
@@ -62,10 +72,8 @@ class KeyManager:
     def mask_config(
         self, schema: dict[str, Any] | None, config: dict[str, Any]
     ) -> dict[str, Any]:
-        if not schema or "properties" not in schema:
-            return dict(config)
         res = dict(config)
-        for key, prop in schema["properties"].items():
+        for key, prop in schema_properties(schema).items():
             if isinstance(prop, dict) and prop.get("secret") is True:
                 if key in res and res[key]:
                     res[key] = MASK_STRING
@@ -78,11 +86,8 @@ class KeyManager:
         new_config: dict[str, Any],
     ) -> dict[str, Any]:
         res = dict(new_config)
-        if not schema or "properties" not in schema:
-            return res
-
         old_cfg = old_config or {}
-        for key, prop in schema["properties"].items():
+        for key, prop in schema_properties(schema).items():
             if isinstance(prop, dict) and prop.get("secret") is True:
                 new_val = new_config.get(key)
                 if new_val == MASK_STRING:
@@ -99,10 +104,7 @@ class KeyManager:
         self, schema: dict[str, Any] | None, config: dict[str, Any]
     ) -> dict[str, Any]:
         res = dict(config)
-        if not schema or "properties" not in schema:
-            return res
-
-        for key, prop in schema["properties"].items():
+        for key, prop in schema_properties(schema).items():
             if isinstance(prop, dict) and prop.get("secret") is True:
                 val = res.get(key)
                 if val and isinstance(val, str):

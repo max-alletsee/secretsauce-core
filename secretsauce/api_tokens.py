@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import secrets
 from typing import Any
@@ -7,8 +7,15 @@ import uuid
 from secretsauce.db import Database
 
 
+LAST_USED_INTERVAL = timedelta(minutes=10)
+
+
+def _iso(dt: datetime) -> str:
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return _iso(datetime.now(timezone.utc))
 
 
 def _hash_token(token: str) -> str:
@@ -51,11 +58,13 @@ class TokenManager:
         if required_scope is not None and row["scope"] != required_scope:
             return None
 
-        now = _now_iso()
-        async with self.db.transaction() as tx:
-            await tx.execute(
+        # One write per token per interval, not one per request.
+        now = datetime.now(timezone.utc)
+        last_used = row.get("last_used_at")
+        if last_used is None or last_used < _iso(now - LAST_USED_INTERVAL):
+            await self.db.write(
                 "UPDATE api_tokens SET last_used_at = ? WHERE id = ?;",
-                (now, row["id"]),
+                (_iso(now), row["id"]),
             )
         return dict(row)
 

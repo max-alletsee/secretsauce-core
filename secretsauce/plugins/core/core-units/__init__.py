@@ -15,11 +15,14 @@ PLUGIN = {
     "description": "Standardized unit conversion and ingredient parsing engine",
     "ui": "ui.js",
     "config_schema": {
-        "default_system": {
-            "type": "string",
-            "enum": ["metric", "us_customary"],
-            "default": "metric",
-        }
+        "type": "object",
+        "properties": {
+            "default_system": {
+                "type": "string",
+                "enum": ["metric", "us_customary"],
+                "default": "metric",
+            }
+        },
     },
 }
 
@@ -102,14 +105,9 @@ async def setup(ctx: PluginContext) -> None:
         if not ingredients or not isinstance(ingredients, list):
             return draft
 
-        # Determine target system: household preference or plugin config
-        target_system = ctx.config.get("default_system", "metric")
-        try:
-            household = await ctx.household.get_household()
-            if household and "units" in household:
-                target_system = household["units"]
-        except Exception:
-            pass
+        # The household's unit system wins; the plugin default covers its absence.
+        household = await ctx.household.get_config()
+        target_system = household.get("units") or ctx.config.get("default_system", "metric")
 
         lang = draft.get("language") or "en"
         new_ingredients = [
@@ -129,10 +127,10 @@ async def setup(ctx: PluginContext) -> None:
         target_system = input_data.get("system") or ctx.config.get(
             "default_system", "metric"
         )
-        recipes_res = await ctx.recipes.list_recipes(limit=1000)
-        recipes = recipes_res.get("items", []) if isinstance(recipes_res, dict) else recipes_res
-        total = len(recipes)
-        for idx, r in enumerate(recipes):
+        # Every language row, not one resolved row per group.
+        rows = await ctx.db.fetch_all("SELECT id FROM recipes ORDER BY group_id, language;")
+        total = len(rows)
+        for idx, r in enumerate(rows):
             recipe_id = r["id"]
             full_recipe = await ctx.recipes.get_recipe(recipe_id)
             ingredients = full_recipe.get("ingredients") or []

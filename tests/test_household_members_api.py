@@ -29,6 +29,15 @@ async def test_household_and_members_api(tmp_path):
         )
         assert bad_pass.status_code == 401
 
+        # Right after a failure even the correct passphrase waits (spec 5.3).
+        throttled = await k.client.put(
+            "/api/household/passphrase",
+            json={"current": "test_passphrase", "new": "new_secret_passphrase"},
+        )
+        assert throttled.status_code == 429
+        assert int(throttled.headers["retry-after"]) >= 1
+        k.rate_limiter.reset()
+
         # Correct current passphrase -> 204 + new cookie
         rot_res = await k.client.put(
             "/api/household/passphrase",

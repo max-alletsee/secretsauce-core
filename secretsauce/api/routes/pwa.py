@@ -84,7 +84,9 @@ async def get_sw(request: Request) -> Response:
     else:
         content = sw_path.read_text(encoding="utf-8")
 
-    precache_data = compute_precache_info()
+    # Hashing every static file is done once at boot, not per request.
+    kernel = getattr(request.app.state, "kernel", None)
+    precache_data = (kernel.precache_info if kernel else None) or compute_precache_info()
     content = content.replace("__SS_PRECACHE__", json.dumps(precache_data))
 
     return Response(

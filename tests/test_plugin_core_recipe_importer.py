@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 import pytest
 from secretsauce.testing import make_kernel
 
@@ -81,13 +81,8 @@ async def test_parse_url_and_history(tmp_path: Path):
 
         mock_html = "<html><body><h1>Banana Bread</h1><p>3 bananas, 250g flour</p></body></html>"
 
-        with patch("httpx.AsyncClient.get") as mock_get, \
+        with patch("secretsauce.net.fetch_public_text", AsyncMock(return_value=mock_html)), \
              patch.object(ai_svc, "complete", new_callable=AsyncMock) as mock_complete:
-            mock_resp = MagicMock()
-            mock_resp.status_code = 200
-            mock_resp.text = mock_html
-            mock_get.return_value = mock_resp
-
             mock_complete.return_value = get_mock_recipe()
 
             res = await k.client.post(
@@ -122,12 +117,8 @@ async def test_import_url_background_job(tmp_path: Path):
             input_data={"url": "https://example.com/banana-bread", "auto_save": True},
         )
 
-        with patch("httpx.AsyncClient.get") as mock_get, \
+        with patch("secretsauce.net.fetch_public_text", AsyncMock(return_value=mock_html)), \
              patch.object(ai_svc, "complete", new_callable=AsyncMock) as mock_complete:
-            mock_resp = MagicMock()
-            mock_resp.status_code = 200
-            mock_resp.text = mock_html
-            mock_get.return_value = mock_resp
             mock_complete.return_value = get_mock_recipe()
 
             run_res = await k.jobs.run_job(job_id)
@@ -137,3 +128,15 @@ async def test_import_url_background_job(tmp_path: Path):
         assert output["title"] == "Classic Banana Bread"
         assert output.get("recipe_id") is not None
 
+
+
+@pytest.mark.asyncio
+async def test_parse_url_refuses_internal_addresses(tmp_path: Path):
+    async with make_kernel(tmp_path, auto_setup=True) as k:
+        res = await k.client.post(
+            "/api/x/core-recipe-importer/parse-url",
+            json={"url": "http://127.0.0.1:8080/api/export", "auto_save": False},
+        )
+        assert res.status_code == 422
+        history = (await k.client.get("/api/x/core-recipe-importer/history")).json()
+        assert history[0]["status"] == "failed"

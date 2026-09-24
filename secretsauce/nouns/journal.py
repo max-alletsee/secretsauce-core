@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import Any
 import uuid
 
@@ -6,11 +5,16 @@ import aiosqlite
 
 from secretsauce.db import Database
 from secretsauce.errors import ConflictError, NotFoundError
+from secretsauce.events import EventLog, resolve_origin
+from secretsauce.nouns._common import (
+    emit_noun_event,
+    in_transaction,
+    merged_value,
+    optional_float,
+    require_fields,
+)
 from secretsauce.nouns.recipes import RecipesRepo
-
-
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+from secretsauce.util import now_iso
 
 
 def _deserialize_journal(row: dict[str, Any]) -> dict[str, Any]:
@@ -23,9 +27,33 @@ def _deserialize_journal(row: dict[str, Any]) -> dict[str, Any]:
 
 
 class JournalRepo:
-    def __init__(self, db: Database, recipes_repo: RecipesRepo | None = None):
+    def __init__(
+        self,
+        db: Database,
+        recipes_repo: RecipesRepo | None = None,
+        events: EventLog | None = None,
+    ):
         self.db = db
         self.recipes_repo = recipes_repo or RecipesRepo(db)
+        self.events = events
+
+    async def _row(self, entry_id: str, conn: aiosqlite.Connection | None) -> dict[str, Any]:
+        row = await self.db.read_one(
+            "SELECT * FROM cook_journal WHERE id = ?;", (entry_id,), conn=conn
+        )
+        if row is None:
+            raise NotFoundError(f"Journal entry '{entry_id}' not found")
+        return _deserialize_journal(row)
+
+    async def _embed_recipes(
+        self, entries: list[dict[str, Any]], conn: aiosqlite.Connection | None
+    ) -> list[dict[str, Any]]:
+        recipes = await self.recipes_repo.get_recipes_by_ids(
+            [e.get("recipe_id") for e in entries], conn=conn
+        )
+        for entry in entries:
+            entry["recipe"] = recipes.get(entry.get("recipe_id") or "")
+        return entries
 
     async def get_entry(
         self,
@@ -33,107 +61,83 @@ class JournalRepo:
         lang: str | None = None,
         conn: aiosqlite.Connection | None = None,
     ) -> dict[str, Any]:
-        row = await self.db.read_one(
-            "SELECT * FROM cook_journal WHERE id = ?;", (entry_id,), conn=conn
-        )
-        if row is None:
-            raise NotFoundError(f"Journal entry '{entry_id}' not found")
-
-        res = _deserialize_journal(row)
-        res["recipe"] = None
-        if res.get("recipe_id"):
-            try:
-                res["recipe"] = await self.recipes_repo.get_recipe(
-                    res["recipe_id"], lang=lang, conn=conn
-                )
-            except NotFoundError:
-                res["recipe"] = None
-
-        return res
+        [entry] = await self._embed_recipes([await self._row(entry_id, conn)], conn)
+        return entry
 
     async def create_entry(
         self, data: dict[str, Any], conn: aiosqlite.Connection | None = None
     ) -> dict[str, Any]:
-        entry_id = data.get("id") or str(uuid.uuid4()).lower()
+        require_fields(data, "date", "meal_type")
 
-        existing = await self.db.read_one(
-            "SELECT * FROM cook_journal WHERE id = ?;", (entry_id,), conn=conn
-        )
-        if existing is not None:
-            raise ConflictError(
-                f"Journal entry '{entry_id}' already exists",
-                current=_deserialize_journal(existing),
+        async def _do_create(writer_conn: aiosqlite.Connection) -> dict[str, Any]:
+            entry_id = data.get("id") or str(uuid.uuid4()).lower()
+            existing = await self.db.read_one(
+                "SELECT * FROM cook_journal WHERE id = ?;", (entry_id,), conn=writer_conn
             )
-
-        schedule_entry_id = data.get("schedule_entry_id")
-        if schedule_entry_id is not None:
-            existing_sched = await self.db.read_one(
-                "SELECT * FROM cook_journal WHERE schedule_entry_id = ?;",
-                (schedule_entry_id,),
-                conn=conn,
-            )
-            if existing_sched is not None:
+            if existing is not None:
                 raise ConflictError(
-                    f"Journal entry already exists for schedule entry '{schedule_entry_id}'",
-                    current=_deserialize_journal(existing_sched),
+                    f"Journal entry '{entry_id}' already exists",
+                    current=_deserialize_journal(existing),
                 )
 
-        now = _now_iso()
-        revision = 1
-        date = data["date"]
-        meal_type = data["meal_type"]
-        recipe_id = data.get("recipe_id")
-        title = data.get("title")
-        status = data.get("status", "cooked")
-        servings_cooked = (
-            float(data["servings_cooked"])
-            if data.get("servings_cooked") is not None
-            else None
-        )
-        servings_left = (
-            float(data["servings_left"])
-            if data.get("servings_left") is not None
-            else None
-        )
-        cooked_by_member_id = data.get("cooked_by_member_id")
-        notes = data.get("notes")
-        actor_member_id = data.get("actor_member_id")
-        origin = data.get("origin", "member")
+            schedule_entry_id = data.get("schedule_entry_id")
+            if schedule_entry_id is not None:
+                existing_sched = await self.db.read_one(
+                    "SELECT * FROM cook_journal WHERE schedule_entry_id = ?;",
+                    (schedule_entry_id,),
+                    conn=writer_conn,
+                )
+                if existing_sched is not None:
+                    raise ConflictError(
+                        f"Journal entry already exists for schedule entry '{schedule_entry_id}'",
+                        current=_deserialize_journal(existing_sched),
+                    )
 
-        sql = """
-        INSERT INTO cook_journal (
-            id, revision, date, meal_type, recipe_id, schedule_entry_id,
-            title, status, servings_cooked, servings_left,
-            cooked_by_member_id, notes, created_at, updated_at,
-            actor_member_id, origin
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-        """
-        params = (
-            entry_id,
-            revision,
-            date,
-            meal_type,
-            recipe_id,
-            schedule_entry_id,
-            title,
-            status,
-            servings_cooked,
-            servings_left,
-            cooked_by_member_id,
-            notes,
-            now,
-            now,
-            actor_member_id,
-            origin,
-        )
+            now = now_iso()
+            actor_member_id = data.get("actor_member_id")
+            origin = resolve_origin(data.get("origin"))
+            await writer_conn.execute(
+                """
+                INSERT INTO cook_journal (
+                    id, revision, date, meal_type, recipe_id, schedule_entry_id,
+                    title, status, servings_cooked, servings_left,
+                    cooked_by_member_id, notes, created_at, updated_at,
+                    actor_member_id, origin
+                ) VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    entry_id,
+                    data["date"],
+                    data["meal_type"],
+                    data.get("recipe_id"),
+                    schedule_entry_id,
+                    data.get("title"),
+                    data.get("status") or "cooked",
+                    optional_float(data.get("servings_cooked"), "servings_cooked"),
+                    optional_float(data.get("servings_left"), "servings_left"),
+                    data.get("cooked_by_member_id"),
+                    data.get("notes"),
+                    now,
+                    now,
+                    actor_member_id,
+                    origin,
+                ),
+            )
+            created = await self.get_entry(entry_id, conn=writer_conn)
+            await emit_noun_event(
+                self.events,
+                writer_conn,
+                "journal:created",
+                "journal",
+                entry_id,
+                revision=1,
+                after=created,
+                actor_member_id=actor_member_id,
+                origin=origin,
+            )
+            return created
 
-        if conn is not None:
-            await conn.execute(sql, params)
-        else:
-            async with self.db.transaction() as writer_conn:
-                await writer_conn.execute(sql, params)
-
-        return await self.get_entry(entry_id, conn=conn)
+        return await in_transaction(self.db, conn, _do_create)
 
     async def update_entry(
         self,
@@ -148,49 +152,8 @@ class JournalRepo:
                 raise ConflictError("Revision mismatch", current=current)
 
             new_revision = current["revision"] + 1
-            now = _now_iso()
-
-            date = data.get("date", current["date"])
-            meal_type = data.get("meal_type", current["meal_type"])
-            recipe_id = (
-                data["recipe_id"]
-                if "recipe_id" in data
-                else current.get("recipe_id")
-            )
-            title = data["title"] if "title" in data else current.get("title")
-            status = data.get("status", current["status"])
-            servings_cooked = (
-                float(data["servings_cooked"])
-                if "servings_cooked" in data
-                and data["servings_cooked"] is not None
-                else (
-                    None
-                    if "servings_cooked" in data
-                    else current.get("servings_cooked")
-                )
-            )
-            servings_left = (
-                float(data["servings_left"])
-                if "servings_left" in data and data["servings_left"] is not None
-                else (
-                    None
-                    if "servings_left" in data
-                    else current.get("servings_left")
-                )
-            )
-            cooked_by_member_id = (
-                data["cooked_by_member_id"]
-                if "cooked_by_member_id" in data
-                else current.get("cooked_by_member_id")
-            )
-            notes = data["notes"] if "notes" in data else current.get("notes")
-            actor_member_id = (
-                data["actor_member_id"]
-                if "actor_member_id" in data
-                else current.get("actor_member_id")
-            )
-            origin = data.get("origin", current.get("origin", "member"))
-
+            actor_member_id = data.get("actor_member_id")
+            origin = resolve_origin(data.get("origin"))
             await writer_conn.execute(
                 """
                 UPDATE cook_journal SET
@@ -211,28 +174,41 @@ class JournalRepo:
                 """,
                 (
                     new_revision,
-                    date,
-                    meal_type,
-                    recipe_id,
-                    title,
-                    status,
-                    servings_cooked,
-                    servings_left,
-                    cooked_by_member_id,
-                    notes,
-                    now,
+                    data.get("date") or current["date"],
+                    data.get("meal_type") or current["meal_type"],
+                    merged_value(data, current, "recipe_id"),
+                    merged_value(data, current, "title"),
+                    data.get("status") or current["status"],
+                    optional_float(
+                        merged_value(data, current, "servings_cooked"), "servings_cooked"
+                    ),
+                    optional_float(
+                        merged_value(data, current, "servings_left"), "servings_left"
+                    ),
+                    merged_value(data, current, "cooked_by_member_id"),
+                    merged_value(data, current, "notes"),
+                    now_iso(),
                     actor_member_id,
                     origin,
                     entry_id,
                 ),
             )
-            return await self.get_entry(entry_id, conn=writer_conn)
+            updated = await self.get_entry(entry_id, conn=writer_conn)
+            await emit_noun_event(
+                self.events,
+                writer_conn,
+                "journal:updated",
+                "journal",
+                entry_id,
+                revision=new_revision,
+                before=current,
+                after=updated,
+                actor_member_id=actor_member_id,
+                origin=origin,
+            )
+            return updated
 
-        if conn is not None:
-            return await _do_update(conn)
-        else:
-            async with self.db.transaction() as writer_conn:
-                return await _do_update(writer_conn)
+        return await in_transaction(self.db, conn, _do_update)
 
     async def delete_entry(
         self,
@@ -241,7 +217,7 @@ class JournalRepo:
         conn: aiosqlite.Connection | None = None,
     ) -> None:
         async def _do_delete(writer_conn: aiosqlite.Connection) -> None:
-            current = await self.get_entry(entry_id, conn=writer_conn)
+            current = await self._row(entry_id, writer_conn)
             if revision is not None and current["revision"] != revision:
                 raise ConflictError("Revision mismatch", current=current)
 
@@ -257,12 +233,17 @@ class JournalRepo:
             await writer_conn.execute(
                 "DELETE FROM cook_journal WHERE id = ?;", (entry_id,)
             )
+            await emit_noun_event(
+                self.events,
+                writer_conn,
+                "journal:deleted",
+                "journal",
+                entry_id,
+                revision=current["revision"],
+                before=current,
+            )
 
-        if conn is not None:
-            await _do_delete(conn)
-        else:
-            async with self.db.transaction() as writer_conn:
-                await _do_delete(writer_conn)
+        await in_transaction(self.db, conn, _do_delete)
 
     async def list_entries(
         self,
@@ -281,16 +262,4 @@ class JournalRepo:
             (from_date, to_date),
             conn=conn,
         )
-        results: list[dict[str, Any]] = []
-        for r in rows:
-            entry = _deserialize_journal(r)
-            entry["recipe"] = None
-            if entry.get("recipe_id"):
-                try:
-                    entry["recipe"] = await self.recipes_repo.get_recipe(
-                        entry["recipe_id"], lang=lang, conn=conn
-                    )
-                except NotFoundError:
-                    entry["recipe"] = None
-            results.append(entry)
-        return results
+        return await self._embed_recipes([_deserialize_journal(r) for r in rows], conn)

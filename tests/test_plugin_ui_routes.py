@@ -58,8 +58,9 @@ async def setup(ctx):
         assert "no-ui" in ids
 
         sample_p = next(p for p in active_list if p["id"] == "sample-ui")
-        assert sample_p["ui_entry"] == "/api/plugins/sample-ui/ui.js"
-        assert sample_p["ui_css"] == "/api/plugins/sample-ui/ui.css"
+        # Versioned by content so the shell may cache the bundle immutably.
+        assert sample_p["ui_entry"].startswith("/api/plugins/sample-ui/ui.js?v=")
+        assert sample_p["ui_css"].startswith("/api/plugins/sample-ui/ui.css?v=")
 
         no_ui_p = next(p for p in active_list if p["id"] == "no-ui")
         assert no_ui_p["ui_entry"] is None

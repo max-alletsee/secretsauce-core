@@ -1,22 +1,29 @@
 from typing import Any
-from fastapi import APIRouter, HTTPException, Request, Response
+
+from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel, Field
 
-from secretsauce.auth import hash_passphrase, issue_session_cookie
+from secretsauce.auth import (
+    MIN_PASSPHRASE_LENGTH,
+    cookie_secure,
+    hash_passphrase_async,
+    issue_session_cookie,
+)
+from secretsauce.errors import ConflictError
+from secretsauce.nouns.household import DEFAULT_MEAL_TYPES
 
 router = APIRouter(prefix="/api/setup", tags=["setup"])
 
 
 class FirstMemberPayload(BaseModel):
-    name: str
-    color: str | None = "#0088cc"
-    avatar_asset_id: str | None = None
+    name: str = Field(min_length=1, max_length=200)
+    color: str | None = Field(default="#0088cc", max_length=32)
     preferred_language: str | None = "en"
 
 
 class SetupPayload(BaseModel):
-    household_name: str
-    passphrase: str = Field(min_length=1)
+    household_name: str = Field(min_length=1, max_length=200)
+    passphrase: str = Field(min_length=MIN_PASSPHRASE_LENGTH)
     first_member: FirstMemberPayload
     languages: dict[str, Any] | None = None
     units: str | None = "metric"
@@ -25,54 +32,42 @@ class SetupPayload(BaseModel):
 
 @router.get("")
 async def get_setup_status(request: Request):
-    kernel = request.app.state.kernel
-    passphrase_info = await kernel.household.get_passphrase_info()
-    needs_setup = passphrase_info is None
+    needs_setup = await request.app.state.kernel.household.get_passphrase_info() is None
     return {"needs_setup": needs_setup, "setup_required": needs_setup}
 
 
 @router.post("", status_code=201)
-async def perform_setup(
-    payload: SetupPayload, request: Request, response: Response
-):
+async def perform_setup(payload: SetupPayload, request: Request, response: Response):
     kernel = request.app.state.kernel
+    pass_hash = await hash_passphrase_async(payload.passphrase)
 
-    passphrase_info = await kernel.household.get_passphrase_info()
-    if passphrase_info is not None:
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "error": {
-                    "code": "conflict",
-                    "message": "Household already set up",
-                }
+    # One transaction: a failure leaves no half-configured household, and two
+    # concurrent setups cannot both succeed.
+    async with kernel.db.transaction() as tx:
+        existing = await kernel.db.read_val(
+            "SELECT 1 FROM household_config WHERE key = 'passphrase_hash';", conn=tx
+        )
+        if existing is not None:
+            raise ConflictError("Household already set up")
+        await kernel.household.update_config(
+            {
+                "household_name": payload.household_name,
+                "languages": payload.languages or {"primary": "en"},
+                "units": payload.units or "metric",
+                "meal_types": payload.meal_types or DEFAULT_MEAL_TYPES,
+            }
+        )
+        version = await kernel.household.set_passphrase(pass_hash)
+        first_member = await kernel.members.create_member(
+            {
+                "name": payload.first_member.name,
+                "avatar_color": payload.first_member.color,
+                "preferred_language": payload.first_member.preferred_language,
             },
+            conn=tx,
         )
 
-    pass_hash = hash_passphrase(payload.passphrase)
-
-    config_updates: dict[str, Any] = {
-        "household_name": payload.household_name,
-        "languages": payload.languages or {"primary": "en"},
-        "units": payload.units or "metric",
-        "meal_types": payload.meal_types
-        or [
-            {"id": "breakfast", "label": "Breakfast"},
-            {"id": "lunch", "label": "Lunch"},
-            {"id": "dinner", "label": "Dinner"},
-        ],
-    }
-    await kernel.household.update_config(config_updates)
-    version = await kernel.household.set_passphrase(pass_hash)
-
-    member_data = payload.first_member.model_dump()
-    first_member = await kernel.members.create_member(member_data)
-
     issue_session_cookie(
-        response, kernel.key_manager, passphrase_version=version
+        response, kernel.key_manager, passphrase_version=version, secure=cookie_secure(request)
     )
-
-    return {
-        "household_name": payload.household_name,
-        "first_member": first_member,
-    }
+    return {"household_name": payload.household_name, "first_member": first_member}

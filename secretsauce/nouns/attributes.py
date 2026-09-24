@@ -6,6 +6,7 @@ from typing import Any, Sequence
 import aiosqlite
 
 from secretsauce.db import Database
+from secretsauce.errors import ValidationError
 
 
 def _now_iso() -> str:
@@ -169,54 +170,48 @@ class AttributesRepo:
                 conn=conn,
             )
             return [r["entity_id"] for r in rows]
-
-        # Process each filter expression
-        subqueries: list[str] = []
-        all_params: list[Any] = []
-
-        pattern = re.compile(
-            r"^([a-zA-Z0-9_\-]+)\.([a-zA-Z0-9_\-]+)(<=|>=|!=|=|<|>)(.*)$"
-        )
-
-        for f in filters:
-            if isinstance(f, str):
-                m = pattern.match(f.strip())
-                if not m:
-                    continue
-                plugin_id, key, op, raw_val = m.groups()
-                # Determine value type
-                try:
-                    val = float(raw_val)
-                    is_numeric = True
-                except ValueError:
-                    val = raw_val
-                    is_numeric = False
-            elif isinstance(f, (tuple, list)) and len(f) == 3:
-                qual_key, op, val = f
-                parts = qual_key.split(".", 1)
-                if len(parts) != 2:
-                    continue
-                plugin_id, key = parts
-                is_numeric = isinstance(val, (int, float)) and not isinstance(
-                    val, bool
-                )
-            else:
-                continue
-
-            if op not in ("=", "!=", "<", "<=", ">", ">="):
-                continue
-
-            val_col = "value_numeric" if is_numeric else "value_text"
-            subquery = f"""
-                SELECT entity_id FROM entity_attributes
-                WHERE entity_type = ? AND plugin_id = ? AND key = ? AND {val_col} {op} ?
-            """
-            subqueries.append(subquery)
-            all_params.extend([entity_type, plugin_id, key, val])
-
-        if not subqueries:
-            return []
-
-        full_query = " INTERSECT ".join(subqueries) + ";"
-        rows = await self.db.read_all(full_query, all_params, conn=conn)
+        sql, params = filter_sql(entity_type, filters)
+        rows = await self.db.read_all(sql + ";", params, conn=conn)
         return [r["entity_id"] for r in rows]
+
+
+_FILTER_PATTERN = re.compile(r"^([a-zA-Z0-9_\-]+)\.([a-zA-Z0-9_\-]+)(<=|>=|!=|=|<|>)(.*)$")
+_OPERATORS = ("=", "!=", "<", "<=", ">", ">=")
+
+
+def parse_filter(f: str | tuple[str, str, Any] | list) -> tuple[str, str, str, Any, bool]:
+    """(plugin_id, key, op, value, numeric) for '<plugin>.<key><op><value>' or a triple."""
+    if isinstance(f, str):
+        m = _FILTER_PATTERN.match(f.strip())
+        if not m:
+            raise ValidationError(
+                f"Invalid attribute filter '{f}'",
+                fields={"attr": "Expected <plugin_id>.<key><op><value>"},
+            )
+        plugin_id, key, op, raw = m.groups()
+        try:
+            return plugin_id, key, op, float(raw), True
+        except ValueError:
+            return plugin_id, key, op, raw, False
+    if isinstance(f, (tuple, list)) and len(f) == 3:
+        qualified, op, value = f
+        plugin_id, _, key = str(qualified).partition(".")
+        if key and op in _OPERATORS:
+            numeric = isinstance(value, (int, float)) and not isinstance(value, bool)
+            return plugin_id, key, op, value, numeric
+    raise ValidationError(f"Invalid attribute filter {f!r}", fields={"attr": "Invalid filter"})
+
+
+def filter_sql(entity_type: str, filters: Sequence[Any]) -> tuple[str, list[Any]]:
+    """A SELECT of entity ids matching every filter (AND), with its parameters."""
+    parts: list[str] = []
+    params: list[Any] = []
+    for f in filters:
+        plugin_id, key, op, value, numeric = parse_filter(f)
+        column = "value_numeric" if numeric else "value_text"
+        parts.append(
+            "SELECT entity_id FROM entity_attributes "
+            f"WHERE entity_type = ? AND plugin_id = ? AND key = ? AND {column} {op} ?"
+        )
+        params.extend([entity_type, plugin_id, key, value])
+    return " INTERSECT ".join(parts), params

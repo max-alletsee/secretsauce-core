@@ -1,6 +1,6 @@
-from typing import Any
 from fastapi import APIRouter, Query, Request, Response
 
+from secretsauce.api.models import RecipeCreate, RecipePatch
 from secretsauce.errors import ValidationError
 
 router = APIRouter(prefix="/api/recipes", tags=["recipes"])
@@ -17,58 +17,25 @@ async def list_recipes(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
-    kernel = request.app.state.kernel
-    return await kernel.recipes.list_recipes(
-        lang=lang,
-        q=q,
-        tags=tag,
-        attrs=attr,
-        sort=sort,
-        limit=limit,
-        offset=offset,
+    return await request.app.state.kernel.recipes.list_recipes(
+        lang=lang, q=q, tags=tag, attrs=attr, sort=sort, limit=limit, offset=offset
     )
 
 
 @router.post("", status_code=201)
-async def create_recipe(payload: dict[str, Any], request: Request):
-    kernel = request.app.state.kernel
-    data = dict(payload)
-    actor_id = getattr(request.state, "actor_member_id", None)
-    if actor_id and "actor_member_id" not in data:
-        data["actor_member_id"] = actor_id
-    return await kernel.recipes.create_recipe(data)
+async def create_recipe(payload: RecipeCreate, request: Request):
+    return await request.app.state.kernel.recipes.create_recipe(payload.data(request))
 
 
 @router.get("/{identifier}")
-async def get_recipe(
-    identifier: str,
-    request: Request,
-    lang: str | None = None,
-):
-    kernel = request.app.state.kernel
-    return await kernel.recipes.get_recipe(identifier, lang=lang)
+async def get_recipe(identifier: str, request: Request, lang: str | None = None):
+    return await request.app.state.kernel.recipes.get_recipe(identifier, lang=lang)
 
 
 @router.patch("/{recipe_id}")
-async def patch_recipe(
-    recipe_id: str,
-    payload: dict[str, Any],
-    request: Request,
-):
-    kernel = request.app.state.kernel
-    if "revision" not in payload:
-        raise ValidationError("Field 'revision' is required for patch")
-
-    data = dict(payload)
-    revision = int(data.pop("revision"))
-    actor_id = getattr(request.state, "actor_member_id", None)
-    if actor_id and "actor_member_id" not in data:
-        data["actor_member_id"] = actor_id
-
-    return await kernel.recipes.update_recipe(
-        recipe_id=recipe_id,
-        revision=revision,
-        data=data,
+async def patch_recipe(recipe_id: str, payload: RecipePatch, request: Request):
+    return await request.app.state.kernel.recipes.update_recipe(
+        recipe_id=recipe_id, revision=payload.revision, data=payload.data(request)
     )
 
 
@@ -78,12 +45,14 @@ async def delete_recipe(
     request: Request,
     revision: int | None = Query(default=None),
 ):
-    kernel = request.app.state.kernel
+    recipes = request.app.state.kernel.recipes
     if "_" in identifier:
         if revision is None:
-            raise ValidationError("Query parameter 'revision' is required for row deletion")
-        await kernel.recipes.delete_recipe_row(recipe_id=identifier, revision=revision)
+            raise ValidationError(
+                "Query parameter 'revision' is required for row deletion",
+                fields={"revision": "This field is required"},
+            )
+        await recipes.delete_recipe_row(recipe_id=identifier, revision=revision)
     else:
-        await kernel.recipes.delete_recipe_group(group_id=identifier)
-
+        await recipes.delete_recipe_group(group_id=identifier)
     return Response(status_code=204)

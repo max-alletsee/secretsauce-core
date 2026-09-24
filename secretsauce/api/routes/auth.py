@@ -1,14 +1,17 @@
-import math
 from fastapi import APIRouter, Request, Response
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from secretsauce import __version__
 from secretsauce.auth import (
+    SESSION_COOKIE,
     clear_session_cookie,
+    client_ip,
+    cookie_secure,
     issue_session_cookie,
-    rate_limiter,
-    verify_passphrase,
+    verify_passphrase_async,
+    verify_session_cookie,
 )
+from secretsauce.errors import SetupRequiredError, UnauthorizedError
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -17,72 +20,55 @@ class LoginPayload(BaseModel):
     passphrase: str
 
 
-def _get_client_ip(request: Request) -> str:
-    if request.client:
-        return request.client.host
-    return "unknown"
-
-
 @router.post("/login")
 async def login(payload: LoginPayload, request: Request, response: Response):
     kernel = request.app.state.kernel
-    client_ip = _get_client_ip(request)
-
-    wait_sec = rate_limiter.check_login_rate_limit(client_ip)
-    if wait_sec is not None:
-        retry_after = max(1, math.ceil(wait_sec))
-        return JSONResponse(
-            status_code=429,
-            headers={"Retry-After": str(retry_after)},
-            content={
-                "error": {
-                    "code": "rate_limited",
-                    "message": "Too many failed attempts. Please try again later.",
-                }
-            },
-        )
+    ip = client_ip(request)
+    kernel.rate_limiter.require_allowed(ip)
 
     passphrase_info = await kernel.household.get_passphrase_info()
     if passphrase_info is None:
-        return JSONResponse(
-            status_code=409,
-            content={
-                "error": {
-                    "code": "setup_required",
-                    "message": "Household setup required",
-                }
-            },
-        )
+        raise SetupRequiredError("Household setup required")
 
-    stored_hash = passphrase_info["passphrase_hash"]
-    if not verify_passphrase(payload.passphrase, stored_hash):
-        rate_limiter.record_login_failure(client_ip)
-        return JSONResponse(
-            status_code=401,
-            content={
-                "error": {
-                    "code": "unauthorized",
-                    "message": "Invalid passphrase",
-                }
-            },
-        )
+    if not await verify_passphrase_async(payload.passphrase, passphrase_info["passphrase_hash"]):
+        kernel.rate_limiter.record_login_failure(ip)
+        raise UnauthorizedError("Invalid passphrase")
 
-    rate_limiter.record_login_success(client_ip)
+    kernel.rate_limiter.record_login_success(ip)
     issue_session_cookie(
         response,
         kernel.key_manager,
         passphrase_version=passphrase_info["passphrase_version"],
+        secure=cookie_secure(request),
     )
     return {"status": "ok"}
 
 
 @router.post("/logout")
-async def logout(response: Response):
-    clear_session_cookie(response)
+async def logout(request: Request, response: Response):
+    """Revokes this session server-side, so a copied cookie stops working too."""
+    kernel = request.app.state.kernel
+    cookie = request.cookies.get(SESSION_COOKIE)
+    passphrase_info = await kernel.household.get_passphrase_info()
+    if cookie and passphrase_info is not None:
+        session = verify_session_cookie(
+            cookie, kernel.key_manager, passphrase_info["passphrase_version"]
+        )
+        if session and session.get("session_id"):
+            await kernel.sessions.revoke(session["session_id"])
+    clear_session_cookie(response, secure=cookie_secure(request))
     return {"status": "ok"}
 
 
 @router.get("/session")
 async def get_session(request: Request):
-    actor_member_id = getattr(request.state, "actor_member_id", None)
-    return {"authenticated": True, "actor_member_id": actor_member_id}
+    token_info = getattr(request.state, "token_info", None)
+    return {
+        "authenticated": True,
+        "logged_in": True,
+        "auth": "token" if token_info else "cookie",
+        "plugin_id": token_info["plugin_id"] if token_info else None,
+        "actor_member_id": getattr(request.state, "actor_member_id", None),
+        "boot_id": request.app.state.kernel.boot_id,
+        "version": __version__,
+    }

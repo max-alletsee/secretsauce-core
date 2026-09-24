@@ -3,9 +3,9 @@ import json
 from typing import Any
 import uuid
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from secretsauce.plugins.context import PluginContext
+from secretsauce.plugins.context import PluginContext, current_ctx
 
 PLUGIN = {
     "id": "core-translator",
@@ -143,9 +143,7 @@ async def translate_recipe(
 
 
 @router.post("/translate")
-async def translate_endpoint(req: TranslateRequest, request: Request):
-    kernel = request.app.state.kernel
-    ctx = kernel.ctx_for("core-translator")
+async def translate_endpoint(req: TranslateRequest, ctx: PluginContext = Depends(current_ctx)):
     try:
         return await translate_recipe(ctx, req.recipe_id, req.target_language)
     except HTTPException:
@@ -155,21 +153,15 @@ async def translate_endpoint(req: TranslateRequest, request: Request):
 
 
 @router.post("/translate-all")
-async def translate_all_endpoint(req: TranslateAllRequest, request: Request):
-    kernel = request.app.state.kernel
-    ctx = kernel.ctx_for("core-translator")
-    job_id = await kernel.jobs.create_job(
-        "core-translator",
-        "translate-all",
-        input_data={"target_language": req.target_language},
-    )
+async def translate_all_endpoint(req: TranslateAllRequest, ctx: PluginContext = Depends(current_ctx)):
+    # Picked up by the kernel's job runner; progress reaches the browser as job:progress pushes.
+    job_id = await ctx.jobs.create("translate-all", {"target_language": req.target_language})
     return {"job_id": job_id, "status": "pending"}
 
 
 @router.get("/history")
-async def get_history_endpoint(request: Request):
-    kernel = request.app.state.kernel
-    rows = await kernel.db.read_all(
+async def get_history_endpoint(ctx: PluginContext = Depends(current_ctx)):
+    rows = await ctx.db.read_all(
         "SELECT * FROM plugin_core_translator_history ORDER BY created_at DESC LIMIT 50"
     )
     return [dict(r) for r in rows]
@@ -186,7 +178,7 @@ class TranslatorService:
 async def setup(ctx: PluginContext):
     service = TranslatorService(ctx)
     ctx.services.register("core-translator", service)
-    ctx.routes.mount(router)
+    ctx.router(router)
 
     async def translate_recipe_job(input_data: dict[str, Any], handle: Any = None) -> dict[str, Any]:
         recipe_id = input_data["recipe_id"]

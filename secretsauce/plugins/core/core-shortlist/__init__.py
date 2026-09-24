@@ -2,8 +2,8 @@ from datetime import datetime, timezone
 from typing import Any
 import uuid
 
-from fastapi import APIRouter, HTTPException, Query, Request, Response
-from secretsauce.plugins.context import PluginContext
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from secretsauce.plugins.context import PluginContext, current_ctx
 
 PLUGIN = {
     "id": "core-shortlist",
@@ -24,14 +24,13 @@ def _now_iso() -> str:
 
 @router.get("")
 async def list_shortlist(
-    request: Request,
+    request: Request, ctx: PluginContext = Depends(current_ctx),
     member_id: str | None = Query(None),
 ) -> list[dict[str, Any]]:
-    kernel = request.app.state.kernel
-    target_member = member_id or request.headers.get("x-actor-member")
+    target_member = member_id or request.state.actor_member_id
 
     if target_member:
-        rows = await kernel.db.read_all(
+        rows = await ctx.db.read_all(
             """SELECT s.id, s.member_id, s.recipe_id, s.note, s.created_at, r.title as recipe_title
                FROM plugin_core_shortlist_entries s
                JOIN recipes r ON s.recipe_id = r.id
@@ -40,7 +39,7 @@ async def list_shortlist(
             (target_member,),
         )
     else:
-        rows = await kernel.db.read_all(
+        rows = await ctx.db.read_all(
             """SELECT s.id, s.member_id, s.recipe_id, s.note, s.created_at, r.title as recipe_title
                FROM plugin_core_shortlist_entries s
                JOIN recipes r ON s.recipe_id = r.id
@@ -50,23 +49,21 @@ async def list_shortlist(
 
 
 @router.post("", status_code=201)
-async def add_to_shortlist(data: dict[str, Any], request: Request) -> dict[str, Any]:
-    kernel = request.app.state.kernel
-    member_id = data.get("member_id") or request.headers.get("x-actor-member")
+async def add_to_shortlist(data: dict[str, Any], request: Request, ctx: PluginContext = Depends(current_ctx)) -> dict[str, Any]:
+    member_id = data.get("member_id") or request.state.actor_member_id
     if not member_id:
-        raise HTTPException(status_code=400, detail="Missing member_id")
+        raise HTTPException(status_code=422, detail="Missing member_id")
 
-    recipe_id = data["recipe_id"]
-    try:
-        await kernel.recipes.get_recipe(recipe_id)
-    except Exception:
-        raise HTTPException(status_code=404, detail="Recipe not found")
+    recipe_id = data.get("recipe_id")
+    if not recipe_id:
+        raise HTTPException(status_code=422, detail="Missing recipe_id")
+    await ctx.recipes.get_recipe(recipe_id)  # 404 when missing
 
     entry_id = str(uuid.uuid4()).lower()
     now = _now_iso()
     note = data.get("note")
 
-    await kernel.db.write(
+    await ctx.db.write(
         """INSERT INTO plugin_core_shortlist_entries (id, member_id, recipe_id, note, created_at)
            VALUES (?, ?, ?, ?, ?)
            ON CONFLICT(member_id, recipe_id) DO UPDATE SET note = excluded.note;""",
@@ -82,13 +79,12 @@ async def add_to_shortlist(data: dict[str, Any], request: Request) -> dict[str, 
 
 
 @router.delete("/{recipe_id}", status_code=204)
-async def remove_from_shortlist(recipe_id: str, request: Request):
-    kernel = request.app.state.kernel
-    member_id = request.headers.get("x-actor-member")
+async def remove_from_shortlist(recipe_id: str, request: Request, ctx: PluginContext = Depends(current_ctx)):
+    member_id = request.state.actor_member_id
     if not member_id:
-        await kernel.db.write("DELETE FROM plugin_core_shortlist_entries WHERE recipe_id = ?;", (recipe_id,))
+        await ctx.db.write("DELETE FROM plugin_core_shortlist_entries WHERE recipe_id = ?;", (recipe_id,))
     else:
-        await kernel.db.write(
+        await ctx.db.write(
             "DELETE FROM plugin_core_shortlist_entries WHERE recipe_id = ? AND member_id = ?;",
             (recipe_id, member_id),
         )
@@ -96,4 +92,4 @@ async def remove_from_shortlist(recipe_id: str, request: Request):
 
 
 async def setup(ctx: PluginContext):
-    ctx.routes.mount(router)
+    ctx.router(router)

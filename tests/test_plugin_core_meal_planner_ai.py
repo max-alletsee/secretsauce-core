@@ -134,3 +134,42 @@ async def test_generate_meal_plan_candidate_pool_and_accept(tmp_path: Path):
         get_res = await k.client.get(f"/api/x/core-meal-planner-ai/plans/{data['id']}")
         assert get_res.status_code == 200
         assert len(get_res.json()["suggestions"]) == 1
+
+
+async def _plan_with(k, suggestions):
+    ai_svc = k.services.get("core-ai-provider")
+    with patch.object(ai_svc, "complete", new_callable=AsyncMock) as mock_complete:
+        mock_complete.return_value = {"title": "Plan", "suggestions": suggestions}
+        res = await k.client.post("/api/x/core-meal-planner-ai/generate", json={"days": 1})
+    assert res.status_code == 200, res.text
+    return res.json()
+
+
+@pytest.mark.asyncio
+async def test_accept_is_atomic_and_only_once(tmp_path: Path):
+    async with make_kernel(tmp_path, auto_setup=True) as k:
+        rec = (await k.client.post("/api/recipes", json={"title": "Dal", "language": "en"})).json()
+        plan = await _plan_with(
+            k,
+            [
+                {"recipe_id": rec["id"], "recipe_title": "Dal"},
+                {"recipe_id": "invented_en", "recipe_title": "Hallucinated"},
+            ],
+        )
+        assert [s["recipe_id"] for s in plan["suggestions"]] == [rec["id"]]
+        sug_id = plan["suggestions"][0]["id"]
+        url = f"/api/x/core-meal-planner-ai/suggestions/{sug_id}/accept"
+
+        # A failing schedule write leaves the suggestion untouched.
+        bad = await k.client.post(url, json={"date": "2026-09-21", "meal_type": ""})
+        assert bad.status_code == 422
+        row = await k.db.fetch_one(
+            "SELECT status FROM plugin_core_meal_planner_suggestions WHERE id = ?", (sug_id,)
+        )
+        assert row["status"] == "suggested"
+
+        assert (await k.client.post(url, json={"date": "2026-09-21"})).status_code == 200
+        again = await k.client.post(url, json={"date": "2026-09-22"})
+        assert again.status_code == 409
+        entries = await k.schedule.list_entries(from_date="2026-09-21", to_date="2026-09-22")
+        assert len(entries) == 1

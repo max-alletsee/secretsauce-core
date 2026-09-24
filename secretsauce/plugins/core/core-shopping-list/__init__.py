@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 from typing import Any
 import uuid
 
-from fastapi import APIRouter, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
-from secretsauce.plugins.context import PluginContext
+from secretsauce.plugins.context import PluginContext, current_ctx
 
 PLUGIN = {
     "id": "core-shopping-list",
@@ -62,29 +62,24 @@ class ToggleCheckedRequest(BaseModel):
 
 @router.get("")
 async def get_aggregated_shopping_list(
-    request: Request,
+    ctx: PluginContext = Depends(current_ctx),
     from_date: str | None = Query(None),
     to_date: str | None = Query(None),
 ):
-    kernel = request.app.state.kernel
-    ctx = kernel.ctx_for("core-shopping-list")
 
     # Load checked state map
-    checked_rows = await kernel.db.read_all("SELECT item_key, checked FROM plugin_core_shopping_list_checked_state")
+    checked_rows = await ctx.db.read_all("SELECT item_key, checked FROM plugin_core_shopping_list_checked_state")
     checked_map = {r["item_key"]: bool(r["checked"]) for r in checked_rows}
 
     items_map: dict[str, dict[str, Any]] = {}
 
     # 1. Scheduled meal entries
-    if from_date and to_date and hasattr(ctx, "schedule") and ctx.schedule:
+    if from_date and to_date:
+        # Entries arrive with their recipe embedded (bulk-fetched); no lookup per entry.
         entries = await ctx.schedule.list_entries(from_date=from_date, to_date=to_date)
         for entry in entries:
-            recipe_id = entry.get("recipe_id")
-            if not recipe_id:
-                continue
-            try:
-                recipe = await ctx.recipes.get_recipe(recipe_id)
-            except Exception:
+            recipe = entry.get("recipe")
+            if not recipe:
                 continue
 
             base_servings = float(recipe.get("servings") or 2.0)
@@ -123,7 +118,7 @@ async def get_aggregated_shopping_list(
                     }
 
     # 2. Staples with always_include = 1
-    staples = await kernel.db.read_all("SELECT * FROM plugin_core_shopping_list_staples WHERE always_include = 1")
+    staples = await ctx.db.read_all("SELECT * FROM plugin_core_shopping_list_staples WHERE always_include = 1")
     for staple in staples:
         key = _make_key(staple["name"], staple["unit"])
         if key not in items_map:
@@ -139,7 +134,7 @@ async def get_aggregated_shopping_list(
             }
 
     # 3. Manual items
-    manual_rows = await kernel.db.read_all("SELECT * FROM plugin_core_shopping_list_items")
+    manual_rows = await ctx.db.read_all("SELECT * FROM plugin_core_shopping_list_items")
     for m in manual_rows:
         key = _make_key(m["name"], m["unit"])
         if key not in items_map:
@@ -163,11 +158,10 @@ async def get_aggregated_shopping_list(
 
 
 @router.post("/toggle")
-async def toggle_checked_endpoint(req: ToggleCheckedRequest, request: Request):
-    kernel = request.app.state.kernel
+async def toggle_checked_endpoint(req: ToggleCheckedRequest, ctx: PluginContext = Depends(current_ctx)):
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    await kernel.db.write(
+    await ctx.db.write(
         """
         INSERT INTO plugin_core_shopping_list_checked_state (item_key, checked, updated_at)
         VALUES (?, ?, ?)
@@ -177,7 +171,7 @@ async def toggle_checked_endpoint(req: ToggleCheckedRequest, request: Request):
     )
 
     # If it's a manual item, also update plugin_core_shopping_list_items
-    await kernel.db.write(
+    await ctx.db.write(
         "UPDATE plugin_core_shopping_list_items SET checked = ?, updated_at = ? WHERE id = ?",
         (1 if req.checked else 0, now, req.key),
     )
@@ -186,9 +180,8 @@ async def toggle_checked_endpoint(req: ToggleCheckedRequest, request: Request):
 
 
 @router.get("/staples")
-async def list_staples_endpoint(request: Request):
-    kernel = request.app.state.kernel
-    rows = await kernel.db.read_all("SELECT * FROM plugin_core_shopping_list_staples ORDER BY name ASC")
+async def list_staples_endpoint(ctx: PluginContext = Depends(current_ctx)):
+    rows = await ctx.db.read_all("SELECT * FROM plugin_core_shopping_list_staples ORDER BY name ASC")
     return [
         {
             "id": r["id"],
@@ -204,12 +197,11 @@ async def list_staples_endpoint(request: Request):
 
 
 @router.post("/staples", status_code=status.HTTP_201_CREATED)
-async def create_staple_endpoint(req: StapleCreateRequest, request: Request):
-    kernel = request.app.state.kernel
+async def create_staple_endpoint(req: StapleCreateRequest, ctx: PluginContext = Depends(current_ctx)):
     staple_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    await kernel.db.write(
+    await ctx.db.write(
         """
         INSERT INTO plugin_core_shopping_list_staples
         (id, name, default_quantity, unit, category, always_include, created_at)
@@ -230,19 +222,17 @@ async def create_staple_endpoint(req: StapleCreateRequest, request: Request):
 
 
 @router.delete("/staples/{staple_id}")
-async def delete_staple_endpoint(staple_id: str, request: Request):
-    kernel = request.app.state.kernel
-    await kernel.db.write("DELETE FROM plugin_core_shopping_list_staples WHERE id = ?", (staple_id,))
+async def delete_staple_endpoint(staple_id: str, ctx: PluginContext = Depends(current_ctx)):
+    await ctx.db.write("DELETE FROM plugin_core_shopping_list_staples WHERE id = ?", (staple_id,))
     return {"status": "deleted", "id": staple_id}
 
 
 @router.post("/items", status_code=status.HTTP_201_CREATED)
-async def create_manual_item_endpoint(req: ManualItemCreateRequest, request: Request):
-    kernel = request.app.state.kernel
+async def create_manual_item_endpoint(req: ManualItemCreateRequest, ctx: PluginContext = Depends(current_ctx)):
     item_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    await kernel.db.write(
+    await ctx.db.write(
         """
         INSERT INTO plugin_core_shopping_list_items
         (id, name, quantity, unit, category, checked, source_type, created_at, updated_at)
@@ -264,9 +254,8 @@ async def create_manual_item_endpoint(req: ManualItemCreateRequest, request: Req
 
 
 @router.delete("/items/{item_id}")
-async def delete_manual_item_endpoint(item_id: str, request: Request):
-    kernel = request.app.state.kernel
-    await kernel.db.write("DELETE FROM plugin_core_shopping_list_items WHERE id = ?", (item_id,))
+async def delete_manual_item_endpoint(item_id: str, ctx: PluginContext = Depends(current_ctx)):
+    await ctx.db.write("DELETE FROM plugin_core_shopping_list_items WHERE id = ?", (item_id,))
     return {"status": "deleted", "id": item_id}
 
 
@@ -278,4 +267,4 @@ class ShoppingListService:
 async def setup(ctx: PluginContext):
     service = ShoppingListService(ctx)
     ctx.services.register("core-shopping-list", service)
-    ctx.routes.mount(router)
+    ctx.router(router)

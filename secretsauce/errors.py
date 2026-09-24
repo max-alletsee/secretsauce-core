@@ -168,3 +168,26 @@ class PluginRuntimeError(SecretSauceError):
 
 # Alias for backward/spec convenience
 PluginError = PluginRuntimeError
+
+
+_STATUS_CODES = {
+    400: "bad_request",
+    401: "unauthorized",
+    403: "forbidden",
+    404: "not_found",
+    405: "method_not_allowed",
+    409: "conflict",
+    413: "payload_too_large",
+    422: "validation",
+    429: "too_many_requests",
+    503: "unavailable",
+}
+
+
+def error_body(code: str, message: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
+    """The one error envelope every API response uses (spec Appendix A.1)."""
+    return {"error": {"code": code, "message": message, "details": details}}
+
+
+def code_for_status(status_code: int) -> str:
+    return _STATUS_CODES.get(status_code, "internal_error" if status_code >= 500 else "error")

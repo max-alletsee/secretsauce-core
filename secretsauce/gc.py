@@ -1,102 +1,121 @@
 import asyncio
-import logging
 from datetime import datetime, timedelta, timezone
+import logging
 from pathlib import Path
-from typing import Any
+import time
 
 from secretsauce.db import Database
 
 logger = logging.getLogger(__name__)
 
-
-async def run_garbage_collection(db: Database, data_dir: Path | str) -> list[str]:
-    """
-    Garbage collector runs lazy cleanups:
-    1. Unlinked files under uploads/ that have no corresponding assets row.
-    2. Assets rows whose sub_id no longer exists in any language row of the recipe.
-    3. Events below every cursor and older than 30 days.
-    """
-    data_path = Path(data_dir)
-    uploads_dir = data_path / "uploads"
-    deleted_files: list[str] = []
-
-    # 1. Clean unlinked upload files
-    if uploads_dir.exists() and uploads_dir.is_dir():
-        asset_rows = await db.read_all("SELECT id, storage_path, filename FROM assets")
-        known_files = {Path(r["storage_path"]).name for r in asset_rows if r.get("storage_path")}
-        known_ids = {r["id"] for r in asset_rows if r.get("id")}
-
-        for file_path in uploads_dir.iterdir():
-            if file_path.is_file():
-                stem = file_path.stem
-                name = file_path.name
-                if stem not in known_ids and name not in known_files and name not in known_ids:
-                    try:
-                        file_path.unlink()
-                        deleted_files.append(file_path.name)
-                        logger.info("GC unlinked orphan file: %s", file_path.name)
-                    except OSError as e:
-                        logger.warning("Failed to unlink %s: %s", file_path, e)
-
-    # 2. Clean recipe assets rows where sub_id is no longer referenced
-    recipe_assets = await db.read_all(
-        "SELECT id, entity_id, sub_id FROM assets WHERE entity_type = 'recipe' AND sub_id IS NOT NULL"
-    )
-    for asset in recipe_assets:
-        group_id = asset["entity_id"]
-        sub_id = asset["sub_id"]
-        recipe_rows = await db.read_all(
-            "SELECT ingredients, instructions, assets FROM recipes WHERE group_id = ?",
-            (group_id,),
-        )
-        if not recipe_rows:
-            # Recipe deleted, clean up asset
-            await _delete_asset(db, uploads_dir, asset["id"])
-            continue
-
-        referenced = False
-        for row in recipe_rows:
-            content = f"{row.get('ingredients', '')} {row.get('instructions', '')} {row.get('assets', '')}"
-            if sub_id in content:
-                referenced = True
-                break
-
-        if not referenced:
-            await _delete_asset(db, uploads_dir, asset["id"])
-
-    # 3. Prune events below every cursor older than 30 days
-    cursor_res = await db.read_one("SELECT MIN(last_seq) AS min_seq FROM event_cursors")
-    if cursor_res and cursor_res["min_seq"] is not None:
-        min_seq = cursor_res["min_seq"]
-        cutoff_dt = datetime.now(timezone.utc) - timedelta(days=30)
-        cutoff_str = cutoff_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-        async with db.transaction() as tx:
-            await tx.execute(
-                "DELETE FROM events WHERE seq < ? AND created_at < ?",
-                (min_seq, cutoff_str),
-            )
-
-    return deleted_files
+EVENT_RETENTION = timedelta(days=30)
+# A file younger than this may belong to an upload whose row has not committed yet.
+ORPHAN_GRACE_SECONDS = 3600.0
 
 
-async def _delete_asset(db: Database, uploads_dir: Path, asset_id: str) -> None:
-    async with db.transaction() as tx:
-        await tx.execute("DELETE FROM assets WHERE id = ?", (asset_id,))
-    if uploads_dir.exists():
-        for f in uploads_dir.glob(f"{asset_id}*"):
+def _iso(dt: datetime) -> str:
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+async def _unlink_orphan_files(db: Database, uploads_dir: Path, grace_seconds: float) -> list[str]:
+    if not uploads_dir.is_dir():
+        return []
+    rows = await db.read_all("SELECT storage_path FROM assets;")
+    known = {r["storage_path"] for r in rows if r.get("storage_path")}
+    cutoff = time.time() - grace_seconds
+
+    def sweep() -> list[str]:
+        deleted: list[str] = []
+        for path in uploads_dir.rglob("*"):
+            if not path.is_file():
+                continue
+            rel = "uploads/" + path.relative_to(uploads_dir).as_posix()
+            if rel in known or path.stat().st_mtime > cutoff:
+                continue
             try:
-                f.unlink()
-            except OSError:
-                pass
+                path.unlink()
+                deleted.append(path.relative_to(uploads_dir).as_posix())
+            except OSError as e:
+                logger.warning("Failed to unlink %s: %s", path, e)
+        return deleted
+
+    deleted = await asyncio.to_thread(sweep)
+    for name in deleted:
+        logger.info("GC unlinked orphan file: %s", name)
+    return deleted
+
+
+async def _delete_unreferenced_recipe_assets(db: Database, uploads_dir: Path) -> int:
+    """Recipe assets whose sub_id no longer appears in any language row of the recipe."""
+    assets = await db.read_all(
+        "SELECT id, entity_id, sub_id, storage_path FROM assets "
+        "WHERE entity_type = 'recipe' AND sub_id IS NOT NULL;"
+    )
+    if not assets:
+        return 0
+    group_ids = sorted({a["entity_id"] for a in assets})
+    placeholders = ",".join("?" * len(group_ids))
+    rows = await db.read_all(
+        f"SELECT group_id, ingredients, steps FROM recipes WHERE group_id IN ({placeholders});",
+        group_ids,
+    )
+    content: dict[str, str] = {}
+    for r in rows:
+        content[r["group_id"]] = content.get(r["group_id"], "") + f" {r['ingredients']} {r['steps']}"
+
+    doomed = [a for a in assets if a["sub_id"] not in content.get(a["entity_id"], "")]
+    if not doomed:
+        return 0
+    async with db.transaction() as tx:
+        await tx.executemany("DELETE FROM assets WHERE id = ?;", [(a["id"],) for a in doomed])
+    for a in doomed:
+        rel = a["storage_path"].removeprefix("uploads/")
+        (uploads_dir / rel).unlink(missing_ok=True)
+    return len(doomed)
+
+
+async def _prune_events(db: Database) -> int:
+    """Events below every active plugin's cursor and older than the retention window.
+
+    Disabled plugins keep their cursors but do not hold the log hostage; when
+    one is re-activated past the retained window it skips to head and rebuilds.
+    """
+    min_seq = await db.read_val(
+        """
+        SELECT MIN(c.last_seq) FROM event_cursors c
+        JOIN plugins p ON p.id = c.plugin_id
+        WHERE p.state = 'active';
+        """
+    )
+    if min_seq is None:
+        min_seq = await db.read_val("SELECT COALESCE(MAX(seq), 0) FROM events;")
+    cutoff = _iso(datetime.now(timezone.utc) - EVENT_RETENTION)
+    cursor = await db.write(
+        "DELETE FROM events WHERE seq <= ? AND created_at < ?;", (min_seq, cutoff)
+    )
+    return cursor.rowcount
+
+
+async def run_garbage_collection(
+    db: Database,
+    data_dir: Path | str,
+    grace_seconds: float = ORPHAN_GRACE_SECONDS,
+) -> list[str]:
+    """Lazy cleanups; returns the upload files it removed (relative to uploads/)."""
+    uploads_dir = Path(data_dir) / "uploads"
+    deleted_files = await _unlink_orphan_files(db, uploads_dir, grace_seconds)
+    await _delete_unreferenced_recipe_assets(db, uploads_dir)
+    await _prune_events(db)
+    return deleted_files
 
 
 async def periodic_gc_worker(db: Database, data_dir: Path | str, interval: float = 3600.0) -> None:
     """Hourly background garbage collector loop."""
     while True:
+        await asyncio.sleep(interval)
         try:
-            await asyncio.sleep(interval)
             await run_garbage_collection(db, data_dir)
         except asyncio.CancelledError:
-            break
-        except Exception as e:
-            logger.error("Error in GC periodic worker: %s", e)
+            raise
+        except Exception:
+            logger.exception("Garbage collection failed")

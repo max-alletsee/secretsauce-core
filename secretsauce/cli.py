@@ -2,10 +2,10 @@ import argparse
 import asyncio
 from datetime import datetime, timezone
 import os
-from pathlib import Path
 import sys
 
 from secretsauce.api.routes.export import create_export_zip, restore_from_zip
+from secretsauce.boot import resolve_data_dir
 from secretsauce.config import load_config
 from secretsauce.db import Database
 
@@ -46,17 +46,7 @@ def cli_main(args: list[str] | None = None) -> int:
 
     subcommand = parsed.subcommand or "serve"
 
-    def get_data_dir(arg_dir: str | None) -> Path:
-        if arg_dir:
-            return Path(arg_dir)
-        env_dir = os.environ.get("DATA_DIR") or os.environ.get("SECRETSAUCE_DATA_DIR")
-        if env_dir:
-            return Path(env_dir)
-        if Path("/data").exists():
-            return Path("/data")
-        return Path("data")
-
-    data_dir = get_data_dir(getattr(parsed, "data_dir", None))
+    data_dir = resolve_data_dir(getattr(parsed, "data_dir", None))
     os.environ["DATA_DIR"] = str(data_dir)
     os.environ["SECRETSAUCE_DATA_DIR"] = str(data_dir)
 

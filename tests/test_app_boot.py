@@ -1,3 +1,5 @@
+import os
+import time
 import io
 import zipfile
 import pytest
@@ -49,11 +51,23 @@ async def test_garbage_collector(tmp_path):
         uploads_dir.mkdir(parents=True, exist_ok=True)
         orphan_file = uploads_dir / "orphan.jpg"
         orphan_file.write_bytes(b"orphan-data")
+        nested_orphan = uploads_dir / "2026" / "01" / "lost.png"
+        nested_orphan.parent.mkdir(parents=True)
+        nested_orphan.write_bytes(b"lost")
+        fresh_file = uploads_dir / "2026" / "01" / "in-flight.png"
+        fresh_file.write_bytes(b"uploading")
+        an_hour_ago = time.time() - 7200
+        for old in (orphan_file, nested_orphan):
+            os.utime(old, (an_hour_ago, an_hour_ago))
 
         # Run GC
         deleted_files = await run_garbage_collection(k.db, tmp_path)
         assert not orphan_file.exists()
+        assert not nested_orphan.exists()
         assert "orphan.jpg" in deleted_files
+        assert "2026/01/lost.png" in deleted_files
+        # Younger than the grace period: may belong to an upload not yet committed.
+        assert fresh_file.exists()
 
 
 @pytest.mark.asyncio

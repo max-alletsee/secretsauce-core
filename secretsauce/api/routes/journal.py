@@ -1,8 +1,9 @@
 from datetime import date, timedelta
-from typing import Any
+
 from fastapi import APIRouter, Query, Request, Response
 
-from secretsauce.errors import ValidationError
+from secretsauce.api.models import JournalCreate, JournalPatch
+from secretsauce.api.routes.schedule import parse_range
 
 router = APIRouter(prefix="/api/journal", tags=["journal"])
 
@@ -13,78 +14,34 @@ async def list_journal(
     from_date: str | None = Query(default=None, alias="from"),
     to_date: str | None = Query(default=None, alias="to"),
     lang: str | None = None,
-    attr: list[str] | None = Query(default=None),
     sort: str = "date",
 ):
-    if not to_date:
-        to_date = date.today().isoformat()
-    if not from_date:
-        from_date = (date.today() - timedelta(days=30)).isoformat()
-
-    try:
-        d_from = date.fromisoformat(from_date)
-        d_to = date.fromisoformat(to_date)
-    except ValueError:
-        raise ValidationError("Invalid date format, expected YYYY-MM-DD")
-
-    delta = (d_to - d_from).days
-    if delta < 0:
-        raise ValidationError("'from' date must be before or equal to 'to' date")
-
-    kernel = request.app.state.kernel
-    return await kernel.journal.list_entries(
-        from_date=from_date,
-        to_date=to_date,
-        lang=lang,
-        sort=sort,
+    to_date = to_date or date.today().isoformat()
+    from_date = from_date or (date.today() - timedelta(days=30)).isoformat()
+    parse_range(from_date, to_date)
+    return await request.app.state.kernel.journal.list_entries(
+        from_date=from_date, to_date=to_date, lang=lang, sort=sort
     )
 
 
 @router.post("", status_code=201)
-async def create_journal_entry(payload: dict[str, Any], request: Request):
-    kernel = request.app.state.kernel
-    data = dict(payload)
-    actor_id = getattr(request.state, "actor_member_id", None)
-    if actor_id and "actor_member_id" not in data:
-        data["actor_member_id"] = actor_id
-    return await kernel.journal.create_entry(data)
+async def create_journal_entry(payload: JournalCreate, request: Request):
+    return await request.app.state.kernel.journal.create_entry(payload.data(request))
 
 
 @router.get("/{entry_id}")
-async def get_journal_entry(
-    entry_id: str,
-    request: Request,
-    lang: str | None = None,
-):
-    kernel = request.app.state.kernel
-    return await kernel.journal.get_entry(entry_id, lang=lang)
+async def get_journal_entry(entry_id: str, request: Request, lang: str | None = None):
+    return await request.app.state.kernel.journal.get_entry(entry_id, lang=lang)
 
 
 @router.patch("/{entry_id}")
-async def patch_journal_entry(
-    entry_id: str,
-    payload: dict[str, Any],
-    request: Request,
-):
-    kernel = request.app.state.kernel
-    if "revision" not in payload:
-        raise ValidationError("Field 'revision' is required for patch")
-
-    data = dict(payload)
-    revision = int(data.pop("revision"))
-    return await kernel.journal.update_entry(
-        entry_id=entry_id,
-        revision=revision,
-        data=data,
+async def patch_journal_entry(entry_id: str, payload: JournalPatch, request: Request):
+    return await request.app.state.kernel.journal.update_entry(
+        entry_id=entry_id, revision=payload.revision, data=payload.data(request)
     )
 
 
 @router.delete("/{entry_id}", status_code=204)
-async def delete_journal_entry(
-    entry_id: str,
-    request: Request,
-    revision: int = Query(...),
-):
-    kernel = request.app.state.kernel
-    await kernel.journal.delete_entry(entry_id=entry_id, revision=revision)
+async def delete_journal_entry(entry_id: str, request: Request, revision: int = Query(...)):
+    await request.app.state.kernel.journal.delete_entry(entry_id=entry_id, revision=revision)
     return Response(status_code=204)

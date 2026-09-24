@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 import json
 from typing import Any
 import uuid
@@ -7,20 +6,21 @@ import aiosqlite
 
 from secretsauce.db import Database
 from secretsauce.errors import ConflictError, NotFoundError
+from secretsauce.events import EventLog
+from secretsauce.nouns._common import emit_noun_event, in_transaction, require_fields, to_float
+from secretsauce.util import now_iso
 
-
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+_LIST_COLUMNS = (
+    "dietary_restrictions",
+    "allergies",
+    "disliked_ingredients",
+    "favorite_cuisines",
+)
 
 
 def _deserialize_member(row: dict[str, Any]) -> dict[str, Any]:
     res = dict(row)
-    for col in (
-        "dietary_restrictions",
-        "allergies",
-        "disliked_ingredients",
-        "favorite_cuisines",
-    ):
+    for col in _LIST_COLUMNS:
         val = res.get(col)
         if isinstance(val, str):
             try:
@@ -32,9 +32,12 @@ def _deserialize_member(row: dict[str, Any]) -> dict[str, Any]:
     return res
 
 
+
+
 class MembersRepo:
-    def __init__(self, db: Database):
+    def __init__(self, db: Database, events: EventLog | None = None):
         self.db = db
+        self.events = events
 
     async def list_members(self, sort: str = "name") -> list[dict[str, Any]]:
         order = "ASC"
@@ -60,60 +63,67 @@ class MembersRepo:
             raise NotFoundError(f"Member '{member_id}' not found")
         return _deserialize_member(row)
 
+    async def member_exists(self, member_id: str) -> bool:
+        return (
+            await self.db.read_val("SELECT 1 FROM household_members WHERE id = ?;", (member_id,))
+        ) is not None
+
     async def create_member(
         self, data: dict[str, Any], conn: aiosqlite.Connection | None = None
     ) -> dict[str, Any]:
-        member_id = data.get("id") or str(uuid.uuid4()).lower()
+        require_fields(data, "name")
 
-        existing = await self.db.read_one(
-            "SELECT * FROM household_members WHERE id = ?;", (member_id,), conn=conn
-        )
-        if existing is not None:
-            raise ConflictError(
-                f"Member with id '{member_id}' already exists",
-                current=_deserialize_member(existing),
+        async def _do_create(writer_conn: aiosqlite.Connection) -> dict[str, Any]:
+            member_id = data.get("id") or str(uuid.uuid4()).lower()
+            existing = await self.db.read_one(
+                "SELECT * FROM household_members WHERE id = ?;",
+                (member_id,),
+                conn=writer_conn,
             )
+            if existing is not None:
+                raise ConflictError(
+                    f"Member with id '{member_id}' already exists",
+                    current=_deserialize_member(existing),
+                )
 
-        now = _now_iso()
-        name = data["name"]
-        avatar_color = data.get("avatar_color")
-        serving_ratio = float(data.get("serving_ratio", 1.0))
-        dietary_restrictions = json.dumps(data.get("dietary_restrictions") or [])
-        allergies = json.dumps(data.get("allergies") or [])
-        disliked_ingredients = json.dumps(data.get("disliked_ingredients") or [])
-        favorite_cuisines = json.dumps(data.get("favorite_cuisines") or [])
-        preferred_language = data.get("preferred_language", "en")
-        revision = 1
+            now = now_iso()
+            await writer_conn.execute(
+                """
+                INSERT INTO household_members (
+                    id, revision, name, avatar_color, serving_ratio,
+                    dietary_restrictions, allergies, disliked_ingredients,
+                    favorite_cuisines, preferred_language, created_at, updated_at
+                ) VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    member_id,
+                    data["name"],
+                    data.get("avatar_color"),
+                    to_float(data.get("serving_ratio", 1.0), "serving_ratio"),
+                    json.dumps(data.get("dietary_restrictions") or []),
+                    json.dumps(data.get("allergies") or []),
+                    json.dumps(data.get("disliked_ingredients") or []),
+                    json.dumps(data.get("favorite_cuisines") or []),
+                    data.get("preferred_language") or "en",
+                    now,
+                    now,
+                ),
+            )
+            created = await self.get_member(member_id, conn=writer_conn)
+            await emit_noun_event(
+                self.events,
+                writer_conn,
+                "member:created",
+                "member",
+                member_id,
+                revision=1,
+                after=created,
+                actor_member_id=data.get("actor_member_id"),
+                origin=data.get("origin"),
+            )
+            return created
 
-        sql = """
-        INSERT INTO household_members (
-            id, revision, name, avatar_color, serving_ratio,
-            dietary_restrictions, allergies, disliked_ingredients,
-            favorite_cuisines, preferred_language, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-        """
-        params = (
-            member_id,
-            revision,
-            name,
-            avatar_color,
-            serving_ratio,
-            dietary_restrictions,
-            allergies,
-            disliked_ingredients,
-            favorite_cuisines,
-            preferred_language,
-            now,
-            now,
-        )
-
-        if conn is not None:
-            await conn.execute(sql, params)
-        else:
-            async with self.db.transaction() as writer_conn:
-                await writer_conn.execute(sql, params)
-
-        return await self.get_member(member_id, conn=conn)
+        return await in_transaction(self.db, conn, _do_create)
 
     async def update_member(
         self,
@@ -128,37 +138,7 @@ class MembersRepo:
                 raise ConflictError("Revision mismatch", current=current)
 
             new_revision = current["revision"] + 1
-            now = _now_iso()
-
-            name = data.get("name", current["name"])
-            avatar_color = (
-                data["avatar_color"]
-                if "avatar_color" in data
-                else current.get("avatar_color")
-            )
-            serving_ratio = float(
-                data.get("serving_ratio", current.get("serving_ratio", 1.0))
-            )
-
-            dietary = json.dumps(
-                data.get(
-                    "dietary_restrictions", current.get("dietary_restrictions", [])
-                )
-            )
-            allergies = json.dumps(
-                data.get("allergies", current.get("allergies", []))
-            )
-            disliked = json.dumps(
-                data.get(
-                    "disliked_ingredients", current.get("disliked_ingredients", [])
-                )
-            )
-            cuisines = json.dumps(
-                data.get("favorite_cuisines", current.get("favorite_cuisines", []))
-            )
-            preferred_language = data.get(
-                "preferred_language", current.get("preferred_language", "en")
-            )
+            merged = {**current, **data}
 
             await writer_conn.execute(
                 """
@@ -177,25 +157,34 @@ class MembersRepo:
                 """,
                 (
                     new_revision,
-                    name,
-                    avatar_color,
-                    serving_ratio,
-                    dietary,
-                    allergies,
-                    disliked,
-                    cuisines,
-                    preferred_language,
-                    now,
+                    merged.get("name") or current["name"],
+                    merged.get("avatar_color"),
+                    to_float(merged.get("serving_ratio", 1.0), "serving_ratio"),
+                    json.dumps(merged.get("dietary_restrictions") or []),
+                    json.dumps(merged.get("allergies") or []),
+                    json.dumps(merged.get("disliked_ingredients") or []),
+                    json.dumps(merged.get("favorite_cuisines") or []),
+                    merged.get("preferred_language") or "en",
+                    now_iso(),
                     member_id,
                 ),
             )
-            return await self.get_member(member_id, conn=writer_conn)
+            updated = await self.get_member(member_id, conn=writer_conn)
+            await emit_noun_event(
+                self.events,
+                writer_conn,
+                "member:updated",
+                "member",
+                member_id,
+                revision=new_revision,
+                before=current,
+                after=updated,
+                actor_member_id=data.get("actor_member_id"),
+                origin=data.get("origin"),
+            )
+            return updated
 
-        if conn is not None:
-            return await _do_update(conn)
-        else:
-            async with self.db.transaction() as writer_conn:
-                return await _do_update(writer_conn)
+        return await in_transaction(self.db, conn, _do_update)
 
     async def delete_member(
         self,
@@ -227,23 +216,26 @@ class MembersRepo:
             for row in sched_rows:
                 try:
                     participants = json.loads(row["participant_member_ids"])
-                    if isinstance(participants, list) and member_id in participants:
-                        updated_participants = [
-                            p for p in participants if p != member_id
-                        ]
-                        await writer_conn.execute(
-                            "UPDATE schedule_entries SET participant_member_ids = ? WHERE id = ?;",
-                            (json.dumps(updated_participants), row["id"]),
-                        )
                 except (json.JSONDecodeError, TypeError):
-                    pass
+                    continue
+                if isinstance(participants, list) and member_id in participants:
+                    updated_participants = [p for p in participants if p != member_id]
+                    await writer_conn.execute(
+                        "UPDATE schedule_entries SET participant_member_ids = ? WHERE id = ?;",
+                        (json.dumps(updated_participants), row["id"]),
+                    )
 
             await writer_conn.execute(
                 "DELETE FROM household_members WHERE id = ?;", (member_id,)
             )
+            await emit_noun_event(
+                self.events,
+                writer_conn,
+                "member:deleted",
+                "member",
+                member_id,
+                revision=current["revision"],
+                before=current,
+            )
 
-        if conn is not None:
-            await _do_delete(conn)
-        else:
-            async with self.db.transaction() as writer_conn:
-                await _do_delete(writer_conn)
+        await in_transaction(self.db, conn, _do_delete)
