@@ -105,6 +105,9 @@ test.describe('Phase 3B End-to-End Browser Tests', () => {
     await expect(addIntentBtn).toBeVisible()
     await addIntentBtn.click()
 
+    // Since the recipe importer registers its own provider, the hub offers a choice.
+    await page.getByRole('button', { name: 'Manual Recipe' }).click()
+
     // Expect navigation to /recipes/new
     await expect(page).toHaveURL(/.*\/recipes\/new/)
     await expect(page.locator('.recipe-edit-page h2')).toHaveText('New Recipe')

@@ -15,6 +15,12 @@ const pluginsExp = new CacheExpiration(PLUGINS_CACHE, { maxEntries: 50 })
 const assetsExp = new CacheExpiration(ASSETS_CACHE, { maxEntries: 200 })
 const apiExp = new CacheExpiration(API_CACHE, { maxEntries: 1000 })
 
+// updateTimestamp() only records use; expireEntries() is what enforces maxEntries.
+async function track(expiration: CacheExpiration, url: string): Promise<void> {
+  await expiration.updateTimestamp(url)
+  await expiration.expireEntries()
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
@@ -45,6 +51,7 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('message', (event) => {
+  // Sent on logout: household data must not outlive the session on this device (spec 8.6).
   if (event.data?.type === 'clear') {
     event.waitUntil(
       Promise.all([caches.delete(API_CACHE), caches.delete(ASSETS_CACHE)])
@@ -85,7 +92,7 @@ self.addEventListener('fetch', (event) => {
         const net = await fetch(req)
         if (net.ok) {
           await cache.put(req, net.clone())
-          await pluginsExp.updateTimestamp(req.url)
+          await track(pluginsExp, req.url)
         }
         return net
       })()
@@ -102,7 +109,7 @@ self.addEventListener('fetch', (event) => {
         const net = await fetch(req)
         if (net.ok) {
           await cache.put(req, net.clone())
-          await assetsExp.updateTimestamp(req.url)
+          await track(assetsExp, req.url)
         }
         return net
       })()
@@ -158,7 +165,7 @@ self.addEventListener('fetch', (event) => {
           const net = await Promise.race([fetch(req), timeoutPromise])
           if (net.ok) {
             await cache.put(req, net.clone())
-            await apiExp.updateTimestamp(req.url)
+            await track(apiExp, req.url)
             return net
           }
           return net

@@ -9,6 +9,10 @@ export interface StreamClient {
   handleMessage(msg: { data: string; lastEventId?: string }): void
 }
 
+// The server sends named SSE events (API reference, section 11); an EventSource
+// only calls onmessage for unnamed ones, so each name needs its own listener.
+const FRAME_NAMES = ['hello', 'event', 'push'] as const
+
 export function createStreamClient(
   streamUrl: string,
   currentBootId: string,
@@ -19,11 +23,12 @@ export function createStreamClient(
   let eventSource: EventSource | null = null
   let lastEventId: string | null = null
 
-  function handleMessage(msg: { data: string; lastEventId?: string }) {
-    if (msg.lastEventId) {
-      lastEventId = msg.lastEventId
-    }
+  function matches(pattern: string, name: string): boolean {
+    if (pattern === '*' || pattern === name) return true
+    return pattern.endsWith(':*') && name.startsWith(pattern.slice(0, -1))
+  }
 
+  function handleMessage(msg: { data: string; lastEventId?: string }) {
     let payload: any
     try {
       payload = JSON.parse(msg.data)
@@ -39,18 +44,15 @@ export function createStreamClient(
       return
     }
 
+    // Only log events carry an id; pushes are not replayable.
+    if (payload.kind === 'event' && msg.lastEventId) {
+      lastEventId = msg.lastEventId
+    }
+
     const name = payload.name
     if (!name) return
-
-    for (const item of handlers) {
-      if (item.pattern === name) {
-        item.fn(payload)
-      } else if (item.pattern.endsWith(':*')) {
-        const prefix = item.pattern.slice(0, -1)
-        if (name.startsWith(prefix)) {
-          item.fn(payload)
-        }
-      }
+    for (const item of [...handlers]) {
+      if (matches(item.pattern, name)) item.fn(payload)
     }
   }
 
@@ -62,21 +64,21 @@ export function createStreamClient(
       streamUrl,
       typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
     )
-    if (lastEventId) {
-      url.searchParams.set('last_event_id', lastEventId)
+    // The browser sends Last-Event-ID itself only on automatic reconnects.
+    if (lastEventId) url.searchParams.set('last_event_id', lastEventId)
+
+    const source = new EventSource(url.toString(), { withCredentials: true })
+    eventSource = source
+    for (const frame of FRAME_NAMES) {
+      source.addEventListener(frame, (event) => {
+        const message = event as MessageEvent
+        handleMessage({ data: message.data, lastEventId: message.lastEventId })
+      })
     }
-
-    eventSource = new EventSource(url.toString(), { withCredentials: true })
-
-    eventSource.onopen = () => {
+    source.onopen = () => {
       online.value = true
     }
-
-    eventSource.onmessage = (event) => {
-      handleMessage({ data: event.data, lastEventId: event.lastEventId })
-    }
-
-    eventSource.onerror = () => {
+    source.onerror = () => {
       online.value = false
     }
   }
@@ -98,11 +100,5 @@ export function createStreamClient(
     }
   }
 
-  return {
-    online,
-    on,
-    connect,
-    disconnect,
-    handleMessage,
-  }
+  return { online, on, connect, disconnect, handleMessage }
 }

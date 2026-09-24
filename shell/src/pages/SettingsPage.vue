@@ -8,6 +8,7 @@ const api = inject<ApiClient>('__SS_API__')!
 const settingsRegistry = inject<any>('__SS_SETTINGS_REGISTRY__')
 const householdStore = useHouseholdStore()
 const themeReg = inject<ReturnType<typeof createThemeRegistry>>('__SS_THEME_REGISTRY__')!
+const logout = inject<(() => Promise<void>) | null>('__SS_LOGOUT__', null)
 
 const sections = settingsRegistry ? settingsRegistry.getSections() : []
 
@@ -65,6 +66,12 @@ function saveDefaultStartPage() {
     <div v-for="sec in sections" :key="sec.id" class="settings-section">
       <h3>{{ sec.title }}</h3>
       <component :is="sec.component" :plugin-id="sec.pluginId" />
+    </div>
+
+    <div v-if="logout" class="settings-section">
+      <h3>This device</h3>
+      <p>Logging out also removes this household's saved data and queued changes from this device.</p>
+      <button class="logout-button" @click="logout()">Log out</button>
     </div>
   </div>
 </template>

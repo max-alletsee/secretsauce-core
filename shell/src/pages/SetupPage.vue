@@ -53,8 +53,10 @@ async function submitSetup() {
           name="passphrase"
           v-model="passphrase"
           type="password"
+          minlength="8"
           required
         />
+        <small>At least 8 characters.</small>
       </div>
 
       <div class="field">

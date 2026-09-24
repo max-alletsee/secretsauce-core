@@ -26,7 +26,17 @@ interface OutboxDB {
   }
 }
 
-async function getDB(): Promise<IDBPDatabase<OutboxDB>> {
+export const OUTBOX_DB_NAME = DB_NAME
+
+const RETRY_BASE_MS = 1000
+const RETRY_MAX_MS = 5 * 60 * 1000
+
+/** Delay before retry number `attempt` (1-based) after a server or network failure. */
+export function retryDelayMs(attempt: number): number {
+  return Math.min(RETRY_BASE_MS * 2 ** Math.max(attempt - 1, 0), RETRY_MAX_MS)
+}
+
+function openOutboxDB(): Promise<IDBPDatabase<OutboxDB>> {
   return openDB<OutboxDB>(DB_NAME, 1, {
     upgrade(db) {
       const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' })
@@ -48,6 +58,29 @@ export function createOutbox(
   const appliedHandlers: ((entry: OutboxEntry, res: unknown) => void)[] = []
   const failedHandlers: ((entry: OutboxEntry, err: ApiError) => void)[] = []
   let isFlushing = false
+  let dbPromise: Promise<IDBPDatabase<OutboxDB>> | null = null
+  let consecutiveFailures = 0
+  let retryTimer: ReturnType<typeof setTimeout> | null = null
+
+  // One connection per outbox; opening IndexedDB on every call is slow.
+  function getDB(): Promise<IDBPDatabase<OutboxDB>> {
+    if (!dbPromise) {
+      dbPromise = openOutboxDB().catch((err) => {
+        dbPromise = null
+        throw err
+      })
+    }
+    return dbPromise
+  }
+
+  function scheduleRetry() {
+    if (retryTimer !== null) return
+    consecutiveFailures += 1
+    retryTimer = setTimeout(() => {
+      retryTimer = null
+      flush()
+    }, retryDelayMs(consecutiveFailures))
+  }
 
   async function refreshCounts() {
     const db = await getDB()
@@ -120,6 +153,7 @@ export function createOutbox(
           }
 
           // 2xx Success: delete from IDB and emit applied
+          consecutiveFailures = 0
           await db.delete(STORE_NAME, entry.id)
           for (const handler of appliedHandlers) handler(entry, response)
         } catch (err: any) {
@@ -139,8 +173,9 @@ export function createOutbox(
             break
           }
 
-          // Rule 7: Network / Offline error -> stop flush, leave pending
+          // Rule 7: Network / Offline error -> stop flush, leave pending, retry with backoff
           if (err instanceof OfflineError) {
+            scheduleRetry()
             break
           }
 
@@ -154,6 +189,7 @@ export function createOutbox(
               for (const handler of failedHandlers) handler(entry, err)
             } else {
               await db.put(STORE_NAME, entry)
+              scheduleRetry()
               break // stop flush
             }
             continue

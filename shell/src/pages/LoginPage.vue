@@ -3,6 +3,7 @@ import { ref, inject } from 'vue'
 import { Slot, type ApiClient } from '@secretsauce/ui'
 
 const api = inject<ApiClient>('__SS_API__')!
+const basePath = inject<string>('__SS_BASE_PATH__', '/')
 const passphrase = ref('')
 const errorMsg = ref('')
 
@@ -11,7 +12,7 @@ async function submitLogin() {
   try {
     await api.post('/api/auth/login', { passphrase: passphrase.value })
     if (typeof window !== 'undefined') {
-      window.location.href = '/'
+      window.location.href = basePath
     }
   } catch (err: any) {
     errorMsg.value = err?.message || 'Login failed'

@@ -2,25 +2,47 @@
 import { ref, onMounted, inject } from 'vue'
 import { Slot, type ApiClient } from '@secretsauce/ui'
 
+interface PluginRow {
+  id: string
+  name?: string
+  description?: string
+  state: string
+  enabled: boolean
+  error?: string | null
+  commands?: { id: string; title: string }[]
+}
+
 const api = inject<ApiClient>('__SS_API__')!
-const plugins = ref<any[]>([])
+const plugins = ref<PluginRow[]>([])
+const message = ref<string | null>(null)
 
 async function loadPlugins() {
   try {
-    const res = await api.get<{ items: any[] }>('/api/plugins')
-    plugins.value = res.items || []
+    // GET /api/plugins answers a plain list.
+    const res = await api.get<PluginRow[] | { items: PluginRow[] }>('/api/plugins')
+    plugins.value = Array.isArray(res) ? res : res?.items || []
   } catch (err) {
     console.error(err)
   }
 }
 
-async function togglePlugin(plugin: any) {
-  if (plugin.enabled) {
-    await api.post(`/api/plugins/${plugin.id}/disable`)
-  } else {
-    await api.post(`/api/plugins/${plugin.id}/enable`)
-  }
+async function togglePlugin(plugin: PluginRow) {
+  await api.post(`/api/plugins/${plugin.id}/${plugin.enabled ? 'disable' : 'enable'}`)
   await loadPlugins()
+}
+
+async function runCommand(plugin: PluginRow, command: { id: string; title: string }) {
+  try {
+    const res = await api.post<{ job_id: string }>(`/api/plugins/${plugin.id}/commands/${command.id}`)
+    message.value = `${command.title} started (job ${res?.job_id ?? '?'})`
+  } catch (err: any) {
+    message.value = `${command.title} failed: ${err?.message || err}`
+  }
+}
+
+function errorSummary(error: string): string {
+  const lines = error.trim().split('\n')
+  return lines[lines.length - 1]
 }
 
 onMounted(loadPlugins)
@@ -29,16 +51,30 @@ onMounted(loadPlugins)
 <template>
   <div class="ss-plugin-manager">
     <h2>Plugin Manager</h2>
+    <p v-if="message" class="notice" role="status">{{ message }}</p>
     <div class="plugin-list">
       <div v-for="p in plugins" :key="p.id" class="plugin-card">
         <div class="card-header">
-          <strong>{{ p.name }} ({{ p.id }})</strong>
+          <strong>{{ p.name || p.id }} ({{ p.id }})</strong>
           <span :class="['status', p.state]">{{ p.state }}</span>
         </div>
         <p>{{ p.description }}</p>
+        <details v-if="p.error && (p.state === 'errored' || p.state === 'blocked')" class="error">
+          <summary>{{ errorSummary(p.error) }}</summary>
+          <pre>{{ p.error }}</pre>
+        </details>
         <div class="card-actions">
           <button @click="togglePlugin(p)">
             {{ p.enabled ? 'Disable' : 'Enable' }}
+          </button>
+          <button
+            v-for="c in p.commands || []"
+            :key="c.id"
+            :data-command="c.id"
+            :disabled="p.state !== 'active'"
+            @click="runCommand(p, c)"
+          >
+            {{ c.title }}
           </button>
           <Slot name="plugin_manager.plugin.actions" :context="{ plugin: p }" />
         </div>
@@ -76,6 +112,22 @@ onMounted(loadPlugins)
 }
 .status.errored {
   color: #b91c1c;
+}
+.status.blocked {
+  color: #b45309;
+}
+.error summary {
+  color: #b91c1c;
+  cursor: pointer;
+}
+.error pre {
+  white-space: pre-wrap;
+  font-size: 0.8em;
+  max-height: 240px;
+  overflow: auto;
+}
+.notice {
+  color: #1c1917;
 }
 .card-actions {
   display: flex;

@@ -1,10 +1,25 @@
 import { type ApiClient, ApiError, ConflictError, OfflineError } from '@secretsauce/ui'
 
+export interface ApiClientOptions {
+  /** Abort requests that take longer; they surface as OfflineError. */
+  timeoutMs?: number
+  /** Uploads carry more data and get more time. */
+  uploadTimeoutMs?: number
+  /** Called when the server answers 401, e.g. after the session was revoked. */
+  onUnauthorized?: () => void
+}
+
+const DEFAULT_TIMEOUT_MS = 30_000
+const DEFAULT_UPLOAD_TIMEOUT_MS = 120_000
+
 export function createApiClient(
   basePath: string = '/',
-  getActorMemberId: () => string | null = () => null
+  getActorMemberId: () => string | null = () => null,
+  options: ApiClientOptions = {}
 ): ApiClient {
   const normalizedBase = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  const uploadTimeoutMs = options.uploadTimeoutMs ?? DEFAULT_UPLOAD_TIMEOUT_MS
 
   function formatUrl(path: string, query?: Record<string, any>): string {
     const cleanPath = path.startsWith('/') ? path : `/${path}`
@@ -24,12 +39,22 @@ export function createApiClient(
     return qs ? `${fullPath}?${qs}` : fullPath
   }
 
+  async function readJson(response: Response): Promise<any> {
+    const text = await response.text()
+    if (!text) return undefined
+    try {
+      return JSON.parse(text)
+    } catch {
+      return undefined
+    }
+  }
+
   async function request<T>(
     method: string,
     path: string,
-    options: { body?: unknown; query?: Record<string, any>; isUpload?: boolean } = {}
+    opts: { body?: unknown; query?: Record<string, any>; isUpload?: boolean } = {}
   ): Promise<T> {
-    const url = formatUrl(path, options.query)
+    const url = formatUrl(path, opts.query)
     const headers: Record<string, string> = {}
     const actorId = getActorMemberId()
     if (actorId) {
@@ -37,13 +62,15 @@ export function createApiClient(
     }
 
     let bodyData: BodyInit | undefined = undefined
-    if (options.isUpload && options.body instanceof FormData) {
-      bodyData = options.body
-    } else if (options.body !== undefined) {
+    if (opts.isUpload && opts.body instanceof FormData) {
+      bodyData = opts.body
+    } else if (opts.body !== undefined) {
       headers['Content-Type'] = 'application/json'
-      bodyData = JSON.stringify(options.body)
+      bodyData = JSON.stringify(opts.body)
     }
 
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), opts.isUpload ? uploadTimeoutMs : timeoutMs)
     let response: Response
     try {
       response = await fetch(url, {
@@ -51,37 +78,35 @@ export function createApiClient(
         headers,
         body: bodyData,
         credentials: 'same-origin',
+        signal: controller.signal,
       })
     } catch (err: any) {
-      throw new OfflineError(err?.message || 'Network request failed')
+      const timedOut = err?.name === 'AbortError'
+      throw new OfflineError(timedOut ? 'Request timed out' : err?.message || 'Network request failed')
+    } finally {
+      clearTimeout(timer)
     }
 
     if (response.ok) {
-      if (response.status === 204) {
-        return undefined as T
-      }
-      return (await response.json()) as T
+      if (response.status === 204) return undefined as T
+      return (await readJson(response)) as T
     }
 
-    let errPayload: any = null
-    try {
-      errPayload = await response.json()
-    } catch {
-      // not JSON
-    }
-
+    const errPayload = await readJson(response)
     const errCode = errPayload?.error?.code || 'unknown_error'
-    const errMsg = errPayload?.error?.message || response.statusText
+    const detail = typeof errPayload?.detail === 'string' ? errPayload.detail : undefined
+    const errMsg = errPayload?.error?.message || detail || response.statusText
 
     if (response.status === 503 && errCode === 'offline') {
       throw new OfflineError(errMsg)
     }
-
-    if (response.status === 409) {
-      const current = errPayload?.error?.details?.current || {}
-      throw new ConflictError(errMsg, current)
+    if (response.status === 401) {
+      options.onUnauthorized?.()
     }
-
+    // 409 also means setup_required; only a revision/id collision is a ConflictError.
+    if (response.status === 409 && errCode === 'conflict') {
+      throw new ConflictError(errMsg, errPayload?.error?.details?.current || {})
+    }
     throw new ApiError(response.status, errCode, errMsg, errPayload?.error?.details)
   }
 

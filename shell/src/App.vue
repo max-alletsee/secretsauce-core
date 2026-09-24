@@ -4,6 +4,7 @@ import { routeLocationKey } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import AppNav from './components/AppNav.vue'
 import OfflineBar from './components/OfflineBar.vue'
+import Toast from 'primevue/toast'
 import { useAppStore } from './stores/app'
 
 const appStore = useAppStore()
@@ -28,6 +29,7 @@ const routes = computed(() => (routeRegistry ? routeRegistry.getRoutes() : []))
         <router-view />
       </main>
     </div>
+    <Toast />
     <OfflineBar
       :online="appStore.online"
       :pending-count="outbox?.pending?.value || 0"

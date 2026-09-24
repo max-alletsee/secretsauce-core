@@ -34,12 +34,12 @@ async def seed_e2e_data():
 
     alex = await kernel.members.create_member({
         "name": "Alex",
-        "color": "#3b82f6",
+        "avatar_color": "#3b82f6",
         "preferred_language": "en",
     })
     charlie = await kernel.members.create_member({
         "name": "Charlie",
-        "color": "#10b981",
+        "avatar_color": "#10b981",
         "preferred_language": "de",
     })
 
@@ -61,7 +61,7 @@ async def seed_e2e_data():
         ],
     })
     print(f"E2E Data seeded: members=[{alex['id']}, {charlie['id']}], recipe={recipe['id']}")
-    await kernel.db.close()
+    await kernel.shutdown()
 
 if __name__ == "__main__":
     asyncio.run(seed_e2e_data())

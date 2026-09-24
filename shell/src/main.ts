@@ -1,15 +1,17 @@
-import { createApp, ref } from 'vue'
-import { createPinia } from 'pinia'
+import { createApp, watch } from 'vue'
+import { createPinia, storeToRefs } from 'pinia'
 import PrimeVue from 'primevue/config'
 import Aura from '@primevue/themes/aura'
 import ToastService from 'primevue/toastservice'
 import ConfirmationService from 'primevue/confirmationservice'
+import ToastEventBus from 'primevue/toasteventbus'
 
 import App from './App.vue'
 import { buildRouter } from './router'
 import { createApiClient } from './api'
 import { createOutbox } from './outbox'
 import { createStreamClient } from './stream'
+import { createAuthState, logout } from './session'
 import { createRouteRegistry } from './registries/routes'
 import { createSlotRegistry } from './registries/slots'
 import { createIntentRegistry } from './registries/intents'
@@ -19,6 +21,7 @@ import { createPluginLoader } from './registries/plugins'
 import { createThemeRegistry } from './theme'
 import { useMemberStore } from './stores/member'
 import { useHouseholdStore } from './stores/household'
+import { useAppStore } from './stores/app'
 import SettingsPage from './pages/SettingsPage.vue'
 import PluginManagerPage from './pages/PluginManagerPage.vue'
 import type { SecretSauceUI } from '@secretsauce/ui'
@@ -35,12 +38,23 @@ app.use(pinia)
 
 const memberStore = useMemberStore()
 const householdStore = useHouseholdStore()
+const appStore = useAppStore()
 
-const api = createApiClient(meta.base_path, () => memberStore.currentMember?.id || null)
+const basePath: string = meta.base_path.endsWith('/') ? meta.base_path : `${meta.base_path}/`
+
+const api = createApiClient(basePath, () => memberStore.currentMember?.id || null, {
+  // A session revoked elsewhere (logout, passphrase change) ends the cached one here.
+  onUnauthorized: () => auth.invalidate(),
+})
+const auth = createAuthState(api)
 const outbox = createOutbox(api)
+const { currentMember, members } = storeToRefs(memberStore)
+const { household } = storeToRefs(householdStore)
+
+const TOAST_SEVERITY = { info: 'info', success: 'success', warning: 'warn', error: 'error' } as const
 
 const stream = createStreamClient(
-  `${meta.base_path}api/events/stream`,
+  `${basePath}api/events/stream`,
   meta.boot_id,
   async () => {
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
@@ -52,6 +66,21 @@ const stream = createStreamClient(
     }
   }
 )
+
+// The offline bar follows the event stream once a session has opened it.
+let streamStarted = false
+watch(stream.online, (online) => {
+  if (streamStarted) appStore.online = online
+})
+function startStream() {
+  streamStarted = true
+  stream.connect()
+}
+function stopStream() {
+  streamStarted = false
+  stream.disconnect()
+  appStore.online = true
+}
 
 const routes = createRouteRegistry()
 const slots = createSlotRegistry()
@@ -90,22 +119,25 @@ function makeSecretSauceUI(pluginId: string): SecretSauceUI {
     },
     on: (name, fn) => stream.on(name, fn),
     api,
-    url: (p: string) => `${meta.base_path}${p.startsWith('/') ? p.slice(1) : p}`,
-    store: {
-      currentMember: ref(memberStore.currentMember) as any,
-      members: ref(memberStore.members) as any,
-      household: ref(householdStore.household) as any,
-      online: stream.online,
-    },
+    url: (p: string) => `${basePath}${p.startsWith('/') ? p.slice(1) : p}`,
+    // Live refs into the stores, not snapshots taken at activation time.
+    store: { currentMember, members, household, online: stream.online },
     outbox,
     i18n: { add: (lang, msgs) => i18n.add(lang, msgs) },
     t: (k, p) => i18n.t(k, p),
     theme: { register: (t) => themes.register(t) },
-    notify: () => {},
+    notify: ({ level, message }) =>
+      ToastEventBus.emit('add', {
+        severity: TOAST_SEVERITY[level] || 'info',
+        summary: pluginId,
+        detail: message,
+        life: level === 'error' ? 8000 : 4000,
+      }),
   }
 }
 
 const pluginLoader = createPluginLoader({
+  basePath,
   routes,
   slots,
   intents,
@@ -124,12 +156,25 @@ app.provide('__SS_SETTINGS_REGISTRY__', settings)
 app.provide('__SS_THEME_REGISTRY__', themes)
 app.provide('__SS_PLUGIN_LOADER__', pluginLoader)
 app.provide('__SS_NAVIGATE__', (path: string) => router.push(path))
+app.provide('__SS_BASE_PATH__', basePath)
+app.provide('__SS_LOGOUT__', async () => {
+  stopStream()
+  await logout({
+    api,
+    serviceWorker: typeof navigator !== 'undefined' ? navigator.serviceWorker : null,
+    storage: typeof localStorage !== 'undefined' ? localStorage : null,
+    deleteDatabase: (name) => typeof indexedDB !== 'undefined' && indexedDB.deleteDatabase(name),
+  })
+  auth.invalidate()
+  // A full reload drops every plugin's in-memory state along with the session.
+  if (typeof window !== 'undefined') window.location.assign(`${basePath}login`)
+})
 
 app.use(PrimeVue, { theme: { preset: Aura } })
 app.use(ToastService)
 app.use(ConfirmationService)
 
-const router = buildRouter(meta.base_path)
+const router = buildRouter(basePath)
 routes.bindRouter(router)
 app.use(router)
 
@@ -137,48 +182,19 @@ let storesFetched = false
 let pluginsLoaded = false
 
 router.beforeEach(async (to, from, next) => {
-  let needsSetup = false
-  try {
-    const setupStatus = await api.get<{ needs_setup?: boolean; setup_required?: boolean }>('/api/setup')
-    needsSetup = Boolean(setupStatus?.needs_setup ?? setupStatus?.setup_required)
-  } catch {
-    // offline or network error, proceed
+  if (await auth.needsSetup()) {
+    return to.path === '/setup' ? next() : next('/setup')
   }
-
-  if (needsSetup) {
-    if (to.path !== '/setup') {
-      return next('/setup')
-    }
-    return next()
-  }
-
   // Setup is complete; disallow visiting /setup
   if (to.path === '/setup') {
     return next('/login')
   }
 
-  // Check auth session
-  let isAuthenticated = false
-  if (to.path === '/login' && from.path === '/') {
-    // Just redirected from root because unauthenticated; skip duplicate session probe
-    isAuthenticated = false
-  } else {
-    try {
-      const session = await api.get<{ authenticated: boolean }>('/api/auth/session')
-      isAuthenticated = Boolean(session?.authenticated)
-    } catch {
-      isAuthenticated = false
-    }
-  }
-
-  if (!isAuthenticated) {
+  if (!(await auth.isAuthenticated())) {
     storesFetched = false
     pluginsLoaded = false
-    stream.disconnect()
-    if (to.path !== '/login') {
-      return next('/login')
-    }
-    return next()
+    stopStream()
+    return to.path === '/login' ? next() : next('/login')
   }
 
   // Authenticated user navigating to /login -> redirect to home
@@ -187,8 +203,8 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // Connect stream and fetch stores once authenticated
-  if (typeof document !== 'undefined' && document.getElementById('app')) {
-    stream.connect()
+  if (typeof document !== 'undefined' && document.getElementById('app') && !streamStarted) {
+    startStream()
   }
 
   if (!pluginsLoaded) {
