@@ -71,7 +71,10 @@ The backend and Playwright E2E tests rely on compiled bundles:
 
 ## 5. Kernel & API Architecture Notes
 
-- **Kernel Attributes:** `BootedKernel` holds `kernel.registry` and `kernel.loader`, **not** `kernel.plugins`.
+- **Kernel Attributes:** `BootedKernel` holds `kernel.registry` (also reachable as the alias `kernel.plugins`) and `kernel.loader` (`enable()`/`disable()` work at runtime).
+- **One composition root:** `secretsauce.boot.boot()` wires everything; both `build_app()` and the test harness `secretsauce.testing.make_kernel()` use it. The harness keeps background services (event pump, job runner, GC) off unless `make_kernel(..., services=True)`: deliver events with `drain_events(k)` and run jobs with `k.jobs.run_job(job_id)`.
+- **Transactions:** `db.transaction()` is re-entrant within a task (savepoints), rolls back on cancellation, and supports `db.after_commit()`/`db.on_rollback()`. Kernel repositories append their `<noun>:*` events inside the same transaction.
+- **Plugin routes:** must live under `/api/x/<plugin_id>/` and take their context via `Depends(current_ctx)`, not `request.app.state.kernel`.
 - **Database Connections:** Always close SQLite connections in async tests and fixtures; open connections on Windows cause file locks that prevent directory cleanups (`_rmtree_unsafe` permission errors).
 
 ---

@@ -6,11 +6,12 @@ This guide explains how to develop, test, and package backend plugins for the Se
 
 ## 1. Plugin Directory Structure
 
-A plugin lives in a directory under `data/plugins/<plugin-id>/` (for user or runtime plugins) or under `secretsauce/plugins/core/<plugin-id>/` (for built-in core plugins).
+A plugin lives in a directory under `<data_dir>/plugins/<plugin-id>/` (user plugins) or `secretsauce/plugins/core/<plugin-id>/` (built-in core plugins). A single-file plugin `<plugin-id>.py` works too.
 
 ```text
 my-plugin/
-├── __init__.py          # Plugin definition and setup(ctx) entry point
+├── __init__.py          # PLUGIN dict and setup(ctx)
+├── helpers.py           # Optional submodules: `from .helpers import ...` works
 ├── migrations/          # SQLite schema migrations (optional)
 │   └── 0001_initial.sql
 ├── ui/                  # UI source files (Vite library build)
@@ -22,229 +23,223 @@ my-plugin/
 └── ui.css               # Optional frontend styles
 ```
 
+The kernel imports the package as `ss_plugin_<id with dashes as underscores>`. Python modules are never reloaded in a running process, so changing plugin code needs a restart; enabling, disabling and configuring a plugin do not.
+
 ---
 
 ## 2. Plugin Manifest (`PLUGIN`)
 
-Every plugin defines a `PLUGIN` dictionary in its `__init__.py` (or a `manifest.json` file in the root of the plugin directory):
+Every plugin declares a `PLUGIN` dictionary in its module. There is no separate manifest file.
 
 ```python
 PLUGIN = {
     "id": "recipe-nutrition",
     "name": "Recipe Nutrition Calculator",
     "version": "1.0.0",
+    "description": "Estimates nutrition per serving",
     "schema": 1,
-    "dependencies": [],
+    "requires": ["core-ai-provider", "core-units?"],
+    "ui": "ui.js",
     "config_schema": {
-        "api_key": {
-            "type": "string",
-            "title": "Nutrition Provider API Key",
-            "secret": True
+        "type": "object",
+        "properties": {
+            "api_key": {"type": "string", "title": "Provider API key", "secret": True},
+            "default_calories": {"type": "number", "default": 500},
         },
-        "default_calories": {
-            "type": "number",
-            "default": 500
-        }
     },
-    "slots": ["recipe.detail.sidebar"],
-    "intents": ["nutrition:estimate"]
 }
 ```
 
 ### Manifest Fields
 | Field | Type | Description |
 |---|---|---|
-| `id` | `str` | Unique plugin identifier (`[a-z0-9-]+`). |
-| `name` | `str` | Display name. |
-| `version` | `str` | SemVer string (e.g. `1.0.0`). |
-| `schema` | `int` | Database schema version integer. Migrations run when `schema > applied_schema`. |
-| `dependencies` | `list[str]` | List of required plugin IDs that must be active. |
-| `config_schema`| `dict` | JSON Schema for plugin settings. Fields with `"secret": True` are encrypted on disk. |
-| `slots` | `list[str]` | UI slots contributed by the plugin. |
-| `intents` | `list[str]` | Intent hubs or providers provided by the plugin. |
+| `id` | `str` | Required. Matches `^[a-z][a-z0-9-]{1,40}$` and the directory or file name. |
+| `version` | `str` | Required. SemVer, e.g. `1.0.0`. |
+| `name` | `str` | Display name; defaults to the id. |
+| `description` | `str` | Shown in Plugin Manager. |
+| `schema` | `int` | Highest migration number. Pending migrations run on activation, each atomically; a failing one marks the plugin `errored`. |
+| `requires` | `list[str]` | Plugin ids that must be active. A trailing `?` marks an optional dependency, which only affects start order. Plugins start in dependency order; a missing or inactive requirement leaves the plugin `blocked`. |
+| `ui`, `ui_css` | `str` | Frontend bundle and stylesheet (see section 6). |
+| `ui_api` | `int` | Frontend API version; defaults to 1. |
+| `config_schema` | `dict` | JSON Schema (`{"type": "object", "properties": {...}}`) for the plugin's settings. `default` values are applied; properties with `"secret": True` are stored encrypted, shown to browsers as `••••••••`, and decrypted for the plugin. |
 
 ---
 
-## 3. The `setup(ctx)` Lifecycle Function
+## 3. Lifecycle: `setup(ctx)` and `teardown()`
 
-When a plugin is activated, the kernel calls its `setup(ctx)` function, passing a sandboxed `PluginContext` instance:
+When a plugin activates, the kernel runs its migrations and calls `setup(ctx)` with the plugin's `PluginContext`. Everything a plugin registers through `ctx` (hooks, event handlers, routes, services, commands, jobs, background tasks) belongs to it and is removed when the plugin is disabled from Plugin Manager, at runtime and without a restart. An optional module-level `teardown()` runs first. An exception in `setup` marks the plugin `errored` with the traceback; nothing else is affected.
 
 ```python
 from secretsauce.plugins.context import PluginContext
 
 async def setup(ctx: PluginContext) -> None:
-    # Register synchronous pre-commit policy hooks
-    @ctx.hook("before_recipe_save")
-    async def validate_recipe(tx, recipe_data, is_new):
-        # Mutate or veto before commit
-        if "nutrition" not in recipe_data.get("tags", []):
-            recipe_data.setdefault("tags", []).append("nutrition")
+    async def tag_nutrition(draft, current=None, ctx=None):
+        # Pre-commit hook: mutate the draft or raise VetoError
+        draft.setdefault("tags", [])
+        return draft
 
-    # Register event listeners
-    @ctx.on("recipe:created")
     async def on_recipe_created(event):
-        # Enqueue background job
-        await ctx.jobs.create(
-            job_type="calculate_nutrition",
-            input_data={"recipe_id": event.entity_id}
-        )
+        await ctx.jobs.create("calculate-nutrition", {"recipe_id": event.entity_id})
+
+    ctx.hook("recipe:create", tag_nutrition)
+    ctx.on("recipe:created", on_recipe_created)
 ```
+
+**Trust model.** A plugin runs in-process with the kernel. It can read and write the whole database, the data directory and the network; `ctx` scopes what it *registers*, not what it can reach. Only install plugins you trust as much as the kernel itself.
 
 ---
 
 ## 4. `PluginContext` SDK Reference
 
-### 4.1 Scoped Entity Attributes (`ctx.attributes`)
-Plugins store metadata on kernel entities without modifying kernel tables:
+### 4.1 Noun repositories (`ctx.recipes`, `ctx.schedule`, `ctx.journal`, `ctx.members`, `ctx.household`, `ctx.assets`)
+These are the kernel's own repositories, the same ones the REST API uses. A plugin write therefore runs pre-commit hooks and appends the same `<noun>:created|updated|deleted` events as a browser write, with `origin = "plugin:<id>"`. Pass `conn=tx` to join a transaction you opened with `ctx.db.transaction()`:
 
 ```python
-# Store a numeric rating or nutrition value
-await ctx.attributes.set("recipe", "rec_123", "calories", 450.0)
-
-# Retrieve attributes for an entity (automatically scoped to current plugin)
-attrs = await ctx.attributes.get("recipe", "rec_123")
-calories = attrs.get("calories")
-
-# Delete attribute
-await ctx.attributes.delete("recipe", "rec_123", "calories")
+async with ctx.db.transaction() as tx:
+    entry = await ctx.schedule.create_entry({"date": "2026-10-01", "meal_type": "dinner"}, conn=tx)
+    await tx.execute("UPDATE plugin_my_plugin_items SET entry_id = ? WHERE id = ?", (entry["id"], item_id))
 ```
 
-### 4.2 Policy Hooks (`ctx.hook`)
-Hooks execute **synchronously** inside the active SQLite transaction before changes are committed.
+Nested `ctx.db.transaction()` blocks in the same task join the outer transaction, so a hook that writes through `ctx.db` commits or rolls back together with the write that triggered it.
 
-- **Mutation**: Mutate dictionary in place to transform data.
-- **Veto**: Raise `VetoError("Reason")` to roll back the entire transaction.
+### 4.2 Configuration (`ctx.config`)
+`ctx.config` returns the plugin's configuration with schema defaults applied and secret fields decrypted. It reflects changes made in Settings immediately. `await ctx.save_config({...})` merges and stores new values (secrets are encrypted).
 
-Supported hook points:
-- `before_recipe_save(tx, data, is_new)`
-- `before_recipe_delete(tx, group_id, language)`
-- `before_member_save(tx, data, is_new)`
-- `before_schedule_save(tx, data, is_new)`
-- `before_journal_save(tx, data, is_new)`
+### 4.3 Scoped Entity Attributes (`ctx.attributes`)
+Plugins store metadata on kernel entities without modifying kernel tables. Keys are scoped to the plugin:
+
+```python
+await ctx.attributes.set("recipe", group_id, "calories", 450.0)
+attrs = await ctx.attributes.get("recipe", group_id)          # {"calories": 450.0}
+matching = await ctx.attributes.query("recipe", ["recipe-nutrition.calories<600"])
+await ctx.attributes.delete("recipe", group_id, "calories")
+```
+
+The same `<plugin_id>.<key><op><value>` filters work on `GET /api/recipes?attr=...`, and `sort=-<plugin_id>.<key>` sorts by an attribute.
+
+### 4.4 Pre-commit Hooks (`ctx.hook`)
+Hooks are awaited inside the write's transaction, before commit, in plugin load order. Names are `<noun>:<create|update>`; the recipe repository runs `recipe:create` and `recipe:update`. A handler receives `(draft, current, ctx)`: for create `current` is `None`; for update `draft` is the stored row with the patch applied. Return the (possibly mutated) draft, or raise `VetoError` to abort the write with HTTP 422. Any other exception also vetoes.
 
 ```python
 from secretsauce.errors import VetoError
 
-@ctx.hook("before_member_save")
-async def check_member_name(tx, member_data, is_new):
-    if member_data.get("name") == "Admin":
-        raise VetoError("The name 'Admin' is reserved.")
+async def no_peanuts(draft, current=None, ctx=None):
+    if any("peanut" in str(i).lower() for i in draft.get("ingredients", [])):
+        raise VetoError("Contains peanuts", plugin_id="allergy-guard")
+    return draft
+
+ctx.hook("recipe:create", no_peanuts)
 ```
 
-### 4.3 Background Jobs (`ctx.jobs`)
-For long-running tasks:
+### 4.5 Events (`ctx.on`, `ctx.emit`, `ctx.push`)
+`ctx.on(name, handler)` subscribes to the event log by exact name or prefix (`"recipe:*"`). Each plugin has its own cursor and a dedicated delivery task: handlers see events in order, at least once, after the writing transaction commits. Make handlers idempotent; `event.revision` makes that a one-line check. Details:
+- The plugin's own events are skipped unless it subscribes with `include_self=True`.
+- A failing handler is retried after 1 s, 10 s, 1 min, then every 10 min, and the event is skipped after 20 attempts. Other plugins are unaffected.
+- A newly installed plugin starts at the head of the log; it never receives history.
+- Writes made inside a handler record the event as their cause; a chain deeper than 8 is refused with `EventDepthError`, which stops feedback loops.
+
+`await ctx.emit("recipe-nutrition:calculated", {"calories": 450}, entity=("recipe", group_id))` appends a plugin event. `await ctx.push("recipe-nutrition:progress", {...})` sends a transient message to open browsers only; it is not logged.
+
+### 4.6 Jobs (`ctx.jobs`)
+Register a handler, then create jobs; the kernel's job runner starts them as tracked tasks:
 
 ```python
-job_id = await ctx.jobs.create(
-    job_type="import_recipes",
-    input_data={"url": "https://example.com/recipe"}
-)
+async def calculate(input_data, handle):
+    await handle.set_progress(50, "Parsing ingredients...")   # pushed to browsers as job:progress
+    return {"calories": 450}                                 # stored as the job result
 
-# In background worker:
-async for handle in ctx.jobs.run(job_id):
-    await handle.set_progress(0.5, message="Parsing ingredients...")
-    if await handle.is_cancelled():
-        return
-    await handle.set_result({"imported_count": 1})
+ctx.jobs.register("calculate-nutrition", calculate)
+job_id = await ctx.jobs.create("calculate-nutrition", {"recipe_id": "abc_en"})
 ```
 
-### 4.4 Custom REST Endpoints (`ctx.routes` / `ctx.router`)
-Plugins can mount custom FastAPI routers scoped to the `/api/x/{plugin_id}` prefix:
+`job:started` and `job:finished` are logged events. `await ctx.jobs.cancel(job_id)` cancels the running task (the handler sees `asyncio.CancelledError`). Jobs still running when the server stops are marked `failed` at the next boot; pending jobs stay queued.
+
+### 4.7 REST Endpoints (`ctx.router`)
+Routers must serve paths under `/api/x/<plugin_id>/`; anything else fails activation. Endpoints get the plugin's context through the `current_ctx` dependency instead of reaching into the app:
 
 ```python
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends
+from secretsauce.plugins.context import PluginContext, current_ctx
 
-router = APIRouter(prefix="/api/x/my-plugin", tags=["my-plugin"])
+router = APIRouter(prefix="/api/x/recipe-nutrition")
 
-@router.get("/status")
-async def get_status(request: Request):
-    return {"status": "operational"}
+@router.get("/summary")
+async def summary(ctx: PluginContext = Depends(current_ctx)):
+    return await ctx.db.fetch_all("SELECT * FROM plugin_recipe_nutrition_values")
 
 async def setup(ctx: PluginContext):
-    ctx.routes.mount(router)
+    ctx.router(router)                                     # session cookie required
 ```
 
-### 4.5 Invocable Commands (`ctx.command`)
-Plugins can expose commands registered in the kernel's `ServiceRegistry`:
+`ctx.router(feed_router, auth="token", scope="read:calendar")` mounts routes for machine clients: they require `Authorization: Bearer <token>` with exactly that scope, issued by this plugin, and do not accept the session cookie. Raise `secretsauce.errors` exceptions (`NotFoundError`, `ValidationError`, `ConflictError`, ...) for the standard error envelope. An unhandled exception answers 500 `plugin_error` with `details.plugin_id` and is logged against the plugin.
+
+### 4.8 Commands (`ctx.command`)
+A command is a job with a button in Plugin Manager:
 
 ```python
 async def recalculate_all(ctx: PluginContext):
-    # Command implementation
     return {"updated": 42}
 
-async def setup(ctx: PluginContext):
-    ctx.command("recalculate", recalculate_all, title="Recalculate all statistics")
+ctx.command("recalculate", recalculate_all, title="Recalculate all statistics")
 ```
 
-### 4.6 Cooperative Background Tasks (`ctx.background`)
-Plugins can run persistent background loops managed cooperatively by the kernel:
+`POST /api/plugins/<id>/commands/recalculate` runs it as a job of type `command:recalculate` and answers `202 {"job_id"}`. A command named `rebuild` is also run by the kernel when the plugin was disabled long enough to miss pruned events.
+
+### 4.9 Background Tasks (`ctx.background`)
+`ctx.background(coro)` runs a coroutine as a tracked task: it is cancelled when the plugin is disabled or the server stops, writes it makes carry the plugin's origin, and an exception is logged against the plugin. Periodic work is a loop with `asyncio.sleep`; let `CancelledError` propagate:
 
 ```python
-import asyncio
-
-async def polling_worker(ctx: PluginContext):
+async def refresh_loop(ctx: PluginContext):
     while True:
         try:
-            await do_periodic_work()
+            await refresh(ctx)
         except asyncio.CancelledError:
-            break
-        except Exception as e:
-            ctx.log.error(f"Worker error: {e}")
+            raise
+        except Exception:
+            ctx.log.exception("Refresh failed; retrying next hour")
         await asyncio.sleep(3600)
 
-async def setup(ctx: PluginContext):
-    ctx.background(polling_worker(ctx))
+ctx.background(refresh_loop(ctx))
 ```
 
-### 4.7 Inter-Plugin Services (`ctx.services`)
-Plugins can export services or invoke other plugins without direct imports:
-
+### 4.10 Inter-Plugin Services (`ctx.services`)
 ```python
-# Provider plugin
-ctx.services.register("generate_summary", my_summary_function)
-
-# Consumer plugin
-summary_fn = ctx.services.get("generate_summary")
-if summary_fn:
-    result = await summary_fn(recipe_text)
+ctx.services.register("nutrition", NutritionService(ctx))   # provider; removed on disable
+svc = ctx.services.get("nutrition")                          # consumer; None if absent
 ```
 
-### 4.8 API Tokens (`ctx.tokens`)
-Issue dedicated bearer tokens for external webhooks or integrations:
-
+### 4.11 API Tokens (`ctx.tokens`)
 ```python
-token = await ctx.tokens.issue(
-    plugin_id=ctx.plugin_id,
-    scope="write:recipes",
-    label="External Webhook"
-)
+token = await ctx.tokens.issue(scope="read:calendar", label="Kitchen tablet")  # shown once
+await ctx.tokens.revoke(token_id)
+tokens = await ctx.tokens.list()
 ```
+
+### 4.12 Fetching user-supplied URLs
+Use `secretsauce.net.fetch_public_text(url)` rather than calling `httpx` directly. It refuses non-http(s) URLs and any host that resolves to a private, loopback or link-local address, re-checks every redirect, and caps the response size.
 
 ---
 
 ## 5. Testing Plugins with `secretsauce.testing`
 
-The kernel provides a first-class test harness (`secretsauce.testing.make_kernel`) that sets up an ephemeral SQLite database, authenticates an `httpx.AsyncClient`, and provides full access to repositories and plugin contexts.
+`make_kernel` boots the real kernel (the same wiring as production) against a temporary directory, completes setup and gives you an authenticated `httpx.AsyncClient`. Background services are off by default so tests control timing: deliver events with `drain_events(k)` and run jobs with `k.jobs.run_job(job_id)`. Pass `services=True` to run the event pump and job runner live.
 
 ```python
-import pytest
-from secretsauce.testing import make_kernel
+from secretsauce.testing import drain_events, make_kernel
 
-@pytest.mark.asyncio
 async def test_my_plugin(tmp_path):
     async with make_kernel(tmp_path) as k:
-        # Get plugin context
         ctx = k.ctx_for("recipe-nutrition")
-        
-        # Test attribute storage
-        await ctx.attributes.set("recipe", "rec_1", "score", 9.5)
-        val = await ctx.attributes.get("recipe", "rec_1", "score")
-        assert val == 9.5
+        await ctx.attributes.set("recipe", "grp1", "calories", 450.0)
+        assert (await ctx.attributes.get("recipe", "grp1"))["calories"] == 450.0
 
-        # Test authenticated REST API
-        res = await k.client.get("/api/recipes")
-        assert res.status_code == 200
+        res = await k.client.post("/api/recipes", json={"title": "Soup", "language": "en"})
+        assert res.status_code == 201
+        events = await drain_events(k)          # handlers have now run
+        assert any(e.name == "recipe:created" for e in events)
 ```
+
+Plugins placed in `k.plugins_dir` before `make_kernel` are discovered at boot; call `await k.loader.discover_and_sync()` to pick up ones added later.
 
 ---
 
@@ -342,9 +337,11 @@ export default function activate(ss: SecretSauceUI) {
     hub: 'recipe:analyze',
     id: 'calculate-macros',
     title: 'Calculate Nutrition Macros',
-    kind: 'action',
-    action: async (ctx) => {
-      return ss.api.post(`/api/plugins/${ss.pluginId}/calculate`, { recipe_id: ctx.recipeId })
+    order: 10,
+    kind: 'headless',
+    execute: async (ctx: any) => {
+      // Plugin routes live under /api/x/<plugin_id>/
+      return ss.api.post(`/api/x/${ss.pluginId}/calculate`, { recipe_id: ctx.recipeId })
     }
   })
 
@@ -358,12 +355,18 @@ export default function activate(ss: SecretSauceUI) {
     component: NutritionSettings
   })
 
-  // 6. Listen to real-time events from SSE
+  // 6. Listen to real-time events from SSE (log events and pushes, by name or prefix)
   ss.on('recipe:*', (event) => {
     console.log('Recipe event received:', event)
   })
 
-  // 7. Register localized strings
+  // 7. Shared state: live refs that follow the shell's stores
+  const member = ss.store.currentMember   // Ref<Member | null>, updates when the user switches
+
+  // 8. Toast notifications
+  ss.notify({ level: 'success', message: 'Nutrition calculated' })
+
+  // 9. Register localized strings
   ss.i18n.add('de', {
     'nutrition.title': 'Nährwerte',
     'nutrition.calories': 'Kalorien'

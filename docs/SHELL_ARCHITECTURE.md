@@ -139,34 +139,39 @@ The Service Worker (`shell/src/sw/sw.ts`) utilizes a pure request classification
 ### Precache Manifest Injection & Static Asset Base Path
 Vite builds the frontend SPA with `base: '/static/'` (`shell/vite.config.ts`), generating hashed assets in `secretsauce/static/assets/`. This aligns script and stylesheet URLs directly with FastAPI's `/static/*` route and ensures Cache-First Service Worker handling. Missing assets return a strict 404 rather than triggering the HTML fallback.
 
-When the FastAPI server serves `GET /sw.js`, it calculates a SHA-256 hash across all static assets and injects the precache manifest dynamically:
+When the FastAPI server serves `GET /sw.js`, it injects the precache manifest (a SHA-256 build hash over all static assets and the file list), computed once at boot:
 ```javascript
 const precache = {"build": "a1b2c3d4e5f6", "files": ["/static/assets/index.js", ...]};
 ```
+
+### Expiry and logout
+Plugin bundles (50), assets (200) and cached API responses (1,000) are capped with Workbox `CacheExpiration`: every cached response records its timestamp and then runs `expireEntries()`, which evicts the least recently used entries past the cap. On logout the shell posts `{type: 'clear'}` to the worker, which deletes the API and asset caches, so household data does not outlive the session on the device (spec 8.6).
 
 ---
 
 ## 5. Offline Outbox Queue Engine
 
-The outbox engine (`shell/src/outbox.ts`) enables offline mutation capabilities:
+The outbox (`shell/src/outbox.ts`) lets plugins queue writes that must survive being offline:
 
-1. **Local Enqueue**: When a mutation occurs offline, `outbox.enqueue({ tag, url, method, body, optimistic_data })` writes an entry to IndexedDB (`secretsauce-outbox`) and generates a synthetic entity ID (e.g., `tmp:recipe_xyz`).
-2. **Replay Loop**: When network connectivity is restored (`online` event or SSE reconnect), the outbox processes entries sequentially in FIFO order.
-3. **Optimistic Rollback**: Every queued item provides a rollback callback if the request permanently fails or is manually discarded.
-4. **Error Handling**:
-   - **Network Error / Offline**: Retries with exponential backoff (1s, 2s, 4s... up to 60s max).
-   - **401 Unauthorized**: Pauses outbox execution immediately until the user re-authenticates.
-   - **409 Conflict**: Increments conflict count and prompts user resolution or discard via `OfflineBar`.
+1. **Enqueue**: `outbox.enqueue({ method, path, body, query, tag })` stores the request in IndexedDB (`ss-outbox`, one connection per outbox) and tries to flush immediately. Creates should carry a client-chosen `id` so a replay is idempotent.
+2. **Flush**: Entries replay in creation order. A success removes the entry and fires `applied`.
+3. **Outcomes**:
+   - **Network error, timeout, 5xx**: The entry stays queued and the flush stops. A retry is scheduled with exponential backoff (1 s, 2 s, 4 s, … capped at 5 minutes), reset by the next success. A 5xx entry moves to `failed` after 10 attempts. The browser's `online` event and a 60-second safety timer also trigger flushes.
+   - **409 on a POST whose `id`/`group_id` matches `details.current`**: The write already happened (an earlier replay); treated as applied.
+   - **401**: The flush stops and entries wait for the next login.
+   - **Other 4xx**: The entry moves to `failed` and fires `failed`; `OfflineBar` lets the user discard it.
 
 ---
 
 ## 6. Real-Time Stream Client (SSE)
 
-The stream client (`shell/src/stream.ts`) manages persistent Server-Sent Events with the kernel:
+The stream client (`shell/src/stream.ts`) keeps one `EventSource` on `GET /api/events/stream` while a session exists:
 
-- **Auto-Reconnection**: Reconnects with exponential backoff if the connection drops, sending `Last-Event-ID` to replay missed events from the kernel's event log.
-- **Process Restart Detection**: The initial SSE frame sends `boot_id`. If the server restarted (`boot_id !== window.__SS__.boot_id`), the client updates the Service Worker and automatically refreshes the page to sync static assets and schema.
-- **Wildcard Subscriptions**: Plugins can subscribe to exact events (`recipe:updated`) or wildcard prefixes (`recipe:*`).
+- **Named frames**: The kernel sends named SSE events (`hello`, `event`, `push`), which an `EventSource` delivers only to listeners registered for those names (not to `onmessage`). The client registers one listener per name and dispatches on each frame's `kind`.
+- **Resuming**: The browser's automatic reconnects send `Last-Event-ID`. When the shell itself reopens the stream, it passes the last seen event id as `?last_event_id=`, so no event in between is lost.
+- **Restart detection**: The `hello` frame carries `boot_id`. If it differs from `window.__SS__.boot_id`, the server restarted; the client updates the service worker and reloads the page.
+- **Subscriptions**: `ss.on(name, handler)` matches exact names (`recipe:updated`), prefixes (`recipe:*`) and pushes by name (`job:progress`).
+- **Online state**: Once a session opened the stream, its connection state drives `appStore.online`, which shows the offline bar.
 
 ---
 
@@ -271,19 +276,22 @@ Plugins provide their frontend components under `<plugin_dir>/ui/src/index.ts`. 
 ## 10. Application Bootstrapping, Dynamic Plugin Loading & Navigation
 
 ### Router Navigation Guard & Dynamic Route Binding (`shell/src/main.ts`)
-The shell router manages unauthenticated visitors, dynamic plugin routing, and onboarding state via a global `beforeEach` guard:
-1. **Dynamic Plugin Loading**: On application startup, the shell queries `GET /api/plugins/active`. For each active plugin:
-   - Injects its stylesheet into `<head>` via `<link rel="stylesheet" id="plugin-css-{id}" href="/api/plugins/{id}/ui.css">` if `ui_css` is present.
-   - Dynamically imports the module entry point via native browser `import(plugin.ui_entry)`.
-   - Executes the plugin's `activate(ss)` export.
-   - Plugin routes registered into `routeRegistry` are bound to Vue Router via `routeRegistry.bindRouter(router)`.
-2. **Household Setup Check**: Queries `GET /api/setup`. If `needs_setup` is `true`, navigates to `/setup` (and blocks other routes). If setup is completed, `/setup` is blocked and redirected.
-3. **Session Authentication Check**: Queries `GET /api/auth/session`.
-   - If unauthenticated (401), disconnects the SSE event stream and redirects navigation to `/login`.
-   - If authenticated, visiting `/login` redirects to `/`.
-4. **Root Route Redirection & Default Start Page**: Authenticated navigation to `/` dynamically redirects to `/timeline` when `core-timeline` is active, falling back to `/recipes` (or `/plugins` if neither is active). Users can configure their start page preference (`Auto`, `Timeline`, or `Recipes`) in Household Settings (`/settings`), stored in `localStorage` under `secretsauce:default_start_page`.
-5. **Data Hydration**: Populates `householdStore` and `memberStore` upon successful authentication.
-6. **SSE Stream Lifecycle**: `stream.connect()` is only initiated when an authenticated session exists, preventing unauthenticated SSE 401 connection retries.
+The shell router manages unauthenticated visitors, dynamic plugin routing, and onboarding state via a global `beforeEach` guard backed by `createAuthState` (`shell/src/session.ts`):
+1. **Household Setup Check**: `GET /api/setup`. While `needs_setup` is true every route leads to `/setup`; once setup is complete `/setup` redirects to `/login`. A completed setup is cached and never re-checked.
+2. **Session Check**: `GET /api/auth/session`. A confirmed session is cached, so navigating costs no requests; any 401 from the API client (`onUnauthorized`) drops the cache and the next navigation re-checks. Without a session the stream is closed and navigation goes to `/login`; with one, `/login` redirects to `/`.
+3. **Dynamic Plugin Loading** (once per session): `GET /api/plugins/active`. Stylesheets are injected into `<head>`, every bundle is fetched in parallel via `import(plugin.ui_entry)` (the URL includes `BASE_PATH` and a content version), and then each plugin's `activate(ss)` runs in the order the kernel listed them. Plugin routes are bound to Vue Router via `routeRegistry.bindRouter(router)`.
+4. **Root Route Redirection & Default Start Page**: `/` redirects to `/timeline` when `core-timeline` is active, else `/recipes`, unless the user chose a start page in Settings (`localStorage` key `secretsauce:default_start_page`).
+5. **Data Hydration**: Populates `householdStore` and `memberStore` once per session. Plugins see them through `ss.store`, whose refs are live (`storeToRefs`), not snapshots.
+6. **SSE Stream Lifecycle**: The stream connects only once a session exists.
+
+### Logout (`shell/src/session.ts`)
+Settings offers **Log out**. It calls `POST /api/auth/logout` (the kernel revokes the session), asks the service worker to clear its API and asset caches, deletes the outbox database and every `localStorage` key starting with `ss-` or `secretsauce:`, then reloads at `/login`. Local data is cleared even when the server cannot be reached.
+
+### API Client (`shell/src/api.ts`)
+Prefixes `BASE_PATH`, sends `X-Actor-Member`, and aborts requests after 30 s (uploads 120 s), reporting them as `OfflineError`. An empty success body resolves to `undefined`. Only a 409 whose code is `conflict` becomes a `ConflictError`; other errors are `ApiError` with the envelope's `code` and message (or FastAPI's `detail`).
+
+### Notifications
+`ss.notify({ level, message })` shows a PrimeVue toast (`<Toast />` in `App.vue`).
 
 ### Shell Layout & Auth Pages (`shell/src/App.vue`)
 - Core navigation routes (`/settings`, `/plugins`) are registered in `routeRegistry` by default.

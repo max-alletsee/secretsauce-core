@@ -9,14 +9,14 @@ Local-first, extensible recipe and meal management kernel with plugin runtime, S
 ## Architecture & Features
 
 ### Backend Kernel
-- **SQLite WAL Concurrency**: Dedicated single-writer connection protected by `asyncio.Lock` with concurrent non-blocking reader connections.
+- **SQLite WAL Concurrency**: Dedicated single-writer connection protected by `asyncio.Lock` (re-entrant within a task, rolled back on cancellation, atomic migrations) and a reader connection whose queries never pin stale snapshots.
 - **Recipe Engine**: Composite group and language rows (`<group_id>_<language>`), fallback language resolution, safe deletion foreign-key re-pointing, and trigram FTS5 search.
 - **Optimistic Revision Concurrency**: Conflict detection returning HTTP 409 on stale edits for recipes, members, and journals.
-- **Cryptography & Security**: HKDF master key derivation (`/data/secret.key`), Scrypt passphrase hashing with per-household salts, versioned session cookie invalidation, and Fernet config encryption.
-- **Transactional Event Log & Outbox**: Event log written in the same transaction as state changes, with per-plugin outbox dispatchers and causal loop detection.
-- **Server-Sent Events Stream**: Live SSE event bus with `event: hello`, historical catch-up via `Last-Event-ID`, and live push notifications.
-- **Background Jobs**: Asynchronous job tracker with real-time numeric progress, cancellation signals, and automatic recovery on server reboot.
-- **Plugin Architecture**: Manifest validation, dependency sorting, scoped database context, entity attributes, synchronous pre-commit policy hooks, and inter-plugin services.
+- **Cryptography & Security**: HKDF master key derivation (`/data/secret.key`), scrypt passphrase hashing, versioned and revocable sessions, `COOKIE_SECURE` handling, throttled login, Fernet-encrypted plugin secrets (masked in every response), token-only plugin routes, sniffed uploads, and an SSRF guard for URL imports.
+- **Transactional Event Log**: Kernel writes append `<noun>:*` events with before/after snapshots in the same transaction; one delivery task per plugin with retry backoff, and causal depth limits that stop feedback loops.
+- **Server-Sent Events Stream**: Named `hello`/`event`/`push` frames, paged catch-up via `Last-Event-ID`, bounded per-client queues, and live push notifications.
+- **Background Jobs**: Job runner with atomic claiming, pushed progress, real cancellation of running tasks, commands as jobs, and recovery on restart.
+- **Plugin Architecture**: Manifest validation, topological dependency ordering, enable/disable at runtime without restarts, shared hooked repositories, entity attributes, pre-commit hooks, and inter-plugin services.
 - **CLI & Backup**: SQLite hot backup via `VACUUM INTO` bundling database, uploads, plugins, and config into portable zip archives, and safe offline restoration (`secretsauce export` / `secretsauce restore`).
 
 ### Frontend Shell & PWA
@@ -54,12 +54,12 @@ pnpm --prefix shell build
 ```
 
 ### Running Tests
-Execute the complete automated test suite (166 tests total + Playwright E2E):
+Execute the complete automated test suite:
 ```bash
-# Run backend kernel & plugin tests (103 tests)
+# Run backend kernel & plugin tests (214 tests)
 uv run pytest
 
-# Run frontend shell & plugin tests (63 tests across 24 suites)
+# Run frontend shell & plugin tests (85 tests across 31 suites)
 pnpm --prefix shell test
 
 # Run browser end-to-end Playwright tests
@@ -116,13 +116,15 @@ secretsauce-core/
 │   ├── config.py                # Infrastructure & environment configuration
 │   ├── db.py                    # SQLite WAL single-writer / reader database engine
 │   ├── errors.py                # Domain error hierarchy
-│   ├── events.py                # Transactional event log & plugin outbox dispatchers
+│   ├── events.py                # Transactional event log, dispatchers & event pump
 │   ├── gc.py                    # Hourly lazy garbage collector
 │   ├── hooks.py                 # Synchronous pre-commit policy hooks
-│   ├── jobs.py                  # Background jobs manager & boot recovery
+│   ├── jobs.py                  # Job runner, cancellation & boot recovery
+│   ├── net.py                   # SSRF-safe fetching of user-supplied URLs
 │   ├── secrets.py               # HKDF key derivation & secret encryption
 │   ├── stream.py                # Server-Sent Events (SSE) broadcaster & replay
-│   ├── testing.py               # Ephemeral test kernel harness (`make_kernel`)
+│   ├── testing.py               # Test harness over the real boot (`make_kernel`)
+│   ├── api/models.py            # Request bodies for the noun endpoints
 │   ├── api/routes/              # REST API & PWA routes (auth, recipes, pwa, ...)
 │   ├── nouns/                   # Domain repositories (recipes, schedule, journal, ...)
 │   ├── plugins/                 # Plugin loader, manifest validator, & context SDK

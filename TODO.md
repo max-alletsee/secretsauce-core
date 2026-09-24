@@ -1,9 +1,9 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Phase 3C: Timeline & Cooking Workflow completed (99 Pytest tests & 63 Vitest tests passing, Playwright E2E suites passing)  
-**Active Plan:** Pending creation of Phase 3D implementation plan (`ai-provider`, `recipe-importer`, `translator`)  
+**Current Status:** Architecture hardening implemented on branch `fix/architecture-hardening` (214 Pytest, 85 Vitest, 3 Playwright E2E passing)  
+**Active Plan:** Pre-Stage 8 completion (`docs/superpowers/plans/2026-09-20-pre-stage-8-completion.md`)  
 **Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md`  
-**Last Updated:** 2026-09-16  
+**Last Updated:** 2026-09-24  
 
 ---
 
@@ -220,6 +220,32 @@ When starting a new Pi session to continue development:
   - Tests: `tests/test_plugin_ui_routes.py`
 - [x] **Task 9: End-to-End Integration & Full Suite Verification** - Commits: `5262558`, `c2b9ec8`
   - Verification: 99 Pytest passing, 63 Vitest passing, Playwright Phase 3C E2E green
+
+---
+
+## Architecture Hardening (branch `fix/architecture-hardening`)
+
+Fixes from the September 2026 architecture and code-quality review. Each change has tests.
+
+- [x] **Database layer**: rollback on cancellation, atomic kernel and plugin migrations, `VACUUM INTO` with a bound path, re-entrant transactions (savepoints), `after_commit`/`on_rollback` callbacks, reads that never pin stale snapshots.
+- [x] **Events**: kernel repositories append `<noun>:*` events with before/after snapshots in the write's transaction; per-write `origin`; causation and depth limit; broadcast after commit; one dispatcher task per plugin with retry backoff; SSE frames with `kind`, paged replay, dedupe, bounded queues, `?last_event_id=`; GC prunes against active plugins only.
+- [x] **Jobs**: job runner in the app lifespan, atomic claim, real cancellation, `job:started|finished` events and `job:progress` pushes, commands as `command:<name>` jobs with `POST /api/plugins/{id}/commands/{name}`.
+- [x] **Composition & plugins**: single composition root (`boot()`) used by the app and the test harness; shared hooked repositories in `PluginContext`; live decrypted `ctx.config`; topological load order with cycle detection and transitive blocking; runtime enable/disable; `ctx.router(auth=, scope=)` enforcement, `/api/x/<id>/` namespace and `current_ctx`; tracked background tasks; package plugins with submodules; `plugin_error` envelope.
+- [x] **Security**: plugin secrets encrypted at rest and masked everywhere; AI provider reads keys via `ctx.config` (environment keys never persisted); `COOKIE_SECURE`; fail-closed auth middleware with token-only plugin routes; server-side session revocation on logout; passphrase minimum 8; throttled rotation, bounded rate limiter, scrypt off the event loop; SSRF-safe URL fetching; sniffed, size-limited uploads with type-derived extensions and `nosniff`; unique token hash index and throttled `last_used_at`.
+- [x] **API hygiene**: request models, one error envelope for every error, atomic setup (`color` → `avatar_color`), streamed export and restore (stale WAL removed), GC over upload subfolders with a grace period.
+- [x] **Efficiency**: `list_recipes` in one windowed query with `attr` filters and attribute sort; bulk recipe embedding for schedule and journal; household config cache; boot-time precache info; cached plugin bundles.
+- [x] **Core plugins**: units uses the household unit system and reconverts every language row; plugins use `ctx` instead of `request.app.state.kernel`; recurring validates rules, materializes idempotently and logs failures; meal-planner accept is atomic and single-use; importer endpoints share one service.
+- [x] **Shell**: SSE client listens for named frames; Plugin Manager reads the list response and runs commands; versioned, base-path-aware bundle URLs loaded in parallel; live `ss.store` refs; toast `notify`; cached route guard; logout that clears caches, outbox and local settings; outbox connection reuse and backoff; API client timeouts and error mapping; service worker cache expiry; offline bar follows the stream.
+- [x] **Docs**: kernel architecture, API reference, plugin developer guide, shell architecture, README and AGENTS.md updated.
+
+**Deliberate deviations from the spec** (documented in the pre-Stage 8 spec notes):
+- Config changes apply live through `ctx.config` instead of deactivate + activate.
+- Disabling a plugin keeps its attribute rows.
+- Only `recipe:create|update` hooks exist; schedule, journal and member writes run no hooks yet.
+
+**Follow-ups**
+- `fetch_public_text` resolves then connects separately; a DNS answer that changes in between (rebinding) is not caught.
+- The shell has no `.vue` type shim, so `tsc --noEmit` reports errors unrelated to runtime behaviour.
 
 ---
 

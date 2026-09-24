@@ -9,34 +9,41 @@ All API routes are served under `/api` with prefix `/api/`. All responses automa
 ### Headers
 | Header | Description |
 |---|---|
-| `Cookie: ss_session=<token>` | Session cookie containing household ID and passphrase version. |
-| `Authorization: Bearer <ss_tok_...>` | API token for machine / plugin access. |
-| `X-Actor-Member: <member_id>` | Attributes mutating action to a specific household member. |
-| `Sec-Fetch-Site: same-origin` | CSRF defense. Value `cross-site` with session cookie is rejected with 403. |
-| `Last-Event-ID: <seq>` | Used on `GET /api/events/stream` for log replay. |
+| `Cookie: ss_session=<token>` | Session cookie set by setup, login and passphrase rotation. Required by every kernel route and by plugin routes mounted with `auth="cookie"`. |
+| `Authorization: Bearer <ss_tok_...>` | API token issued by a plugin. Accepted only on that plugin's routes mounted with `auth="token"` (the token's scope must equal the route's) and on `GET /api/auth/session`. Everywhere else it answers 401. |
+| `X-Actor-Member: <member_id>` | Attributes writes to a household member. Ignored unless the id exists. Bodies cannot set `actor_member_id` or `origin`. |
+| `Sec-Fetch-Site` | A cookie-authenticated request with value `cross-site` is rejected with 403. |
+| `Last-Event-ID: <seq>` | Replay position for `GET /api/events/stream`. |
+
+Before setup, every route except `/api/health` and `/api/setup` answers `409 setup_required`. While the server is still booting, `/api` routes answer `503 unavailable`.
 
 ### Error Envelope
-When an error occurs, the API returns a structured JSON payload:
+Every error, including validation errors, unknown routes and unhandled exceptions, uses one shape:
 ```json
 {
   "error": {
     "code": "conflict",
-    "message": "Resource revision mismatch (expected 2, found 1)",
-    "details": {
-      "expected_revision": 2,
-      "current_revision": 1
-    }
+    "message": "Revision mismatch",
+    "details": {"current": {"id": "…", "revision": 3}}
   }
 }
 ```
 
-Common status codes:
-- `400 Bad Request`: `validation_error`
-- `401 Unauthorized`: `unauthorized`
-- `403 Forbidden`: `forbidden`
-- `404 Not Found`: `not_found`
-- `409 Conflict`: `conflict` (revision collision) or `setup_required`
-- `500 Internal Server Error`: `internal_error`
+| Status | `code` | Notes |
+|---|---|---|
+| 401 | `unauthorized` | Missing, invalid, expired or revoked session or token. |
+| 403 | `forbidden` | Cross-site request with a session cookie. |
+| 404 | `not_found` | Unknown resource or route. |
+| 405 | `method_not_allowed` | |
+| 409 | `conflict` | Revision mismatch or duplicate id; `details.current` is the stored row. |
+| 409 | `setup_required` | The household is not set up yet. |
+| 413 | `payload_too_large` | Upload or fetched page over its limit. |
+| 422 | `validation` | `details.fields` maps each invalid field to a message. |
+| 422 | `veto` | A plugin's pre-commit hook refused the write; `details.plugin_id` names it. |
+| 429 | `too_many_requests` | Login or passphrase rotation after recent failures; `Retry-After` gives the wait in seconds. |
+| 500 | `plugin_error` | Unhandled exception in a plugin route; `details.plugin_id` names it. |
+| 500 | `internal_error` | Unhandled kernel exception. |
+| 503 | `unavailable` | Server still booting, or a required service (such as AI) is not available. |
 
 ---
 
@@ -73,50 +80,37 @@ Exports all kernel nouns as a JSON payload for interop.
 ## 3. Setup & Auth Endpoints
 
 ### `GET /api/setup`
-Returns whether initial household setup is required. Publicly accessible without authentication.
-- **Status:** `200 OK`
-- **Response:**
-  ```json
-  {
-    "needs_setup": false,
-    "setup_required": false
-  }
-  ```
+Whether initial household setup is required. No authentication.
+- **Response:** `{"needs_setup": false, "setup_required": false}`
 
 ### `POST /api/setup`
-Initializes a new household. Only accessible when no household passphrase has been configured. Subsequent calls return `409 Conflict`.
+Initializes the household in one transaction: configuration, passphrase and first member all succeed or none do. Answers `409 conflict` once a passphrase exists.
 - **Request:**
   ```json
   {
     "household_name": "My Home",
-    "passphrase": "master-passphrase",
-    "first_member": {
-      "name": "Alex",
-      "preferred_language": "en"
-    }
+    "passphrase": "at least 8 characters",
+    "first_member": {"name": "Alex", "color": "#3b82f6", "preferred_language": "en"},
+    "languages": {"primary": "en"},
+    "units": "metric",
+    "meal_types": [{"id": "dinner", "label": "Dinner"}]
   }
   ```
-- **Status:** `201 Created`
-- **Sets Cookie:** `ss_session`
+  `first_member.color` becomes the member's `avatar_color`. `languages`, `units` and `meal_types` are optional.
+- **Status:** `201 Created`, `{"household_name", "first_member": Member}`; sets `ss_session`. `422 validation` for a passphrase shorter than 8 characters.
 
 ### `POST /api/auth/login`
-Authenticates against the household passphrase. Subject to progressive delay rate-limiting.
-- **Request:**
-  ```json
-  {
-    "passphrase": "master-passphrase"
-  }
-  ```
-- **Status:** `200 OK`
-- **Sets Cookie:** `ss_session`
+- **Request:** `{"passphrase": "…"}`
+- **Status:** `200 OK` `{"status": "ok"}` and sets `ss_session`; `401 unauthorized` for a wrong passphrase; `429 too_many_requests` with `Retry-After` while the client is throttled (after `n` consecutive failures, `min(2^(n-1), 60)` seconds).
+- The cookie is `HttpOnly`, `SameSite=Lax`, valid 30 days; `Secure` follows `COOKIE_SECURE` (`auto`: when the request is https).
 
 ### `GET /api/auth/session`
-Returns the status of the current session and the actor member if provided.
-- **Status:** `200 OK`
+Describes the caller's authentication. Accepts the session cookie or a bearer token.
+- **Response:** `{"authenticated": true, "logged_in": true, "auth": "cookie" | "token", "plugin_id": <token's plugin or null>, "actor_member_id", "boot_id", "version"}`; `401` without valid credentials.
 
 ### `POST /api/auth/logout`
-Clears the session cookie.
-- **Status:** `204 No Content`
+Revokes the session server-side (the same cookie no longer works anywhere) and clears the cookie.
+- **Status:** `200 OK` `{"status": "ok"}`
 
 ---
 
@@ -140,19 +134,13 @@ Returns the household configuration.
   ```
 
 ### `PATCH /api/household`
-Updates household config fields (`household_name`, `meal_types`, `languages`, `units`).
-- **Status:** `200 OK`
+Updates any subset of `household_name`, `meal_types`, `languages`, `units` (`metric` or `us_customary`).
+- **Status:** `200 OK` with the full configuration.
 
 ### `PUT /api/household/passphrase`
 Rotates the household passphrase, increments `passphrase_version`, invalidates all existing sessions, and sets a fresh cookie.
-- **Request:**
-  ```json
-  {
-    "old_passphrase": "current-passphrase",
-    "new_passphrase": "new-strong-passphrase"
-  }
-  ```
-- **Status:** `204 No Content`
+- **Request:** `{"current": "current passphrase", "new": "new passphrase, at least 8 characters"}`
+- **Status:** `204 No Content` with a fresh cookie; `401` if `current` is wrong; `429` with `Retry-After` after recent failures (shared with login); `422` if `new` is too short.
 
 ---
 
@@ -197,121 +185,118 @@ Deletes member and cascades unlinking from schedules and journals.
 
 ## 6. Recipes Endpoints
 
+Request bodies for members, recipes, schedule and journal are validated: wrong types answer `422 validation` with `details.fields`, unknown keys are ignored (so a fetched row can be sent back), and `origin`/`actor_member_id` in a body are ignored. `PATCH` bodies require `revision`.
+
 ### `GET /api/recipes`
-Searches and lists recipes.
+One recipe per group, resolved into `lang`: the row in that language, else the household's primary language, else the oldest row. Filters and sorting apply to the resolved row.
 - **Query Parameters:**
-  - `q`: Trigram full-text search string.
-  - `tag`: Filter by tag name.
-  - `lang`: Language preference code (falls back according to household settings).
-  - `sort_by_attr`: Sort by numeric entity attribute (e.g. `ratings.score`).
-  - `limit`, `offset`: Pagination.
+  - `lang`: Language to resolve into (default: primary language).
+  - `q`: Search. Three or more characters use trigram full-text search over `lang` and the primary language, in rank order; shorter terms match titles with `LIKE`, sorted by title.
+  - `tag` (repeatable): The resolved row must carry every tag.
+  - `attr` (repeatable): Attribute filter `<plugin_id>.<key><op><value>` with `op` in `= != < <= > >=`; numeric values compare against numbers, others against text. Filters combine with AND. A malformed filter answers 422.
+  - `sort`: Comma-separated `title`, `created_at`, `updated_at` or `<plugin_id>.<key>`, each optionally prefixed with `-`. Attribute sorts put recipes without the attribute last.
+  - `limit` (1–200, default 50), `offset`.
+- **Response:** `{"items": [Recipe], "total": <matching groups>, "limit", "offset"}`; each recipe carries `languages`.
 
 ### `POST /api/recipes`
-Creates a new recipe language row.
+Creates a recipe, or adds a language row when `group_id` names an existing recipe.
 - **Request:**
   ```json
   {
-    "group_id": "rec_123",
+    "group_id": "optional-client-chosen-id",
     "language": "en",
     "title": "Vegetable Stir Fry",
     "description": "Quick stir fry with vegetables",
-    "ingredients": [
-      {"id": "i1", "raw_text": "1 bell pepper", "name": "Bell Pepper", "quantity": 1.0, "unit": "pcs"}
-    ],
-    "steps": [
-      {"id": "s1", "instruction": "Slice pepper and stir fry on high heat", "timer_minutes": 5}
-    ],
+    "ingredients": [{"raw_text": "1 bell pepper", "name": "Bell Pepper", "quantity": 1.0, "unit": "pcs"}],
+    "steps": [{"instruction": "Slice pepper and stir fry on high heat"}],
     "tags": ["dinner", "vegan"],
     "prep_time_minutes": 10,
     "cook_time_minutes": 10,
     "servings": 2
   }
   ```
-- **Status:** `201 Created`
+  `title` and `language` are required. A `group_id` is 1–64 letters, digits or `-`; the row id is `<group_id>_<language>`.
+- **Status:** `201 Created`; `409 conflict` if that row exists; `422 veto` if a plugin hook refuses it.
 
 ### `GET /api/recipes/{id}`
-Gets a specific recipe row by ID (e.g. `rec_123_en`) or by group ID with `?lang=`.
-- **Status:** `200 OK`
+`{id}` is a row id (`<group_id>_<language>`), which returns exactly that row, or a group id, which returns the row resolved by `?lang=`.
 
 ### `PATCH /api/recipes/{id}`
-Updates a recipe row. Guarded by `revision`.
-- **Status:** `200 OK` (or `409 Conflict`)
+Updates one row. Body: `{"revision": n, ...fields}`. `409 conflict` on a stale revision.
 
 ### `DELETE /api/recipes/{id}`
-Deletes a single language row. Re-points references to surviving language rows if other translations exist.
-- **Status:** `204 No Content`
-
-### `DELETE /api/recipes/groups/{group_id}`
-Cascades deletion of all language rows and references.
-- **Status:** `204 No Content`
+- Row id with `?revision=`: deletes that language row; references to it are re-pointed to the primary-language or oldest remaining row. Deleting the last row deletes the recipe.
+- Group id: deletes every row of the recipe, with its assets and attributes.
+- **Status:** `204 No Content`. Each deleted row emits one `recipe:deleted` event.
 
 ---
 
 ## 7. Schedule & Cook Journal Endpoints
 
 ### `GET /api/schedule`
-Lists scheduled entries. Query parameters: `from`, `to`, `limit`, `offset`.
+Entries between `from` and `to` (inclusive, `YYYY-MM-DD`, at most 62 days apart), ordered by date and position, each with its `recipe` embedded.
 
 ### `POST /api/schedule`
-Schedules a meal.
 - **Request:**
   ```json
   {
     "date": "2026-09-15",
     "meal_type": "dinner",
-    "recipe_id": "rec_123_en",
-    "participant_member_ids": ["mem_alex"],
-    "servings": 4
+    "recipe_id": "rec-123_en",
+    "title": null,
+    "note": "Early dinner",
+    "servings_override": 4,
+    "position": 0,
+    "assigned_cook_id": "mem_alex",
+    "participant_member_ids": ["mem_alex"]
   }
   ```
-- **Status:** `201 Created`
+  `date` and `meal_type` are required.
+- **Status:** `201 Created`. `PATCH /api/schedule/{id}` takes `{"revision", ...fields}`; `DELETE /api/schedule/{id}?revision=` deletes.
 
 ### `GET /api/journal`
-Lists cook journal entries.
-- **Query Parameters:**
-  - `from` (optional, string, `YYYY-MM-DD`): Start date. Defaults to 30 days ago (`today - 30d`).
-  - `to` (optional, string, `YYYY-MM-DD`): End date. Defaults to today (`today`).
-  - `lang` (optional, string): Preferred language for recipe titles.
-  - `attr` (optional, list[str]): Entity attribute keys to include.
-  - `sort` (optional, string): Sort order (`date`, default).
-- **Status:** `200 OK`
-- **Response:** Array of cook journal entries.
+- **Query Parameters:** `from` (default 30 days ago), `to` (default today), `lang`, `sort`.
+- **Response:** Array of journal entries with `recipe` embedded.
 
 ### `POST /api/journal`
-Logs a cooked meal or converts a scheduled entry.
+Logs a cooked meal, optionally for a schedule entry (one journal entry per schedule entry).
 - **Request:**
   ```json
   {
     "date": "2026-09-15",
     "meal_type": "dinner",
-    "recipe_id": "rec_123_en",
+    "recipe_id": "rec-123_en",
     "schedule_entry_id": "sched_456",
+    "status": "cooked",
     "servings_cooked": 4,
     "servings_left": 1,
-    "cooked_by_member_id": "mem_alex"
+    "cooked_by_member_id": "mem_alex",
+    "notes": "Great"
   }
   ```
-- **Status:** `201 Created`
+- **Status:** `201 Created`; `409 conflict` if the schedule entry already has one. `PATCH` and `DELETE` work as for the schedule.
 
 ---
 
 ## 8. Assets & Attributes Endpoints
 
 ### `POST /api/assets`
-Uploads a binary asset (`multipart/form-data`).
-- **Form Fields:**
-  - `file`: Binary file.
-  - `entity_type`: `recipe`, `member`, etc.
-  - `entity_id`: ID of target entity.
-  - `sub_id`: Optional sub-component ID (e.g. step ID).
-  - `slot`: Optional slot identifier (default: `primary`).
-- **Status:** `201 Created`
+Uploads a file (`multipart/form-data`).
+- **Form Fields:** `file`, `entity_type` (`recipe`, `member`, `schedule_entry`, `journal`), `entity_id`, optional `sub_id` (e.g. a step id) and `slot` (default `primary`).
+- **Rules:** At most 20 MB (`413 payload_too_large`, checked while reading). Allowed types are JPEG, PNG, WebP and PDF plus any a plugin allowed; the file's leading bytes must match the declared type (`422 validation` otherwise). The stored file's extension comes from the type, never from the client's filename, and the filename is reduced to its base name.
+- **Status:** `201 Created` with the asset row.
+
+### `GET /api/assets?entity_type=&entity_id=` / `GET /api/assets/{id}`
+The assets of an entity, or one asset row.
 
 ### `GET /api/assets/{id}/file`
-Streams binary asset file with `Content-Type` and `Cache-Control: public, max-age=31536000, immutable`.
+The file, with `Cache-Control: private, max-age=31536000, immutable` and `X-Content-Type-Options: nosniff`. Images and PDFs are served `inline`; any other type as an `attachment`.
+
+### `DELETE /api/assets/{id}`
+Deletes the row; the file is removed once the deletion commits.
 
 ### `GET /api/attributes`
-Returns entity attributes for an entity.
+All plugins' attributes of an entity.
 - **Query Parameters:** `entity_type`, `entity_id`.
 - **Response:** `{"<plugin_id>.<key>": value, ...}`
 
@@ -320,52 +305,48 @@ Returns entity attributes for an entity.
 ## 9. Plugins & Background Jobs Endpoints
 
 ### `GET /api/plugins`
-Lists all discovered plugins, enabled status, and schema versions.
+Every discovered plugin as a plain list: `id`, `version`, `state` (`active`, `disabled`, `blocked`, `errored`), `enabled`, `error` (traceback or blocking reason), `applied_schema`, `config` (secrets masked as `••••••••`), manifest fields, and `commands` (`[{"id", "title"}]`).
 
 ### `GET /api/plugins/active`
-Lists currently active plugins enriched with frontend asset URLs.
-- **Status:** `200 OK`
-- **Response:**
-  ```json
-  [
-    {
-      "id": "recurring",
-      "name": "Recurring Meals",
-      "version": "1.0.0",
-      "description": "Weekly recurring meal planning and scheduling",
-      "state": "active",
-      "ui_entry": "/api/plugins/recurring/ui.js",
-      "ui_css": null
-    }
-  ]
-  ```
+Active plugins with frontend bundle URLs. The URLs include `BASE_PATH` and a content version, so the shell can cache them immutably.
+```json
+[
+  {
+    "id": "core-recurring",
+    "name": "core-recurring",
+    "version": "1.0.0",
+    "state": "active",
+    "ui_entry": "/api/plugins/core-recurring/ui.js?v=3f9c2a1b7d4e5f60",
+    "ui_css": null
+  }
+]
+```
 
-### `GET /api/plugins/{id}/ui.js`
-Serves the compiled frontend ES module bundle for the specified plugin.
-- **Status:** `200 OK` (or `304 Not Modified` with matching `If-None-Match`)
-- **Headers:** `Content-Type: text/javascript`, `ETag: "<sha256>"`
-- **Caching:** Defaults to `Cache-Control: no-cache`. When requested with version query `?v=<version>`, returns `Cache-Control: public, max-age=31536000, immutable`.
+### `GET /api/plugins/{id}/ui.js` / `GET /api/plugins/{id}/ui.css`
+The plugin's bundle, only while the plugin is active.
+- **Headers:** `ETag: "<sha256>"` (`304 Not Modified` for a matching `If-None-Match`). With `?v=` the response is `Cache-Control: public, max-age=31536000, immutable`, otherwise `no-cache`.
 
-### `GET /api/plugins/{id}/ui.css`
-Serves the optional frontend stylesheet for the specified plugin.
-- **Status:** `200 OK` (or `304 Not Modified` with matching `If-None-Match`)
-- **Headers:** `Content-Type: text/css`, `ETag: "<sha256>"`
-- **Caching:** Follows identical ETag and immutable versioning behavior as `ui.js`.
+### `GET /api/plugins/{id}`
+One plugin, in the same shape as the list.
 
 ### `POST /api/plugins/{id}/enable` / `POST /api/plugins/{id}/disable`
-Enables or disables a plugin at runtime.
+Take effect immediately, without a restart. Disabling runs the plugin's `teardown`, cancels its background tasks and jobs, removes its routes, hooks, event handlers and services, and blocks active plugins that require it. Enabling re-activates it and re-evaluates blocked dependents. Both return the plugin.
 
 ### `GET /api/plugins/{id}/config` / `PUT /api/plugins/{id}/config`
-Gets or updates plugin configuration. Passwords / secrets are masked as `••••••••`.
+The configuration with schema defaults applied. Secret fields are stored encrypted and returned as `••••••••`; a `PUT` carrying that mask keeps the stored secret. `PUT` replaces the configuration and returns it masked; the plugin sees the new values immediately.
+
+### `POST /api/plugins/{id}/commands/{command}`
+Runs a registered command of an active plugin as a job of type `command:<command>`.
+- **Status:** `202 Accepted` `{"job_id": "job_…"}`; `404` for an unknown command or inactive plugin.
 
 ### `GET /api/jobs`
-Lists background jobs with status filter (`status=pending|running|completed|failed|cancelled`).
+Jobs, newest first. Filters: `status` (`pending`, `running`, `done`, `failed`, `cancelled`), `plugin_id`, `limit` (1–200), `offset`.
 
 ### `GET /api/jobs/{id}`
-Returns job status, progress (0.0–1.0), and result or error payload.
+Status, `progress` (0–100), `message`, `input`, and `result` or `error`.
 
 ### `POST /api/jobs/{id}/cancel`
-Signals cancellation for a running job.
+Marks a pending or running job `cancelled` and cancels its running task. Returns the job.
 
 ---
 
@@ -373,9 +354,9 @@ Signals cancellation for a running job.
 
 Plugins mount custom API routers under the `/api/x/{plugin_id}` namespace.
 
-### Recipe Shortlist Plugin (`/api/x/shortlist`)
+### Recipe Shortlist Plugin (`/api/x/core-shortlist`)
 
-#### `GET /api/x/shortlist`
+#### `GET /api/x/core-shortlist`
 Lists shortlisted recipes, ordered by most recently added.
 - **Query Parameters:** `member_id` (optional, string) to filter by a specific member.
 - **Status:** `200 OK`
@@ -393,7 +374,7 @@ Lists shortlisted recipes, ordered by most recently added.
   ]
   ```
 
-#### `POST /api/x/shortlist`
+#### `POST /api/x/core-shortlist`
 Adds a recipe to a member's shortlist or updates an existing entry's note.
 - **Headers:** `X-Actor-Member: <member_id>` (optional if provided in body).
 - **Body:**
@@ -407,63 +388,34 @@ Adds a recipe to a member's shortlist or updates an existing entry's note.
 - **Status:** `201 Created`
 - **Cascade Behavior:** The underlying table `plugin_shortlist_entries` enforces foreign keys with `ON DELETE CASCADE` against `recipes(id)`. When a recipe is deleted, all related shortlist entries across all household members are automatically pruned.
 
-#### `DELETE /api/x/shortlist/{id}`
+#### `DELETE /api/x/core-shortlist/{id}`
 Removes an entry from the shortlist by shortlist entry ID.
 - **Status:** `200 OK`
 - **Response:** `{"ok": true}`
 
 ---
 
-### Ratings Plugin (`/api/x/ratings`)
+### Ratings Plugin (`/api/x/core-ratings`)
 
-#### `GET /api/x/ratings`
-Retrieves binary rating votes recorded across cooking journal entries.
-- **Query Parameters:**
-  - `journal_id` (optional, string): Filter by a specific journal entry ID.
-  - `recipe_id` (optional, string): Filter by a specific recipe ID.
-  - `member_id` (optional, string): Filter by a specific household member ID.
-- **Status:** `200 OK`
-- **Response:**
-  ```json
-  [
-    {
-      "id": "e492bb1c-5ad4-41fc-a92c-674519965d9e",
-      "journal_id": "jrn_1a2b3c",
-      "member_id": "mem_4d5e6f",
-      "score": 1,
-      "created_at": "2026-09-13T18:30:00Z"
-    }
-  ]
-  ```
+#### `GET /api/x/core-ratings?journal_id=<id>`
+The votes on one journal entry.
+- **Response:** `{"scores": [{"member_id": "mem_4d5e6f", "score": 1}], "net_score": 1}`
 
-#### `POST /api/x/ratings`
-Records a binary upvote (`+1`), downvote (`-1`), or clears a previous vote (`0`) for a cooked journal entry.
-- **Headers:** `X-Actor-Member: <member_id>` (optional if `member_id` is supplied in body).
-- **Body:**
-  ```json
-  {
-    "journal_id": "jrn_1a2b3c",
-    "member_id": "mem_4d5e6f",
-    "score": 1
-  }
-  ```
-- **Status:** `200 OK`
-- **Response:**
-  ```json
-  {
-    "ok": true,
-    "journal_id": "jrn_1a2b3c",
-    "member_id": "mem_4d5e6f",
-    "score": 1
-  }
-  ```
-- **Entity Attribute Mirroring:** Every vote automatically recomputes and mirrors the aggregate recipe score into `entity_attributes` under key `ratings.score` for the recipe associated with `journal_id`. If all votes are cleared or net score becomes zero, the attribute is cleaned up.
+#### `PUT /api/x/core-ratings`
+Records or changes a member's vote on a journal entry.
+- **Body:** `{"journal_id": "jrn_1a2b3c", "member_id": "mem_4d5e6f", "score": 1}` (`score` is `1` or `-1`).
+- **Response:** `{"status": "ok", "net_score": 1}`
+
+#### `DELETE /api/x/core-ratings?journal_id=<id>&member_id=<id>`
+Removes a member's vote. **Response:** `{"status": "ok"}`
+
+**Attribute mirroring:** every change recomputes the net score of the recipe behind the journal entry and stores it as the attribute `core-ratings.score` on the recipe group (removed when no votes remain), so `GET /api/recipes?sort=-core-ratings.score` lists the favourites first. The `rebuild` command recomputes every score.
 
 ---
 
-### Recurring Meals Plugin (`/api/x/recurring`)
+### Recurring Meals Plugin (`/api/x/core-recurring`)
 
-#### `GET /api/x/recurring/rules`
+#### `GET /api/x/core-recurring/rules`
 Lists all configured recurring meal rules joined with their target recipe titles.
 - **Status:** `200 OK`
 - **Response:**
@@ -480,8 +432,8 @@ Lists all configured recurring meal rules joined with their target recipe titles
   ]
   ```
 
-#### `POST /api/x/recurring/rules`
-Creates a new recurring meal rule for a given weekday (0 = Monday, 6 = Sunday).
+#### `POST /api/x/core-recurring/rules`
+Creates a new recurring meal rule for a given weekday (0 = Monday, 6 = Sunday). `422` for a weekday outside 0–6 or an empty meal type, `404` for an unknown recipe.
 - **Body:**
   ```json
   {
@@ -492,51 +444,49 @@ Creates a new recurring meal rule for a given weekday (0 = Monday, 6 = Sunday).
   ```
 - **Status:** `200 OK`
 
-#### `DELETE /api/x/recurring/rules/{id}`
+#### `DELETE /api/x/core-recurring/rules/{id}`
 Deletes a recurring meal rule by ID.
 - **Status:** `200 OK`
 - **Response:** `{"ok": true}`
 
-#### `POST /api/x/recurring/materialize`
-Triggers immediate materialization of active recurring rules across the upcoming 14 calendar days into the schedule.
+#### `POST /api/x/core-recurring/materialize`
+Schedules each rule's recipe on matching days in the next 14 days unless that day's meal slot is already planned; running it again creates nothing new. The plugin also does this hourly in the background.
 - **Status:** `200 OK`
-- **Response:** `{"ok": true}`
+- **Response:** `{"ok": true, "created": 2}`
 
 ---
 
 ## 11. Server-Sent Events (SSE) Stream
 
 ### `GET /api/events/stream`
-- **Headers:** `Last-Event-ID` (optional, integer sequence number).
-- **Format:** `text/event-stream`
+- **Position:** `Last-Event-ID` header, or `?last_event_id=<seq>` when opening a new `EventSource` (browsers send the header only on automatic reconnects).
+- **Format:** `text/event-stream` with named events. Every frame's data carries `kind`.
 
-#### Stream Framing
-1. **Initial Frame:**
+#### Frames
+1. **Hello** (always first):
    ```text
    event: hello
-   data: {"boot_id": "99645eb445944111be07c87c541ea3fe", "seq": 42}
+   data: {"kind": "hello", "boot_id": "99645eb445944111be07c87c541ea3fe", "seq": 42}
    ```
-2. **Replay Frames** (if `Last-Event-ID` was provided and `< seq`):
+   A different `boot_id` than the page was loaded with means the server restarted; the shell reloads.
+2. **Replay** (when the given position is below `seq`): every logged event after it up to `seq`, in order, paged through the whole log.
    ```text
    id: 43
    event: event
-   data: {"kind":"event","seq":43,"name":"recipe:created","entity_type":"recipe","entity_id":"rec_123","created_at":"..."}
+   data: {"kind": "event", "seq": 43, "name": "recipe:created", "entity_type": "recipe", "entity_id": "rec-1_en", "revision": 1, "actor_member_id": null, "origin": "member", "cause_seq": null, "depth": 0, "created_at": "…"}
    ```
-3. **Live Log Events**:
-   ```text
-   id: 44
-   event: event
-   data: {"kind":"event","seq":44,"name":"member:updated", ...}
-   ```
-4. **Transient Pushes**:
+   Event frames carry the envelope only, never `data`.
+3. **Live events**: the same frames for events committed after `seq`.
+4. **Pushes** (transient, not logged, not replayed):
    ```text
    event: push
-   data: {"kind":"push","name":"notification","data":{"text":"Timer finished"}}
+   data: {"kind": "push", "name": "job:progress", "data": {"id": "job_…", "percent": 40, "message": "…"}, "plugin_id": null}
    ```
-5. **Keep-Alive Ping** (every 20s):
-   ```text
-   : ping
-   ```
+5. **Keep-alive** every 20 s: `: ping`
+
+A client that stops reading is disconnected once 1,000 frames are queued for it; it resumes with `Last-Event-ID` and replays what it missed.
+
+Event names: `recipe:*`, `schedule:*`, `journal:*`, `member:*` (`created`, `updated`, `deleted`), `asset:created|deleted`, `plugin:activated|deactivated`, `job:started|finished`, and plugin events `<plugin_id>:<verb>`.
 
 ---
 

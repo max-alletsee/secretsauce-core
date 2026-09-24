@@ -43,7 +43,11 @@ SQLite in Write-Ahead Logging (WAL) mode enables concurrent readers alongside a 
 ```
 
 - **Single Writer Connection**: Guarded by an `asyncio.Lock`. All mutating operations (`INSERT`, `UPDATE`, `DELETE`, `VACUUM INTO`) execute through `db.transaction()` or `db.vacuum_into()`.
-- **Single Reader Connection**: Handles non-blocking `SELECT` queries without acquiring the write lock.
+- **Re-entrant transactions**: The task that holds the writer may open `db.transaction()` again (a pre-commit hook writing through `ctx.db`, a repository called without `conn`). The nested block joins the open transaction through a `SAVEPOINT` instead of deadlocking on the lock the task already holds. A failure inside it rolls back to the savepoint only.
+- **Rollback on cancellation**: A transaction rolls back on any `BaseException`, including `asyncio.CancelledError`, and the rollback is shielded from a second cancellation. A cancelled request can never leave the writer inside an open transaction.
+- **Commit and rollback callbacks**: `db.after_commit(fn, key=None)` runs `fn` only after the outermost transaction commits (SSE broadcasts, dispatcher wake-ups, deleting a replaced file); with a `key` it runs at most once per transaction. `db.on_rollback(fn)` undoes side effects outside the database, such as removing an uploaded file whose row never committed. Both respect savepoints.
+- **Single Reader Connection**: Handles `SELECT` queries without acquiring the write lock. Every read executes and drains its statement in one step on the connection's thread (`execute_fetchall`): a statement left open across an `await` pins a read snapshot that every other task sharing the connection would then see.
+- **Atomic migrations**: Scripts run statement by statement (`split_sql_script` respects triggers, strings and comments) inside one transaction together with their bookkeeping row. `executescript()` is not used because it commits any pending transaction first.
 - **Connection Pragma Configuration**:
   - `PRAGMA journal_mode=WAL;`
   - `PRAGMA foreign_keys=ON;`
@@ -73,19 +77,26 @@ The kernel uses a single Master Key stored at `/data/secret.key` (with strict `0
 ```
 
 1. **Passphrase Authentication**:
-   - Master passphrase stored in `household_config` using Scrypt KDF (`n=32768, r=8, p=1`).
-   - Session cookies signed with `secretsauce/session` subkey via `itsdangerous.URLSafeTimedSerializer`.
-   - Each session cookie binds: `{household_id, passphrase_version, created_at}`.
-   - Changing the household passphrase increments `passphrase_version`, instantly invalidating all active sessions across all devices.
-2. **Rate Limiting & Brute-Force Defense**:
-   - Failed authentication attempts increment a backoff delay up to 10 seconds.
+   - The passphrase is stored in `household_config` as `scrypt$<n>$<r>$<p>$<salt>$<hash>` (`n=2**15, r=8, p=1`, base64 parts). Hashes in the older `scrypt$<salt hex>$<hash hex>` format still verify. Hashing runs in a worker thread so it never blocks the event loop. New passphrases need at least 8 characters.
+   - Session cookies (`ss_session`) are signed with the `secretsauce/session` subkey via `itsdangerous.URLSafeTimedSerializer`, carry `{session_id, passphrase_version}` and are valid for 30 days.
+   - Changing the passphrase increments `passphrase_version`, which invalidates every other session.
+   - Logout records the session id in `revoked_sessions` until the cookie would have expired, so a copied cookie stops working too.
+   - The cookie's `Secure` flag follows `COOKIE_SECURE`: `true`, `false`, or `auto` (set when the request scheme is https).
+2. **Request Authentication (`AuthMiddleware`)** fails closed:
+   - While no kernel is attached (still booting) every `/api` route except `/api/health` answers 503.
+   - Kernel routes and plugin routes mounted with `auth="cookie"` require the session cookie.
+   - Bearer tokens are accepted only on routes a plugin mounted with `auth="token"`, where the token's scope and owning plugin must match the route, and on `GET /api/auth/session`.
+   - `X-Actor-Member` is honoured only when it names an existing member.
+3. **Rate Limiting & Brute-Force Defense**:
+   - After `n` consecutive failures from one address, attempts within `min(2^(n-1), 60)` seconds answer 429 with `Retry-After`. Login and passphrase rotation share the limiter, which lives on the kernel and tracks at most 10,000 addresses.
    - `Sec-Fetch-Site: cross-site` requests with session cookies are blocked with HTTP 403.
-3. **Encrypted Configuration**:
-   - Secrets marked in plugin config schemas are encrypted on disk with the Fernet subkey (`secretsauce/config`).
-   - API endpoints mask secrets as `••••••••`; submitting the mask preserves existing ciphertext.
-4. **API Bearer Tokens (`api_tokens.py`)**:
-   - Machine tokens (`ss_tok_<urlsafe32>`) stored as SHA-256 hashes in `api_tokens`.
-   - Audited with `last_used_at` timestamp and restricted by scope.
+4. **Encrypted Configuration**:
+   - Plugin config fields whose schema carries `"secret": true` are stored encrypted with the Fernet subkey (`secretsauce/config`). Plaintext secrets written by older versions are encrypted the first time the plugin loads.
+   - Every endpoint that returns plugin config (`/api/plugins`, `/api/plugins/{id}`, `/api/plugins/{id}/config`) masks secrets as `••••••••`; submitting the mask keeps the stored value.
+   - Plugins read clear values through `ctx.config`.
+5. **API Bearer Tokens (`api_tokens.py`)**:
+   - Machine tokens (`ss_tok_<urlsafe32>`) are stored as SHA-256 hashes behind a unique index.
+   - `last_used_at` is written at most once every 10 minutes per token.
 
 ---
 
@@ -122,59 +133,63 @@ The kernel uses a single Master Key stored at `/data/secret.key` (with strict `0
   1. Requested language (e.g. `de`).
   2. Household primary language (`household_config.languages.primary`).
   3. Oldest available language row in group.
-- **Foreign Key Safe Deletion**: Deleting a language row re-points attached schedule, journal, and asset foreign keys to the oldest surviving row in the group. Deleting the last row executes a complete group cascade.
+- **Foreign Key Safe Deletion**: Deleting a language row re-points every foreign key that references it to the primary-language row of the group, or the oldest surviving one. Deleting the last row deletes the whole group with its assets and attributes.
+- **Listing**: `list_recipes` resolves every group in one windowed query (`ROW_NUMBER() OVER (PARTITION BY group_id ...)`) and applies search, tag and attribute filters and sorting to the resolved row, so the query count does not grow with the number of recipes.
 
 ### 4.2 Household Members (`secretsauce/nouns/members.py`)
 - Stores member profiles, avatars, dietary restrictions, allergies, and serving ratios.
-- Guarded by optimistic revision checks.
+- Guarded by optimistic revision checks. Deleting a member removes its assets and attributes and its id from every schedule entry's participants.
+
+All repositories validate required fields (`ValidationError` → 422), take an optional `conn` to join the caller's transaction, and emit their events when constructed with the kernel's `EventLog`.
 
 ### 4.3 Schedule & Cook Journal (`secretsauce/nouns/schedule.py`, `journal.py`)
 - `schedule_entries`: Planned meals by date, meal type, participant members, and recipe ID.
 - `cook_journal`: Actual cook history, servings cooked vs. left over, notes, and member attribution.
+- Lists embed each entry's `recipe`, fetched for the whole page in one query (`RecipesRepo.get_recipes_by_ids`).
 
 ### 4.4 Assets & Entity Attributes (`secretsauce/nouns/assets.py`, `attributes.py`)
-- `assets`: Binary assets stored on disk at `uploads/{id}.{ext}`, recorded with entity type, entity ID, and optional `sub_id` (e.g., photo tied to an ingredient ID).
-- `entity_attributes`: Scoped key-value store enabling plugins to annotate core nouns (e.g. `ratings.score`, `nutrition.calories`) with fast numeric or string lookups and indexed sorting. `AttributesRepo` provides `get_attribute`, `set_attribute`, and `delete_attribute`.
+- `assets`: Files stored at `uploads/<yyyy>/<mm>/<id>.<ext>`, recorded with entity type, entity id and optional `sub_id` (e.g. a photo tied to a step). The declared content type must match the file's signature and determines the extension. A file written for a row that rolls back is removed; a deleted asset's file is removed only after the deletion commits.
+- `entity_attributes`: Scoped key-value store enabling plugins to annotate core nouns (e.g. `core-ratings.score`, `nutrition.calories`) with numeric or text values. `AttributesRepo` provides `set_attribute`, `delete_attribute`, `get_attributes`, `get_all_attributes` and `query_entity_ids`; `filter_sql` turns `<plugin>.<key><op><value>` filters into SQL for the recipe listing.
 
 ---
 
 ## 5. Event Log, Outbox Dispatchers & Streaming
 
 ```
-[ Domain Mutation ]
-       │
-       ▼ (Same SQLite Transaction)
-[ INSERT INTO events (seq, name, entity_type, entity_id, data, origin, ...) ]
-       │
-       ├──────────────────────────────────────┐
-       ▼                                      ▼
-[ Outbox Dispatcher ]               [ EventBroadcaster ]
- (Retries up to 20 attempts,         (In-memory async queue)
-  advances event_cursors,                     │
-  capped at causal depth 8)                   ▼
-       │                               GET /api/events/stream
-       ▼                              - Frame 1: event: hello
- [ Plugin Event Handlers ]            - Frame 2..N: Last-Event-ID replay
-                                      - Frame N+1..: Live log events & pushes
+[ Repository mutation ]──same transaction──▶ INSERT INTO events (... cause_seq, depth)
+                                                   │ after commit
+                          ┌────────────────────────┴───────────────────────┐
+                          ▼                                                ▼
+                 EventPump.wake()                                 EventBroadcaster
+       one dispatcher task per active plugin                bounded queue per SSE client
+                          │                                                │
+                          ▼                                                ▼
+        plugin handlers, in order, cursor per plugin          GET /api/events/stream
 ```
 
-1. **Transactional Event Append**: Events are appended inside the mutating transaction, guaranteeing no event is emitted for rolled-back state.
-2. **Dispatcher Outbox**: Each plugin maintains an independent cursor in `event_cursors`. If a handler raises an exception, the dispatcher retries up to 20 times before advancing and recording `last_error`.
-3. **Causal Depth Cap**: If an event handler triggers cascading events, causal depth is capped at 8 to prevent infinite loops.
-4. **SSE Stream (`secretsauce/stream.py`)**:
-   - `GET /api/events/stream`
-   - Yields `event: hello` with `boot_id` and current head `seq`.
-   - When `Last-Event-ID` is passed, replays missed events from the database before listening to live events.
-   - Supports transient pushes (`event: push`) that bypass the event log.
+1. **Transactional append**: The kernel repositories (recipes, schedule, journal, members, assets) append `<noun>:created|updated|deleted` inside the mutation's own transaction, with `before`/`after` snapshots in `data` (embedded joins such as a schedule entry's `recipe` are left out). A vetoed or failed write leaves neither row nor event. Deleting a recipe emits one `recipe:deleted` per language row. The kernel also logs `plugin:activated|deactivated` and `job:started|finished` with origin `system`.
+2. **Origin and causation**: `origin` describes each write, never an earlier one: `member` for REST writes, `plugin:<id>` for writes made while a plugin's handler, job or background task runs (the `acting_as` context variable), or an explicit value passed by kernel code. Writes made inside an event handler record the delivered event as `cause_seq` and `depth + 1`; a write deeper than 8 raises `EventDepthError` and is logged, which stops feedback loops.
+3. **Broadcast after commit**: SSE broadcasts and dispatcher wake-ups are registered with `db.after_commit`, so no browser or plugin hears about a write that rolled back.
+4. **Delivery (`EventPump`, `EventDispatcher`)**: One task per active plugin drains `events WHERE seq > last_seq` in batches of 100. It wakes after every commit that appended events, and every 5 seconds otherwise. Drains are serialized per plugin, so an event is never delivered twice at once. Events a plugin has no handler for only advance its cursor. A failing event is retried after 1 s, 10 s, 60 s, then every 10 minutes, and skipped after 20 attempts with the traceback kept in `event_cursors.last_error`. A failing plugin never delays the others. The dispatcher skips events whose origin is the plugin itself unless the handler subscribed with `include_self=True`.
+5. **Cursors**: A plugin activated for the first time starts at the log head and never replays history. A disabled plugin keeps its cursor and catches up when re-enabled; if the events it missed were pruned meanwhile, its cursor moves to head and its `rebuild` command, if registered, is queued.
+6. **SSE stream (`secretsauce/stream.py`)**: `GET /api/events/stream` sends named events whose data always carries `kind`:
+   - `hello` with `boot_id` and the head `seq`;
+   - `event` frames with the envelope (no `data`) and `id: <seq>`;
+   - `push` frames `{"kind": "push", "name", "data", "plugin_id"}` for transient messages such as `job:progress`.
+
+   Replay starts after `Last-Event-ID` (header) or `?last_event_id=` (for a freshly opened `EventSource`) and pages through the log up to the hello position; live frames at or below it are skipped. Each client has a bounded queue of 1,000 items; a client too slow to drain it is disconnected and replays what it missed when it reconnects.
 
 ---
 
 ## 6. Background Jobs & Recovery (`secretsauce/jobs.py`)
 
-Long-running plugin tasks (recipe imports, translations, backups) run through the `JobManager`:
-- Status lifecycle: `pending` $\to$ `running` $\to$ `completed` | `failed` | `cancelled`.
-- Real-time numeric progress tracking (0.0 to 1.0).
-- **Boot Recovery**: On kernel startup, `recover_stale_jobs_on_boot()` marks any jobs stranded in `pending` or `running` state as `failed` with message `"Server restarted before job completed"`.
+Long-running plugin work (imports, translations, reconversions, commands) runs as jobs:
+- **Lifecycle**: `pending` → `running` → `done` | `failed` | `cancelled`. `job:started` and `job:finished` (with the final status) are logged events. Progress (`handle.set_progress(percent, message)`) updates the row and reaches browsers as a `job:progress` push; it never enters the log.
+- **Runner**: `JobManager.start()`, called at app startup, runs pending jobs as tracked tasks, waking when a job is created and every 5 seconds. A job is claimed atomically (`pending` → `running` in one `UPDATE`), so it runs once. Jobs whose plugin has not registered a handler stay pending until it does. Handlers run as `plugin:<id>` for origin purposes.
+- **Cancellation**: `cancel_job` marks the job `cancelled` and cancels its running task. A job cancelled before it started never runs, and a cancelled or finished job's result cannot be overwritten.
+- **Commands**: `ctx.command(name, fn, title)` registers `fn` as a job of type `command:<name>`; `POST /api/plugins/{id}/commands/{name}` queues it and answers `202 {"job_id"}`.
+- **Boot recovery**: Jobs still `running` when the previous process stopped become `failed` with the message `interrupted by restart`. Pending jobs stay queued.
+- **Explicit execution**: `JobManager.run_job(job_id)` runs a job in the caller's task; tests and scripts use it.
 
 ---
 
@@ -204,91 +219,54 @@ The kernel includes a localized culinary units parsing, conversion, and formatti
 
 ## 8. Plugin Runtime, Core Plugins & Dynamic UI Serving
 
-```
-                     ┌───────────────────────────────┐
-                     │         PluginLoader          │
-                     └───────────────┬───────────────┘
-                                     │ Searches
-                    ┌────────────────┴────────────────┐
-                    ▼                                 ▼
-       ┌────────────────────────┐        ┌────────────────────────┐
-       │ secretsauce/plugins/   │        │     data/plugins/      │
-       │        core/           │        │     (User/Runtime)     │
-       │ (units, recurring, ...)│        └────────────────────────┘
-       └────────────┬───────────┘
-                    │
-                    ▼
-       ┌────────────────────────┐
-       │  PluginContext (Sandboxed)
-       │  • ctx.routes / router() -> mounts under /api/x/{id}
-       │  • ctx.command()        -> registers in ServiceRegistry
-       │  • ctx.hook()           -> synchronous pre-commit hooks
-       │  • ctx.jobs             -> Scoped background job engine
-       │  • ctx.background()     -> cooperative task runners
-       └────────────┬───────────┘
-                    │ Serves UI
-                    ▼
-       ┌────────────────────────┐
-       │ GET /api/plugins/{id}/ui.js (SHA-256 ETag + 304 / Immutable)
-       │ GET /api/plugins/{id}/ui.css
-       └────────────────────────┘
-```
-
-1. **Dual Search Paths**:
-   - The kernel discovers built-in core plugins (`secretsauce/plugins/core/`) and external runtime plugins (`data/plugins/`).
-   - Core plugins (`units`, `recurring`, `core-members`, `core-recipes`, `shortlist`, `core-timeline`, `cook-tracker`, `ratings`) are pre-installed and activated during boot.
-2. **Dynamic Extension Routers (`ctx.routes` / `RouterRegistry`)**:
-   - Plugins mount custom FastAPI routers under `/api/x/{plugin_id}/...`.
-   - The `RouterRegistry` inserts plugin routes before the SPA catch-all fallback route (`/{full_path:path}`).
-3. **Database Schema & Cascade Guarantees**:
-   - Plugin migrations create tables prefixed with `plugin_<plugin_id>_`.
-   - SQLite foreign keys are strictly enforced (`PRAGMA foreign_keys = ON;`). Plugins declaring foreign keys against kernel entities (e.g. `plugin_shortlist_entries.recipe_id REFERENCES recipes(id) ON DELETE CASCADE`) cascade cleanly upon noun deletions.
-4. **Dynamic UI Bundle Serving**:
-   - `GET /api/plugins/active`: Lists enabled plugins and flags whether `ui.js` or `ui.css` are present.
-   - `GET /api/plugins/{plugin_id}/ui.js` and `GET /api/plugins/{plugin_id}/ui.css`: Serves compiled ES modules directly from the plugin directory with SHA-256 ETag headers for conditional 304 validation and long-lived immutable caching with version query params (`?v=...`).
+1. **Discovery**: The loader scans `secretsauce/plugins/core/` and then `<data_dir>/plugins/`, each in sorted order; the first plugin found with a given id wins. A package plugin is imported as `ss_plugin_<id>` and registered in `sys.modules` as a real package, so it can import its own submodules (`from .helpers import ...`). Modules are never re-imported in a running process.
+2. **Ordering and dependencies**: Plugins activate in topological order of `requires`, ties broken by id. A plugin whose required dependency is missing, errored, disabled or not active is `blocked`, transitively. Plugins in a dependency cycle are `blocked` with the cycle named. Optional dependencies (`"id?"`) only affect ordering.
+3. **Activation**: Pending migrations run atomically (a failing migration marks the plugin `errored` and boot continues), the event cursor is prepared, `setup(ctx)` runs, the plugin's dispatcher joins the event pump and `plugin:activated` is logged. An exception in `setup` marks the plugin `errored`, removes whatever it had registered, and affects nothing else.
+4. **Runtime enable/disable**: `POST /api/plugins/{id}/disable` calls `teardown()` if defined, cancels the plugin's background tasks and running jobs, and removes its hooks, event handlers, routes, services, commands and job handlers. Active dependents become `blocked`. `enable` re-activates the plugin and re-evaluates blocked dependents. No restart is involved.
+5. **Context (`PluginContext`)**: Each plugin gets one context holding the kernel's own repositories, so plugin writes run the same hooks and append the same events as REST writes. `ctx.config` is the plugin's configuration with schema defaults applied and secrets decrypted; it is live, so config changes apply without re-activation.
+6. **Routes (`RouterRegistry`)**: `ctx.router(router, auth="cookie" | "token", scope=None)` mounts a router before the SPA fallback. Every path must lie under `/api/x/<plugin_id>/`; anything else fails activation. Plugin endpoints receive their context through the dependency `secretsauce.plugins.context.current_ctx`. An unhandled exception in a plugin route answers 500 `plugin_error` with `details.plugin_id` and is logged against the plugin.
+7. **Database schema**: Plugin migrations create tables prefixed `plugin_<plugin_id>_`. Foreign keys are enforced, so a plugin table declaring `REFERENCES recipes(id) ON DELETE CASCADE` cleans up with the noun.
+8. **UI bundles**: `GET /api/plugins/active` lists active plugins with `ui_entry`/`ui_css` URLs that include the base path and a content version (`?v=<sha256 prefix>`). `GET /api/plugins/{id}/ui.js|ui.css` serves the bundle with an ETag (304 on match) and immutable caching for versioned URLs. Bundle bytes and ETags are cached in memory and re-read only when the file changes.
 
 ---
 
 ## 9. Garbage Collector (`secretsauce/gc.py`)
 
-An hourly background task cleans lazy references:
-1. **Unlinked Uploads**: Deletes files under `uploads/` with no matching row in `assets`.
-2. **Orphaned Sub-ID Assets**: Cleans `assets` rows whose `sub_id` no longer exists in any language row of the recipe.
-3. **Event Log Pruning**: Prunes events older than 30 days that are below all active plugin cursors in `event_cursors`.
+An hourly background task, started with the app, cleans lazy references:
+1. **Unlinked uploads**: Walks `uploads/` recursively (files live in `uploads/<yyyy>/<mm>/`) and deletes files with no matching `assets.storage_path`. Files younger than one hour are kept, since they may belong to an upload whose row has not committed yet.
+2. **Orphaned sub-id assets**: Deletes, in bulk, recipe assets whose `sub_id` no longer appears in the ingredients or steps of any language row of the recipe.
+3. **Event pruning**: Deletes events older than 30 days that are at or below the cursor of every *active* plugin. Disabled plugins do not hold the log back (see cursors in section 5).
 
 ---
 
 ## 10. Backup, Export & Restore (`secretsauce/api/routes/export.py`)
 
-- **Full System Backup (`GET /api/export` / `secretsauce export`)**:
-  - Uses SQLite `VACUUM INTO` outside active transactions for zero-downtime hot backup.
-  - Bundles `secretsauce.db`, `uploads/`, `plugins/`, `site/` (if present), and `config.json` into an `application/zip` archive.
-- **System Restore (`secretsauce restore <backup.zip>`)**:
-  - Safely extracts backup archive into the target `data_dir`.
-  - Validates archive integrity (presence of `secretsauce.db`) and enforces Zip Slip path traversal defenses.
-- **Data Interop (`GET /api/export/json`)**:
-  - Exports all kernel nouns (`recipes`, `schedule_entries`, `cook_journal`, `household_members`, `assets`, `household_config`) as a JSON payload for migration or external tools.
+- **Full backup (`GET /api/export` / `secretsauce export`)**: A `VACUUM INTO` copy of the database plus `uploads/`, `plugins/`, `site/` and `config.json`. The zip is built in a temporary file by a worker thread and streamed, so large upload folders neither block the event loop nor sit in memory.
+- **Restore (`secretsauce restore <backup.zip>`)**: Validates the archive (it must contain `secretsauce.db`, and no path may escape the target), removes stale `secretsauce.db-wal`/`-shm` files that would otherwise be replayed onto the restored database, and streams each entry to disk.
+- **Data interop (`GET /api/export/json`)**: Every kernel noun as JSON with JSON columns decoded (recipe ingredients, steps, tags and source; schedule participants; member lists).
 
 ---
 
 ## 11. Runtime Boot & `BootedKernel` Lifecycle (`secretsauce/boot.py`)
 
-When the application boots via `boot(data_dir)`, it orchestrates the following sequence:
-1. **Directories**: Ensures `uploads/` and `plugins/` directories exist within `data_dir`.
-2. **Config & Keys**: Loads `config.json` and initializes `KeyManager` (`secret.key`).
-3. **Database**: Connects to `secretsauce.db` and runs any pending schema migrations.
-4. **Repositories**: Instantiates core noun repositories (`household`, `members`, `recipes`, `schedule`, `journal`, `assets`, `attributes`).
-5. **Services & Plugins**: Instantiates `JobManager`, `TokenManager`, `PluginRegistry`, and `PluginLoader`. Stale jobs from prior runs are recovered, and plugin manifests are discovered and synchronized.
-6. **Precache Computation**: Hashes static shell assets for the Service Worker precache manifest.
-7. **BootedKernel State**: Returns a `BootedKernel` dataclass attached to `app.state.kernel`.
+`boot()` is the single composition root. The production app (`build_app`) and the test harness (`secretsauce.testing.make_kernel`) both use it, so tests exercise the production wiring.
+
+1. **Data directory**: `resolve_data_dir()` takes the explicit argument, then `DATA_DIR`, `SECRETSAUCE_DATA_DIR`, `/data` if it exists, else `./data`; `uploads/` and `plugins/` are created.
+2. **Config & keys**: Loads `config.json` (environment variables override it) and the `KeyManager` (`secret.key`).
+3. **Database**: Connects and runs pending kernel migrations.
+4. **Wiring**: `BootedKernel` builds the event log, broadcaster and event pump, the hook registry, the noun repositories (sharing hooks and events), jobs, tokens, sessions, the rate limiter, services, the router registry, the plugin registry and the loader.
+5. **Recovery & plugins**: Jobs left running by a previous process are failed, revoked sessions are loaded, and plugins are discovered and activated.
+6. **Precache**: Static shell assets are hashed once for the service worker (`kernel.precache_info`).
+7. **Services**: The app lifespan calls `kernel.start_services()` (event pump, job runner, garbage collector) and `kernel.shutdown()` on exit, which stops them, tears plugins down and closes the database. The test harness leaves services off unless `make_kernel(..., services=True)`; tests deliver events with `drain_events()` and run jobs with `run_job()`.
 
 ### Kernel Attributes & Accessors
-All API routers interact with the kernel through `request.app.state.kernel`:
-- `kernel.db`: Database connection and transaction runner.
-- `kernel.household`, `kernel.members`, etc.: Core noun repositories.
-- `kernel.plugins` / `kernel.registry`: `PluginRegistry` instance for listing, enabling, configuring, and inspecting plugins.
-- `kernel.loader`: `PluginLoader` for dynamic backend plugin activation.
-- `kernel.broadcaster`: `EventBroadcaster` for SSE clients.
+Routes reach the kernel through `request.app.state.kernel`:
+- `kernel.db`: database and transaction runner.
+- `kernel.household`, `kernel.members`, `kernel.recipes`, `kernel.schedule`, `kernel.journal`, `kernel.assets`, `kernel.attributes`: noun repositories.
+- `kernel.registry` (alias `kernel.plugins`): `PluginRegistry` for plugin rows, manifests and configuration.
+- `kernel.loader`: `PluginLoader`, including `enable()` and `disable()`.
+- `kernel.ctx_for(plugin_id)` / `kernel.active_ctx(plugin_id)`: plugin contexts.
+- `kernel.events`, `kernel.pump`, `kernel.broadcaster`, `kernel.jobs`, `kernel.tokens`, `kernel.sessions`, `kernel.rate_limiter`.
 
 ---
 

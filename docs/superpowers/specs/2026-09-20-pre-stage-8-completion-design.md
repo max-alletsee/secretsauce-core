@@ -8,6 +8,20 @@
 
 ---
 
+## Implementation Notes (2026-09-24)
+
+The architecture hardening pass (branch `fix/architecture-hardening`) changed the ground this spec was written on. Read these before implementing the tasks below:
+
+- **Events carry `data`, not `payload`.** `Event` has `name`, `entity_type`, `entity_id`, `revision`, `actor_member_id`, `origin`, `cause_seq`, `depth`, `data`, `created_at`. The origin is on the envelope: the translator's loop check is `event.origin == "plugin:core-translator"` (and the dispatcher already skips a plugin's own events unless it subscribed with `include_self=True`). The recipe row id is `event.entity_id`; kernel noun events carry the row as `event.data["after"]` (and `event.data["before"]` for updates and deletes).
+- **Kernel noun events now exist.** Recipe, schedule, journal, member and asset writes emit `<noun>:created|updated|deleted` in the write's transaction, so handlers on `recipe:created`/`recipe:updated` fire for REST and plugin writes alike.
+- **There is no `manifest.json`.** A plugin declares its manifest as the module-level `PLUGIN` dict (validated by `secretsauce.plugins.manifest.validate_manifest`). The installer (section on `POST /api/plugins/install`) must import the archive's module to read `PLUGIN`, as the architecture spec section 6.10 describes.
+- **The `plugins` table has no `core` column**, and `validate_manifest` ignores a `"core"` key. A core plugin is one discovered under `secretsauce/plugins/core/`; the uninstall guard should check `kernel.loader.plugin_dirs[id]` against that directory.
+- **Commands already run as jobs.** `POST /api/plugins/{id}/commands/{name}` exists and queues `command:<name>`; the job runner executes it. Plugin Manager lists commands (`GET /api/plugins` returns `commands`) and runs them.
+- **Enable/disable work at runtime** via `kernel.loader.enable()`/`disable()`; an installed or updated plugin still needs the restart described in 6.10, because modules are not re-imported.
+- **Deliberate deviations from the architecture spec:** configuration changes take effect live through `ctx.config` rather than by deactivating and re-activating the plugin; disabling a plugin keeps its attribute rows; only `recipe:create|update` pre-commit hooks exist so far.
+
+---
+
 ## 1. Executive Summary & Context
 
 SecretSauce core completed Stages 1 through 6 and the initial implementation of all 13 Stage 7 core plugins (`core-*`). All 122 Pytest backend tests and 67 Vitest frontend tests pass. However, an architectural audit against the master system architecture (`docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md`) revealed that several foundational features before Stage 8 were deferred or left as stubs:
