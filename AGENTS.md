@@ -57,19 +57,37 @@ secretsauce-core/
 
 ---
 
-## 4. UI & Plugin Build Pipeline (Critical)
+## 4. Testing Strategy (TDD)
+
+Earlier bugs slipped past a green test suite because tests skipped over the broken code or faked things production never did. Rules:
+
+- **Outside-in:** Start every feature with one failing test that runs the way production runs. Then write the unit tests inside it.
+  - Backend: `build_app()` + `app.router.lifespan_context(app)` + httpx, then poll until the expected result appears (see `_eventually` in `tests/test_runtime_services.py`). Never call `drain_events()` or `run_job()` in these tests.
+  - Shell: add a Playwright test for anything that goes between browser and kernel (REST, SSE, service worker, outbox), and for browser globals that Vitest/Happy-DOM only mocks (`localStorage`, `SVGElement`, `indexedDB`, 401 handling).
+- **Use `make_kernel()` only for unit-level tests.** If a feature is only tested with `drain_events()`/`run_job()`, the code that connects it in production is untested.
+- **Trigger, don't fake.** Create events by going through the kernel (HTTP or repos). Only the event-system tests (`tests/test_events*.py`) may emit or append kernel `<noun>:*` events directly.
+- **Test from the real entry point.** Don't test through internal functions the app never calls from outside. Example: test the stream client via `connect()`, not `handleMessage()`. Fake browser APIs must behave like the real ones.
+- **Mocks must match the backend.** Check mocked API responses against the route code or a recorded real response, never from memory. Vitest tests with a mocked API are component tests; don't call them e2e or integration tests.
+- **Test failure cases, not just the happy path:**
+  - Transactions: cancelled or raising mid-write, nested, concurrent.
+  - Events and jobs: duplicate delivery, concurrent drains, a handler that raises or loops, restart.
+  - Auth: no credential, wrong type of credential, revoked session.
+  - Multi-step writes (setup, migrations, import): if step N fails, nothing is saved.
+- **Check shared rules across everything:** for rules that apply everywhere (auth, error format, events), write one parametrized test over `app.routes`, all noun repos or all plugins, so new code is covered automatically.
+
+---
+
+## 5. UI & Plugin Build Pipeline (Critical)
 
 The backend and Playwright E2E tests rely on compiled bundles:
 1. **Plugin UI compilation:** When modifying plugins under `secretsauce/plugins/core/<name>/ui/`:
    - You **MUST** run `pnpm --prefix shell build:plugins` to compile to `<plugin>/ui/dist/ui.js`.
 2. **Shell compilation:** When modifying the application shell (`shell/src/`):
    - You **MUST** run `pnpm --prefix shell build` to compile to `secretsauce/static/`.
-3. **Never trust Happy-DOM / Vitest component tests alone:**
-   - Vitest runs against mocks. Browser globals (`localStorage`, `SVGElement`, `indexedDB`, unauthenticated 401 handling) must be verified via Playwright E2E tests (`pnpm --prefix shell test:e2e`).
 
 ---
 
-## 5. Kernel & API Architecture Notes
+## 6. Kernel & API Architecture Notes
 
 - **Kernel Attributes:** `BootedKernel` holds `kernel.registry` (also reachable as the alias `kernel.plugins`) and `kernel.loader` (`enable()`/`disable()` work at runtime).
 - **One composition root:** `secretsauce.boot.boot()` wires everything; both `build_app()` and the test harness `secretsauce.testing.make_kernel()` use it. The harness keeps background services (event pump, job runner, GC) off unless `make_kernel(..., services=True)`: deliver events with `drain_events(k)` and run jobs with `k.jobs.run_job(job_id)`.
@@ -79,7 +97,7 @@ The backend and Playwright E2E tests rely on compiled bundles:
 
 ---
 
-## 6. Git Worktree & Cleanup Hygiene
+## 7. Git Worktree & Cleanup Hygiene
 
 - Before removing a worktree (`git worktree remove`), ensure all background server processes, pytest runs, and Node processes are completely terminated. Windows will lock files and corrupt worktree pruning if handles remain open.
 - Never delete `tmp/`, `tmp_claudecode/`, or test data directories like `my-test-data/` unless explicitly requested.
