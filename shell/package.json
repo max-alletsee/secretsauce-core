@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build:plugins": "node scripts/build-plugins.ts",
-    "build": "node scripts/build-plugins.ts && vite build && vite build --config vite.sw.config.ts && npx tsx scripts/vendor.ts",
+    "build": "node scripts/build-plugins.ts && vite build && vite build --config vite.sw.config.ts && node scripts/vendor.ts",
     "test": "vitest run",
     "test:e2e": "playwright test"
   },
