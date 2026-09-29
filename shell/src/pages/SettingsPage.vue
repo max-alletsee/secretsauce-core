@@ -13,17 +13,17 @@ const logout = inject<(() => Promise<void>) | null>('__SS_LOGOUT__', null)
 const sections = settingsRegistry ? settingsRegistry.getSections() : []
 
 const defaultStartPage = ref(
-  (typeof localStorage !== 'undefined' && localStorage.getItem('secretsauce:default_start_page')) || 'auto'
+  (() => { try { return localStorage.getItem('secretsauce:default_start_page') || 'auto' } catch { return 'auto' } })()
 )
 
 function saveDefaultStartPage() {
-  if (typeof localStorage !== 'undefined') {
+  try {
     if (defaultStartPage.value === 'auto') {
       localStorage.removeItem('secretsauce:default_start_page')
     } else {
       localStorage.setItem('secretsauce:default_start_page', defaultStartPage.value)
     }
-  }
+  } catch { /* optional device storage */ }
 }
 </script>
 
@@ -48,8 +48,9 @@ function saveDefaultStartPage() {
 
     <div class="settings-section" v-if="themeReg">
       <h3>Appearance</h3>
-      <label>Theme</label>
+      <label for="theme">Theme</label>
       <select
+        id="theme"
         :value="themeReg.currentTheme.value"
         @change="(e: any) => themeReg.setTheme(e.target.value)"
       >
@@ -71,7 +72,7 @@ function saveDefaultStartPage() {
     <div v-if="logout" class="settings-section">
       <h3>This device</h3>
       <p>Logging out also removes this household's saved data and queued changes from this device.</p>
-      <button class="logout-button" @click="logout()">Log out</button>
+      <Button class="logout-button" label="Log out" severity="danger" outlined @click="logout()" />
     </div>
   </div>
 </template>
@@ -84,6 +85,6 @@ function saveDefaultStartPage() {
 .settings-section {
   margin-bottom: 32px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e7e5e4;
+  border-bottom: 1px solid var(--p-content-border-color);
 }
 </style>

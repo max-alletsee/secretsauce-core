@@ -1,0 +1,3 @@
+# PrimeVue's generated JavaScript includes multiline CSS template strings.
+# Preserve upstream blank-line indentation; source files keep default checks.
+secretsauce/static/assets/*.js whitespace=-blank-at-eol

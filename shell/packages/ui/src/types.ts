@@ -2,6 +2,14 @@ import type { Component, Ref } from 'vue'
 
 export const API_VERSION = 1
 
+export interface ConfirmOptions {
+  header?: string
+  message: string
+  acceptLabel?: string
+  rejectLabel?: string
+  severity?: 'info' | 'success' | 'warn' | 'danger' | 'secondary'
+}
+
 export interface SecretSauceUI {
   pluginId: string
   navigate?(path: string): void
@@ -9,7 +17,7 @@ export interface SecretSauceUI {
   slot(name: string, component: Component, opts?: { order?: number }): void
   intent: { hub(def: IntentHub): void; provider(def: IntentProvider): void }
   settings: { section(def: { id: string; title: string; component: Component; order?: number }): void }
-  on(name: string, handler: (e: StreamEvent | StreamPush) => void): void
+  on(name: string, handler: (e: StreamEvent | StreamPush) => void): void | (() => void)
   api: ApiClient
   url(path: string): string
   store: { currentMember: Ref<Member | null>; members: Ref<Member[]>; household: Ref<Household>; online: Ref<boolean> }
@@ -18,6 +26,7 @@ export interface SecretSauceUI {
   t(key: string, params?: Record<string, string | number>): string
   theme: { register(def: { id: string; label: string; preset: object }): void }
   notify(n: { level: 'info' | 'success' | 'warning' | 'error'; message: string }): void
+  confirm(options: ConfirmOptions): Promise<boolean>
 }
 
 export interface RouteDef {

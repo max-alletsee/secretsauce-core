@@ -72,7 +72,7 @@ function handleSubmit() {
       />
     </div>
 
-    <button type="submit" @click="handleSubmit">Save Settings</button>
+    <Button type="submit" label="Save Settings" @click="handleSubmit" />
   </form>
 </template>
 
@@ -94,20 +94,20 @@ function handleSubmit() {
 }
 .field-desc {
   font-size: 0.8em;
-  color: #666;
+  color: var(--p-text-muted-color);
   margin: 0;
 }
 .form-field input,
 .form-field select {
   padding: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--p-content-border-color);
   border-radius: 4px;
 }
 button[type="submit"] {
   align-self: flex-start;
   padding: 8px 16px;
-  background: #c2410c;
-  color: #fff;
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
   border: none;
   border-radius: 4px;
   cursor: pointer;

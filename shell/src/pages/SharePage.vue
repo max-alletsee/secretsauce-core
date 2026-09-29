@@ -44,7 +44,7 @@ function handleResolve(result: any) {
   max-width: 500px;
   margin: 40px auto;
   padding: 24px;
-  border: 1px solid #e7e5e4;
+  border: 1px solid var(--p-content-border-color);
   border-radius: 8px;
 }
 .share-trigger {

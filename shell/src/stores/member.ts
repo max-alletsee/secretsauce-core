@@ -8,12 +8,13 @@ export const useMemberStore = defineStore('member', () => {
 
   function setMembers(list: Member[]) {
     members.value = list
-    const storedId = localStorage.getItem('ss-current-member')
+    let storedId: string | null = null
+    try { storedId = localStorage.getItem('ss-current-member') } catch { /* optional storage */ }
     if (storedId) {
       currentMember.value = list.find((m) => m.id === storedId) || list[0] || null
     } else if (list.length > 0) {
       currentMember.value = list[0]
-      localStorage.setItem('ss-current-member', list[0].id)
+      try { localStorage.setItem('ss-current-member', list[0].id) } catch { /* optional storage */ }
     }
   }
 
@@ -21,7 +22,7 @@ export const useMemberStore = defineStore('member', () => {
     const target = members.value.find((m) => m.id === id)
     if (target) {
       currentMember.value = target
-      localStorage.setItem('ss-current-member', id)
+      try { localStorage.setItem('ss-current-member', id) } catch { /* optional storage */ }
     }
   }
 

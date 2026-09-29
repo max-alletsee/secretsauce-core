@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import SetupPage from './pages/SetupPage.vue'
 import LoginPage from './pages/LoginPage.vue'
 import SettingsPage from './pages/SettingsPage.vue'
-import PluginManagerPage from './pages/PluginManagerPage.vue'
 import SharePage from './pages/SharePage.vue'
 
 export function buildRouter(basePath: string = '/') {
@@ -12,12 +11,10 @@ export function buildRouter(basePath: string = '/') {
     {
       path: '/',
       redirect: () => {
-        if (typeof localStorage !== 'undefined') {
+        try {
           const preferred = localStorage.getItem('secretsauce:default_start_page')
-          if (preferred === '/timeline' || preferred === '/recipes') {
-            return preferred
-          }
-        }
+          if (preferred === '/timeline' || preferred === '/recipes') return preferred
+        } catch { /* device storage is optional */ }
         if (router && router.getRoutes().some((r: any) => r.path === '/timeline')) {
           return '/timeline'
         }
@@ -29,12 +26,10 @@ export function buildRouter(basePath: string = '/') {
     {
       path: '/settings',
       component: SettingsPage,
-      nav: { label: 'Settings', icon: 'cog', order: 900 } as any,
     },
     {
       path: '/plugins',
-      component: PluginManagerPage,
-      nav: { label: 'Plugins', icon: 'box', order: 910 } as any,
+      redirect: '/settings?section=plugins',
     },
     { path: '/share', component: SharePage },
   ]

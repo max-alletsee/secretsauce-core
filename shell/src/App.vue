@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, computed } from 'vue'
+import { inject, computed, ref, watch } from 'vue'
 import { routeLocationKey } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import AppNav from './components/AppNav.vue'
@@ -18,18 +18,24 @@ const isAuthPage = computed(() => {
 })
 
 const routes = computed(() => (routeRegistry ? routeRegistry.getRoutes() : []))
+const navigationOpen = ref(false)
+watch(() => route?.fullPath, () => { navigationOpen.value = false })
 </script>
 
 <template>
   <div class="ss-layout">
-    <AppHeader />
+    <AppHeader :show-navigation="!isAuthPage" @navigation="navigationOpen = true" />
+    <Drawer v-model:visible="navigationOpen" header="Navigation" position="left">
+      <AppNav :routes="routes" />
+    </Drawer>
     <div class="ss-main-container">
-      <AppNav v-if="!isAuthPage" :routes="routes" />
+      <AppNav v-if="!isAuthPage" class="desktop-navigation" :routes="routes" />
       <main class="ss-content">
         <router-view />
       </main>
     </div>
     <Toast />
+    <ConfirmDialog />
     <OfflineBar
       :online="appStore.online"
       :pending-count="outbox?.pending?.value || 0"
@@ -44,7 +50,8 @@ const routes = computed(() => (routeRegistry ? routeRegistry.getRoutes() : []))
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: #faf7f2;
+  background: var(--p-surface-50);
+  color: var(--p-text-color);
 }
 .ss-layout {
   display: flex;
@@ -58,6 +65,8 @@ body {
 }
 .ss-content {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
 }
+@media (max-width: 767px) { .desktop-navigation { display: none; } }
 </style>

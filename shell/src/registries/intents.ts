@@ -10,6 +10,11 @@ export function createIntentRegistry() {
   }
 
   function registerProvider(pluginId: string, provider: IntentProvider) {
+    if (!((provider.kind === 'ui' && provider.component) ||
+      (provider.kind === 'headless' && typeof provider.execute === 'function'))) {
+      console.error(`Invalid intent provider ${pluginId}/${provider.id}: expected ui/component or headless/execute`)
+      return
+    }
     providers.value.push({ ...provider, pluginId })
   }
 

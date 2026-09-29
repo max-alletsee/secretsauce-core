@@ -55,5 +55,6 @@ export function createFakeSecretSauceUI(pluginId: string = 'test-plugin'): Secre
     t: (key: string) => key,
     theme: { register: () => {} },
     notify: () => {},
+    confirm: async () => false,
   }
 }

@@ -45,10 +45,10 @@ const showDialog = ref(false)
         <li v-for="item in props.failedEntries" :key="item.id">
           <strong>{{ item.tag || item.path }}</strong> ({{ item.plugin_id }})
           <div class="error-text">{{ item.last_error }}</div>
-          <button type="button" @click="emit('discard', item.id)">Discard</button>
+          <Button type="button" label="Discard" severity="danger" outlined @click="emit('discard', item.id)" />
         </li>
       </ul>
-      <button type="button" @click="showDialog = false">Close</button>
+      <Button type="button" label="Close" text @click="showDialog = false" />
     </div>
   </div>
 </template>
@@ -59,8 +59,8 @@ const showDialog = ref(false)
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: #c2410c;
-  color: #fff;
+  background-color: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
   padding: 8px 16px;
   display: flex;
   justify-content: space-between;
@@ -79,7 +79,7 @@ const showDialog = ref(false)
   background-color: rgba(255, 255, 255, 0.25);
 }
 .badge-failed {
-  background-color: #991b1b;
+  background-color: var(--p-red-800);
 }
 .ss-modal-overlay {
   position: fixed;
@@ -91,12 +91,12 @@ const showDialog = ref(false)
   z-index: 1100;
 }
 .ss-modal {
-  background: #fff;
+  background: var(--p-surface-0);
   padding: 20px;
   border-radius: 8px;
   max-width: 500px;
   width: 100%;
-  color: #000;
+  color: var(--p-text-color);
 }
 .failed-list {
   list-style: none;
@@ -104,11 +104,11 @@ const showDialog = ref(false)
   margin: 10px 0;
 }
 .failed-list li {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--p-content-border-color);
   padding: 8px 0;
 }
 .error-text {
-  color: #dc2626;
+  color: var(--p-red-600);
   font-size: 0.85em;
 }
 </style>

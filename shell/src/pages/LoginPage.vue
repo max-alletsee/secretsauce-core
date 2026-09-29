@@ -26,10 +26,10 @@ async function submitLogin() {
     <form @submit.prevent="submitLogin">
       <div v-if="errorMsg" class="error-banner">{{ errorMsg }}</div>
       <div class="field">
-        <label>Passphrase</label>
-        <input v-model="passphrase" type="password" required autofocus />
+        <label for="login-passphrase">Passphrase</label>
+        <InputText id="login-passphrase" v-model="passphrase" type="password" required autofocus />
       </div>
-      <button type="submit">Log In</button>
+      <Button type="submit" label="Log In" />
     </form>
 
     <div class="login-footer">
@@ -43,7 +43,7 @@ async function submitLogin() {
   max-width: 400px;
   margin: 80px auto;
   padding: 24px;
-  border: 1px solid #e7e5e4;
+  border: 1px solid var(--p-content-border-color);
   border-radius: 8px;
 }
 .field {
@@ -54,20 +54,20 @@ async function submitLogin() {
 }
 .field input {
   padding: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--p-content-border-color);
   border-radius: 4px;
 }
 button {
   padding: 10px 20px;
-  background: #c2410c;
-  color: #fff;
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
   border: none;
   border-radius: 4px;
   cursor: pointer;
   width: 100%;
 }
 .error-banner {
-  color: #dc2626;
+  color: var(--p-red-600);
   margin-bottom: 12px;
 }
 .login-footer {

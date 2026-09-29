@@ -1,10 +1,9 @@
 import { createApp, watch } from 'vue'
 import { createPinia, storeToRefs } from 'pinia'
-import PrimeVue from 'primevue/config'
-import Aura from '@primevue/themes/aura'
-import ToastService from 'primevue/toastservice'
-import ConfirmationService from 'primevue/confirmationservice'
 import ToastEventBus from 'primevue/toasteventbus'
+import 'primeicons/primeicons.css'
+import { installUi } from './ui/install'
+import { makeSecretSauceUI as buildPluginUi } from './pluginContext'
 
 import App from './App.vue'
 import { buildRouter } from './router'
@@ -22,8 +21,6 @@ import { createThemeRegistry } from './theme'
 import { useMemberStore } from './stores/member'
 import { useHouseholdStore } from './stores/household'
 import { useAppStore } from './stores/app'
-import SettingsPage from './pages/SettingsPage.vue'
-import PluginManagerPage from './pages/PluginManagerPage.vue'
 import type { SecretSauceUI } from '@secretsauce/ui'
 
 const meta = (typeof window !== 'undefined' && (window as any).__SS__) || {
@@ -89,51 +86,18 @@ const settings = createSettingsRegistry()
 const i18n = createI18nRegistry()
 const themes = createThemeRegistry()
 
-// Register shell core navigation routes
-routes.register('shell', {
-  path: '/settings',
-  component: SettingsPage,
-  nav: { label: 'Settings', icon: 'cog', order: 900 },
-})
-routes.register('shell', {
-  path: '/plugins',
-  component: PluginManagerPage,
-  nav: { label: 'Plugins', icon: 'box', order: 910 },
-})
-
 // Register share intent hub owned by shell
 intents.registerHub({ id: 'share:receive', title: 'Handle Shared URL/Text' })
 
 function makeSecretSauceUI(pluginId: string): SecretSauceUI {
-  return {
-    pluginId,
-    navigate: (p: string) => router.push(p),
-    route: (def) => routes.register(pluginId, def),
-    slot: (name, comp, opts) => slots.register(pluginId, name, comp, opts),
-    intent: {
-      hub: (hub) => intents.registerHub(hub),
-      provider: (prov) => intents.registerProvider(pluginId, prov),
-    },
-    settings: {
-      section: (sec) => settings.register(pluginId, sec),
-    },
-    on: (name, fn) => stream.on(name, fn),
-    api,
-    url: (p: string) => `${basePath}${p.startsWith('/') ? p.slice(1) : p}`,
-    // Live refs into the stores, not snapshots taken at activation time.
+  return buildPluginUi(pluginId, {
+    routes, slots, intents, settings, i18n, themes, router, stream, basePath, api, outbox,
     store: { currentMember, members, household, online: stream.online },
-    outbox,
-    i18n: { add: (lang, msgs) => i18n.add(lang, msgs) },
-    t: (k, p) => i18n.t(k, p),
-    theme: { register: (t) => themes.register(t) },
-    notify: ({ level, message }) =>
-      ToastEventBus.emit('add', {
-        severity: TOAST_SEVERITY[level] || 'info',
-        summary: pluginId,
-        detail: message,
-        life: level === 'error' ? 8000 : 4000,
-      }),
-  }
+    notify: ({ level, message }) => ToastEventBus.emit('add', {
+      severity: TOAST_SEVERITY[level] || 'info', summary: pluginId, detail: message,
+      life: level === 'error' ? 8000 : 4000,
+    }),
+  })
 }
 
 const pluginLoader = createPluginLoader({
@@ -170,9 +134,7 @@ app.provide('__SS_LOGOUT__', async () => {
   if (typeof window !== 'undefined') window.location.assign(`${basePath}login`)
 })
 
-app.use(PrimeVue, { theme: { preset: Aura } })
-app.use(ToastService)
-app.use(ConfirmationService)
+installUi(app, { themes })
 
 const router = buildRouter(basePath)
 routes.bindRouter(router)
@@ -213,7 +175,8 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.path === '/' || to.redirectedFrom?.path === '/') {
-    const preferred = typeof localStorage !== 'undefined' ? localStorage.getItem('secretsauce:default_start_page') : null
+    let preferred: string | null = null
+    try { preferred = localStorage.getItem('secretsauce:default_start_page') } catch { /* device storage is optional */ }
     if (preferred === '/timeline' || preferred === '/recipes') {
       if (to.path !== preferred) return next(preferred)
     } else {

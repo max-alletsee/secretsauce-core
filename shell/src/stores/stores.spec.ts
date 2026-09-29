@@ -24,7 +24,7 @@ describe('Shell Stores & Theming', () => {
   it('registers and applies themes', () => {
     const reg = createThemeRegistry()
     reg.register({ id: 'dark-orange', label: 'Dark Orange', preset: {} })
-    expect(reg.getThemes()).toHaveLength(2) // Aura + dark-orange
+    expect(reg.getThemes()).toHaveLength(5) // Four installed presets plus the plugin theme.
     reg.setTheme('dark-orange')
     expect(reg.currentTheme.value).toBe('dark-orange')
     expect(localStorage.getItem('ss-theme')).toBe('dark-orange')

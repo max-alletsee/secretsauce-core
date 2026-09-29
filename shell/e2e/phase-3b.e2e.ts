@@ -105,8 +105,10 @@ test.describe('Phase 3B End-to-End Browser Tests', () => {
     await expect(addIntentBtn).toBeVisible()
     await addIntentBtn.click()
 
-    // Since the recipe importer registers its own provider, the hub offers a choice.
-    await page.getByRole('button', { name: 'Manual Recipe' }).click()
+    // With one valid provider the trigger navigates directly; with several it opens a menu.
+    const manualChoice = page.getByRole('button', { name: 'Manual Recipe', exact: true })
+    await expect(manualChoice.or(page.getByRole('heading', { name: 'New Recipe', exact: true }))).toBeVisible()
+    if (await manualChoice.isVisible()) await manualChoice.click()
 
     // Expect navigation to /recipes/new
     await expect(page).toHaveURL(/.*\/recipes\/new/)

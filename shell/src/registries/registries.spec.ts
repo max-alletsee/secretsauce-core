@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { createRouteRegistry } from './routes'
 import { createSlotRegistry } from './slots'
@@ -60,11 +60,29 @@ describe('Shell Registries', () => {
       title: 'Import',
       order: 10,
       kind: 'headless',
+      execute: () => undefined,
     })
     expect(reg.getProviders('recipe:create')).toHaveLength(0)
 
     reg.registerHub({ id: 'recipe:create', title: 'Create Recipe' })
     expect(reg.getProviders('recipe:create')).toHaveLength(1)
+  })
+
+  it.each([
+    { kind: undefined, execute: () => {} },
+    { kind: 'unknown', execute: () => {} },
+    { kind: 'ui' },
+    { kind: 'headless' },
+  ])('rejects an invalid intent provider shape: %j', (shape) => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      const reg = createIntentRegistry()
+      reg.registerHub({ id: 'recipe:create', title: 'Create' })
+      reg.registerProvider('broken-plugin', { hub: 'recipe:create', id: 'broken-provider', title: 'Broken', order: 1, ...shape } as any)
+      expect(reg.getProviders('recipe:create')).toEqual([])
+      expect(error.mock.calls.flat().join(' ')).toContain('broken-plugin')
+      expect(error.mock.calls.flat().join(' ')).toContain('broken-provider')
+    } finally { error.mockRestore() }
   })
 
   it('translates messages with {param} placeholders', () => {
