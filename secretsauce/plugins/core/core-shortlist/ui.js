@@ -1,117 +1,141 @@
-import { defineComponent as u, inject as S, ref as v, watch as y, openBlock as n, createElementBlock as l, normalizeClass as b, onMounted as k, createElementVNode as x, toDisplayString as g, Fragment as A, renderList as I } from "vue";
-const $ = ["title"], w = /* @__PURE__ */ u({
+import { defineComponent as g, ref as h, watch as b, resolveComponent as x, openBlock as n, createBlock as S, normalizeClass as B, onMounted as w, createElementBlock as _, createElementVNode as k, toDisplayString as f, withCtx as $, createTextVNode as A, createCommentVNode as M, Fragment as N, renderList as R, withModifiers as V, unref as y } from "vue";
+import { useSecretSauce as C } from "@secretsauce/ui";
+const z = /* @__PURE__ */ g({
   __name: "ShortlistAction",
   props: {
     context: {}
   },
   emits: ["change"],
-  setup(o, { emit: s }) {
-    var h, p, m;
-    const t = o, a = s, i = S("__SS_API__"), e = v(!!((h = t.context) != null && h.isShortlisted || (m = (p = t.context) == null ? void 0 : p.recipe) != null && m.is_shortlisted));
-    y(() => {
-      var c, r, d;
-      return ((c = t.context) == null ? void 0 : c.isShortlisted) ?? ((d = (r = t.context) == null ? void 0 : r.recipe) == null ? void 0 : d.is_shortlisted);
-    }, (c) => {
-      c !== void 0 && (e.value = !!c);
+  setup(i, { emit: r }) {
+    var d, a;
+    const e = i, l = r, o = C(), c = h(!1), t = h(!!(((d = e.context) == null ? void 0 : d.isShortlisted) ?? ((a = e.context) == null ? void 0 : a.recipe.is_shortlisted)));
+    b(() => {
+      var s, p;
+      return ((s = e.context) == null ? void 0 : s.isShortlisted) ?? ((p = e.context) == null ? void 0 : p.recipe.is_shortlisted);
+    }, (s) => {
+      s !== void 0 && (t.value = !!s);
     });
-    async function _(c) {
-      var d;
-      if (c.stopPropagation(), !((d = t.context) != null && d.recipe) || !i) return;
-      const r = !e.value;
-      e.value = r;
-      try {
-        r ? await i.post("/api/x/core-shortlist", { recipe_id: t.context.recipe.id }) : await i.delete(`/api/x/core-shortlist/${t.context.recipe.id}`), a("change", r);
-      } catch {
-        e.value = !r;
+    async function u(s) {
+      var v;
+      s.stopPropagation();
+      const p = (v = e.context) == null ? void 0 : v.recipe;
+      if (!(!p || c.value)) {
+        c.value = !0;
+        try {
+          t.value ? await o.api.delete(`/api/x/core-shortlist/${p.id}`) : await o.api.post("/api/x/core-shortlist", { recipe_id: p.id }), t.value = !t.value, l("change", t.value);
+        } catch (m) {
+          o.notify({ level: "error", message: (m == null ? void 0 : m.message) || "Could not update shortlist" });
+        } finally {
+          c.value = !1;
+        }
       }
     }
-    return (c, r) => (n(), l("button", {
-      type: "button",
-      class: b(["btn-shortlist", { active: e.value }]),
-      title: e.value ? "Remove from shortlist" : "Add to shortlist",
-      onClick: _
-    }, " ★ ", 10, $));
+    return (s, p) => {
+      const v = x("Button");
+      return n(), S(v, {
+        class: B(["btn-shortlist", { active: t.value }]),
+        icon: t.value ? "pi pi-star-fill" : "pi pi-star",
+        "aria-label": t.value ? "Remove from shortlist" : "Add to shortlist",
+        title: t.value ? "Remove from shortlist" : "Add to shortlist",
+        "aria-pressed": t.value,
+        text: "",
+        rounded: "",
+        loading: c.value,
+        onClick: u
+      }, null, 8, ["class", "icon", "aria-label", "title", "aria-pressed", "loading"]);
+    };
   }
-}), f = (o, s) => {
-  const t = o.__vccOpts || o;
-  for (const [a, i] of s)
-    t[a] = i;
-  return t;
-}, B = /* @__PURE__ */ f(w, [["__scopeId", "data-v-49e76ba8"]]), C = /* @__PURE__ */ u({
+}), E = /* @__PURE__ */ g({
   __name: "ShortlistFilter",
   props: {
     context: {}
   },
   emits: ["toggle"],
-  setup(o, { emit: s }) {
-    const t = o, a = s, i = v(!1);
-    function e() {
-      var _;
-      a("toggle"), (_ = t.context) != null && _.toggle ? t.context.toggle() : i.value = !i.value;
+  setup(i, { emit: r }) {
+    const e = i, l = r, o = h(!1);
+    function c() {
+      var t;
+      l("toggle"), (t = e.context) != null && t.toggle ? e.context.toggle() : o.value = !o.value;
     }
-    return (_, h) => {
-      var p;
-      return n(), l(
-        "button",
-        {
-          type: "button",
-          class: b(["shortlist-filter-chip", { active: ((p = t.context) == null ? void 0 : p.active) ?? i.value }]),
-          onClick: e
-        },
-        " ★ Shortlist ",
-        2
-        /* CLASS */
-      );
+    return (t, u) => {
+      var a, s;
+      const d = x("Button");
+      return n(), S(d, {
+        class: "shortlist-filter-chip",
+        label: "Shortlist",
+        icon: "pi pi-star",
+        "aria-pressed": ((a = e.context) == null ? void 0 : a.active) ?? o.value,
+        outlined: !(((s = e.context) == null ? void 0 : s.active) ?? o.value),
+        size: "small",
+        onClick: c
+      }, null, 8, ["aria-pressed", "outlined"]);
     };
   }
-}), F = /* @__PURE__ */ f(C, [["__scopeId", "data-v-387e17b7"]]), P = { class: "shortlist-sidebar" }, E = {
-  key: 0,
-  class: "sidebar-list"
-}, N = ["href"], R = {
-  key: 1,
-  class: "empty-hint"
-}, j = /* @__PURE__ */ u({
+}), F = { class: "shortlist-sidebar" }, T = { key: 1 }, D = ["href", "onClick"], I = { key: 2 }, L = /* @__PURE__ */ g({
   __name: "ShortlistSidebar",
-  props: {
-    context: {}
-  },
-  setup(o) {
-    const s = S("__SS_API__"), t = v([]);
-    return k(async () => {
-      if (s)
-        try {
-          t.value = await s.get("/api/x/core-shortlist");
-        } catch {
-        }
-    }), (a, i) => (n(), l("div", P, [
-      x(
-        "h4",
-        null,
-        "Shortlist (" + g(t.value.length) + ")",
-        1
-        /* TEXT */
-      ),
-      t.value.length ? (n(), l("ul", E, [
-        (n(!0), l(
-          A,
+  setup(i) {
+    const r = C(), e = h([]), l = h("");
+    return w(async () => {
+      try {
+        e.value = await r.api.get("/api/x/core-shortlist");
+      } catch (o) {
+        l.value = (o == null ? void 0 : o.message) || "Could not load shortlist";
+      }
+    }), (o, c) => {
+      const t = x("Message");
+      return n(), _("section", F, [
+        k(
+          "h3",
           null,
-          I(t.value, (e) => (n(), l("li", {
-            key: e.id
-          }, [
-            x("a", {
-              href: `#/recipes/${e.recipe_id}`
-            }, g(e.recipe_title || "Recipe"), 9, N)
-          ]))),
-          128
-          /* KEYED_FRAGMENT */
-        ))
-      ])) : (n(), l("p", R, "No shortlisted recipes."))
-    ]));
+          "Shortlist (" + f(e.value.length) + ")",
+          1
+          /* TEXT */
+        ),
+        l.value ? (n(), S(t, {
+          key: 0,
+          severity: "error"
+        }, {
+          default: $(() => [
+            A(
+              f(l.value),
+              1
+              /* TEXT */
+            )
+          ]),
+          _: 1
+          /* STABLE */
+        })) : M("v-if", !0),
+        e.value.length ? (n(), _("ul", T, [
+          (n(!0), _(
+            N,
+            null,
+            R(e.value, (u) => (n(), _("li", {
+              key: u.id
+            }, [
+              k("a", {
+                href: y(r).url(`/recipes/${u.recipe_id}`),
+                onClick: V((d) => {
+                  var a, s;
+                  return (s = (a = y(r)).navigate) == null ? void 0 : s.call(a, `/recipes/${u.recipe_id}`);
+                }, ["prevent"])
+              }, f(u.recipe_title || "Recipe"), 9, D)
+            ]))),
+            128
+            /* KEYED_FRAGMENT */
+          ))
+        ])) : (n(), _("p", I, "No shortlisted recipes."))
+      ]);
+    };
   }
-}), z = /* @__PURE__ */ f(j, [["__scopeId", "data-v-99b85d8b"]]);
-function M(o) {
-  o.slot("recipe.card.actions", B, { order: 10 }), o.slot("recipe.list.filters", F, { order: 10 }), o.slot("timeline.sidebar", z, { order: 20 });
+}), O = (i, r) => {
+  const e = i.__vccOpts || i;
+  for (const [l, o] of r)
+    e[l] = o;
+  return e;
+}, P = /* @__PURE__ */ O(L, [["__scopeId", "data-v-2dfa8201"]]);
+function G(i) {
+  i.slot("recipe.card.actions", z, { order: 10 }), i.slot("recipe.list.filters", E, { order: 10 }), i.slot("timeline.sidebar", P, { order: 20 });
 }
 export {
-  M as default
+  G as default
 };

@@ -1,176 +1,66 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, inject } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useSecretSauce } from '@secretsauce/ui'
 import IngredientRowList from '../components/IngredientRowList.vue'
 import StepList from '../components/StepList.vue'
-
-const props = defineProps<{
-  recipeId?: string
-  id?: string
-}>()
-
-const emit = defineEmits<{
-  saved: [any]
-}>()
-
-const navigate = inject<(path: string) => void>('__SS_NAVIGATE__', (path: string) => {
-  window.location.href = path
-})
-const api = inject<any>('__SS_API__')
-
-const targetId = computed(() => {
-  if (props.id) return props.id
-  if (props.recipeId) return props.recipeId
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/recipes/')) {
-    const parts = window.location.pathname.split('/')
-    if (parts.length >= 3 && parts[parts.length - 1] === 'edit') {
-      return parts[parts.length - 2]
-    }
-  }
-  return ''
-})
-
-const title = ref('')
-const description = ref('')
-const language = ref('en')
-const servings = ref(2)
-const prepTime = ref<number | null>(null)
-const cookTime = ref<number | null>(null)
-const tags = ref('')
-const coverAssetId = ref<string | null>(null)
-const ingredients = ref<any[]>([])
-const steps = ref<any[]>([])
-const revision = ref(1)
-
-onMounted(async () => {
-  if (targetId.value && api) {
-    try {
-      const existing = await api.get(`/api/recipes/${targetId.value}`)
-      title.value = existing.title || ''
-      description.value = existing.description || ''
-      language.value = existing.language || 'en'
-      servings.value = existing.servings || 2
-      prepTime.value = existing.prep_time_minutes || null
-      cookTime.value = existing.cook_time_minutes || null
-      tags.value = (existing.tags || []).join(', ')
-      coverAssetId.value = existing.cover_asset_id || null
-      ingredients.value = existing.ingredients || []
-      steps.value = existing.steps || []
-      revision.value = existing.revision || 1
-    } catch {
-      // offline or not found
-    }
-  }
-})
-
-async function onImageUpload(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file || !api) return
-  const form = new FormData()
-  form.append('file', file)
-  form.append('entity_type', 'recipe')
-  form.append('slot', 'cover')
-  const res = await api.upload('/api/assets', form)
-  coverAssetId.value = res.id
+const props = defineProps<{ recipeId?: string; id?: string }>()
+const emit = defineEmits<{ saved: [any] }>()
+const ss = useSecretSauce(), targetId = computed(() => props.id || props.recipeId || '')
+const title = ref(''), description = ref(''), language = ref(ss.store.household.value?.languages.primary || 'en'), servings = ref(2)
+const prepTime = ref<number | null>(null), cookTime = ref<number | null>(null), tags = ref<string[]>([]), coverAssetId = ref<string | null>(null)
+const ingredients = ref<any[]>([]), steps = ref<any[]>([]), revision = ref(1), busy = ref(false), error = ref('')
+watch(targetId, async id => {
+  if (!id) return
+  try {
+    const existing = await ss.api.get<any>(`/api/recipes/${id}`)
+    title.value = existing.title; description.value = existing.description || ''; language.value = existing.language; servings.value = existing.servings
+    prepTime.value = existing.prep_time_minutes; cookTime.value = existing.cook_time_minutes; tags.value = [...existing.tags]
+    coverAssetId.value = existing.cover_asset_id || null; ingredients.value = existing.ingredients; steps.value = existing.steps; revision.value = existing.revision
+  } catch (failure: any) { error.value = failure?.message || 'Could not load recipe' }
+}, { immediate: true })
+async function onImageUpload(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || busy.value) return
+  busy.value = true; error.value = ''
+  try { const form = new FormData(); form.append('file', file); form.append('entity_type', 'recipe'); form.append('slot', 'cover'); coverAssetId.value = (await ss.api.upload<any>('/api/assets', form)).id }
+  catch (failure: any) { error.value = failure?.message || 'Could not upload image' }
+  finally { busy.value = false }
 }
-
 async function save() {
-  if (!title.value.trim() || !api) return
-  const payload = {
-    title: title.value.trim(),
-    description: description.value.trim(),
-    language: language.value,
-    servings: Number(servings.value) || 2,
-    prep_time_minutes: prepTime.value ? Number(prepTime.value) : null,
-    cook_time_minutes: cookTime.value ? Number(cookTime.value) : null,
-    tags: tags.value.split(',').map((t) => t.trim()).filter(Boolean),
-    cover_asset_id: coverAssetId.value,
-    ingredients: ingredients.value,
-    steps: steps.value,
-  }
-
-  let res: any
-  if (targetId.value) {
-    res = await api.patch(`/api/recipes/${targetId.value}`, { ...payload, revision: revision.value })
-  } else {
-    res = await api.post('/api/recipes', payload)
-  }
-  emit('saved', res)
-  if (res?.id) {
-    navigate(`/recipes/${res.id}`)
-  }
-}
-
-function cancel() {
-  navigate(targetId.value ? `/recipes/${targetId.value}` : '/recipes')
+  if (!title.value.trim() || busy.value) return
+  busy.value = true; error.value = ''
+  const payload = { title: title.value.trim(), description: description.value.trim(), language: language.value, servings: servings.value, prep_time_minutes: prepTime.value, cook_time_minutes: cookTime.value, tags: tags.value, cover_asset_id: coverAssetId.value, ingredients: ingredients.value, steps: steps.value }
+  try {
+    const result = targetId.value ? await ss.api.patch<any>(`/api/recipes/${targetId.value}`, { ...payload, revision: revision.value }) : await ss.api.post<any>('/api/recipes', payload)
+    emit('saved', result); ss.notify({ level: 'success', message: 'Recipe saved' }); ss.navigate?.(`/recipes/${result.id}`)
+  } catch (failure: any) { error.value = failure?.message || 'Could not save recipe' }
+  finally { busy.value = false }
 }
 </script>
-
 <template>
-  <div class="recipe-edit-page">
-    <div class="edit-top-bar">
-      <h2>{{ targetId ? 'Edit Recipe' : 'New Recipe' }}</h2>
-      <button type="button" class="btn-cancel" @click="cancel">Cancel</button>
+  <form class="recipe-edit-page" @submit.prevent="save">
+    <div class="edit-top-bar"><h2>{{ targetId ? 'Edit Recipe' : 'New Recipe' }}</h2><Button label="Cancel" class="btn-cancel" severity="secondary" :disabled="busy" @click="ss.navigate?.(targetId ? `/recipes/${targetId}` : '/recipes')" /></div>
+    <Message v-if="error" severity="error">{{ error }}</Message>
+    <div class="form-group"><label for="recipe-title">Title</label><InputText id="recipe-title" v-model="title" class="input-title" required fluid /></div>
+    <div class="form-group"><label for="recipe-description">Description</label><Textarea id="recipe-description" v-model="description" class="textarea" rows="3" fluid /></div>
+    <div class="form-row">
+      <div class="form-group"><label for="recipe-language">Language</label><InputText id="recipe-language" v-model="language" fluid /></div>
+      <div class="form-group"><label for="recipe-servings">Servings</label><InputNumber inputId="recipe-servings" v-model="servings" :min="1" fluid /></div>
+      <div class="form-group"><label for="recipe-prep">Prep time (min)</label><InputNumber inputId="recipe-prep" v-model="prepTime" :min="0" fluid /></div>
+      <div class="form-group"><label for="recipe-cook">Cook time (min)</label><InputNumber inputId="recipe-cook" v-model="cookTime" :min="0" fluid /></div>
     </div>
-    <div class="form-section">
-      <div class="form-group">
-        <label>Title</label>
-        <input v-model="title" type="text" placeholder="Recipe Title" class="input input-title" />
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <textarea v-model="description" rows="2" placeholder="Brief description..." class="textarea" />
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Language</label>
-          <input v-model="language" type="text" class="input" />
-        </div>
-        <div class="form-group">
-          <label>Servings</label>
-          <input v-model.number="servings" type="number" min="1" class="input" />
-        </div>
-        <div class="form-group">
-          <label>Prep Time (m)</label>
-          <input v-model.number="prepTime" type="number" min="0" class="input" />
-        </div>
-        <div class="form-group">
-          <label>Cook Time (m)</label>
-          <input v-model.number="cookTime" type="number" min="0" class="input" />
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Tags (comma-separated)</label>
-        <input v-model="tags" type="text" placeholder="dinner, quick, italian" class="input" />
-      </div>
-      <div class="form-group">
-        <label>Cover Image</label>
-        <input type="file" accept="image/*" @change="onImageUpload" />
-      </div>
-    </div>
-
-    <div class="editor-section">
-      <h3>Ingredients</h3>
-      <IngredientRowList v-model="ingredients" />
-    </div>
-
-    <div class="editor-section">
-      <h3>Instructions</h3>
-      <StepList v-model="steps" />
-    </div>
-
-    <div class="actions-row">
-      <button class="btn-primary" @click="save">Save Recipe</button>
-    </div>
-  </div>
+    <div class="form-group"><label for="recipe-tags">Tags</label><AutoComplete inputId="recipe-tags" v-model="tags" multiple :typeahead="false" fluid /></div>
+    <div class="form-group"><label for="recipe-cover">Cover image</label><input id="recipe-cover" type="file" accept="image/*" :disabled="busy" @change="onImageUpload"><img v-if="coverAssetId" :src="ss.url(`/api/assets/${coverAssetId}/file`)" alt="Recipe cover" class="cover-preview"></div>
+    <section><h3>Ingredients</h3><IngredientRowList v-model="ingredients" /></section>
+    <section><h3>Instructions</h3><StepList v-model="steps" /></section>
+    <div class="actions-row"><Button type="submit" label="Save Recipe" class="btn-primary" icon="pi pi-check" :loading="busy" :disabled="!title.trim()" /></div>
+  </form>
 </template>
-
 <style scoped>
-.recipe-edit-page { padding: 24px; max-width: 800px; margin: 0 auto; }
-.form-section { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-.form-group label { display: block; font-size: 0.85em; font-weight: 500; margin-bottom: 4px; }
-.input, .textarea { width: 100%; padding: 8px; border: 1px solid #d6d3d1; border-radius: 4px; box-sizing: border-box; }
-.form-row { display: flex; gap: 12px; }
-.editor-section { margin-bottom: 24px; }
-.actions-row { display: flex; justify-content: flex-end; margin-top: 24px; }
-.btn-primary { background: #0284c7; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 500; cursor: pointer; }
+.recipe-edit-page { padding: 1.5rem; max-width: 60rem; margin: 0 auto; display: grid; gap: 1rem; }
+.edit-top-bar, .actions-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }h2 { margin: 0; }
+.form-group { display: grid; gap: .5rem; }label { color: var(--p-text-muted-color); }
+.form-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; }.cover-preview { max-width: 15rem; max-height: 12rem; }
+.actions-row { justify-content: flex-end; }
+@media (max-width: 767px) { .form-row { grid-template-columns: 1fr 1fr; } }
 </style>

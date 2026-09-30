@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './helpers/state'
 
 test.describe('Live event stream', () => {
   test('a write made elsewhere reaches the open shell over SSE', async ({ page }) => {

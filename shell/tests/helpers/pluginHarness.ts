@@ -32,5 +32,6 @@ export function pluginHarness(api: SecretSauceUI['api']) {
   return { ...deps, pinia, memberStore, householdStore, notifications, ss: (id: string) => makeSecretSauceUI(id, deps), provide: {
     __SS_ROUTE_REGISTRY__: routes, __SS_SLOT_REGISTRY__: slots, __SS_INTENT_REGISTRY__: intents,
     __SS_SETTINGS_REGISTRY__: settings, __SS_THEME_REGISTRY__: themes,
+    __SS_API__: api, __SS_NAVIGATE__: (path: string) => { router.push(path) },
   } }
 }

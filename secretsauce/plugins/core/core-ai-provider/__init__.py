@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends
 import httpx
 from pydantic import BaseModel
 from secretsauce.plugins.context import PluginContext, current_ctx
+from secretsauce.errors import SecretSauceError
 from secretsauce.secrets import MASK_STRING
 
 PLUGIN = {
@@ -45,6 +46,11 @@ router = APIRouter(prefix="/api/x/core-ai-provider", tags=["core-ai-provider"])
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+class AIUnavailableError(SecretSauceError):
+    code = "unavailable"
+    status_code = 503
 
 
 class BudgetExceededError(RuntimeError):
@@ -134,10 +140,13 @@ class AIService:
         call_type: str = "generic",
         calling_plugin: str = "core-ai-provider",
     ) -> dict[str, Any] | str:
-        await self.check_budget()
         settings = await self.get_settings()
         provider = settings.get("provider", "gemini")
         model = settings.get("model", "gemini-3.8-flash")
+        key_name = {"gemini": "gemini_api_key", "openai": "openai_api_key", "openrouter": "openrouter_api_key"}.get(provider)
+        if key_name and not self._api_key(settings, key_name):
+            raise AIUnavailableError(f"AI isn’t set up yet: configure a key for {provider}")
+        await self.check_budget()
 
         if provider == "gemini":
             api_key = self._api_key(settings, "gemini_api_key")

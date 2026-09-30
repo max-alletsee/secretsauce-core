@@ -1,77 +1,17 @@
 <script setup lang="ts">
-import { inject } from 'vue'
-import { useMemberStore } from '@/stores/member'
-
-const memberStore = useMemberStore()
-const api = inject<any>('__SS_API__')
-
-function onMemberChange(e: Event) {
-  const target = e.target as HTMLSelectElement
-  const id = target.value
-  if (!id) {
-    memberStore.setCurrentMember(null)
-    localStorage.removeItem('secretsauce:current_member_id')
-    if (api && typeof api.setDefaultHeader === 'function') {
-      api.setDefaultHeader('x-actor-member', null)
-    }
-    return
-  }
-  memberStore.setCurrentMember(id)
-  localStorage.setItem('secretsauce:current_member_id', id)
-  if (api && typeof api.setDefaultHeader === 'function') {
-    api.setDefaultHeader('x-actor-member', id)
-  }
+import { computed } from 'vue'
+import { useSecretSauce } from '@secretsauce/ui'
+const ss = useSecretSauce()
+const options = computed(() => [{ id: '', name: 'All members' }, ...ss.store.members.value])
+function selectMember(id: string) {
+  ss.store.currentMember.value = ss.store.members.value.find(member => member.id === id) || null
+  try { if (id) localStorage.setItem('ss-current-member', id); else localStorage.removeItem('ss-current-member') }
+  catch { /* Device storage is optional; the live actor still changes. */ }
 }
 </script>
-
 <template>
-  <div class="ss-member-picker">
-    <div
-      v-if="memberStore.currentMember"
-      class="member-avatar"
-      :style="{ backgroundColor: memberStore.currentMember.avatar_color || '#0284c7' }"
-    >
-      {{ memberStore.currentMember.name ? memberStore.currentMember.name.slice(0, 1).toUpperCase() : '?' }}
-    </div>
-    <select
-      class="member-select"
-      :value="memberStore.currentMember?.id || ''"
-      @change="onMemberChange"
-    >
-      <option value="">All Members</option>
-      <option
-        v-for="m in memberStore.members"
-        :key="m.id"
-        :value="m.id"
-      >
-        {{ m.name }}
-      </option>
-    </select>
-  </div>
+  <div class="ss-member-picker"><Avatar v-if="ss.store.currentMember.value" class="member-avatar" :label="ss.store.currentMember.value.name.slice(0, 1).toUpperCase()" shape="circle" /><Select class="member-select" aria-label="Current member" :modelValue="ss.store.currentMember.value?.id || ''" :options="options" optionLabel="name" optionValue="id" @update:modelValue="selectMember" /></div>
 </template>
-
 <style scoped>
-.ss-member-picker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.member-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 13px;
-}
-.member-select {
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid #d6d3d1;
-  background: white;
-  font-size: 0.9em;
-}
+.ss-member-picker { display: flex; gap: .5rem; align-items: center; }.member-avatar { background: var(--p-primary-color); color: var(--p-primary-contrast-color); }.member-select { max-width: 12rem; }
 </style>

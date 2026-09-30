@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
-import { Slot } from '@secretsauce/ui'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { Slot, useSecretSauce } from '@secretsauce/ui'
 import MealSlot from '../components/MealSlot.vue'
 import AddEntryModal from '../components/AddEntryModal.vue'
 
-const api = inject<any>('__SS_API__', null)
-const intentRunner = inject<any>('__SS_INTENT__', null)
+const ss = useSecretSauce()
+const api = ss.api
+let loadRevision = 0
 
 const anchorDate = ref(new Date())
 const scheduleEntries = ref<any[]>([])
@@ -43,13 +44,15 @@ const fromDate = computed(() => days.value[0].date)
 const toDate = computed(() => days.value[days.value.length - 1].date)
 
 async function loadEntries() {
-  if (!api) return
+  const revision = ++loadRevision
   try {
-    const res = await api.get(`/api/schedule?from=${fromDate.value}&to=${toDate.value}`)
-    scheduleEntries.value = Array.isArray(res) ? res : []
+    const query = `?from=${fromDate.value}&to=${toDate.value}`
+    const [entries, journal] = await Promise.all([api.get<any[]>(`/api/schedule${query}`), api.get<any[]>(`/api/journal${query}`)])
+    if (revision !== loadRevision) return
+    const cooked = new Set(journal.filter(row => row.status === 'cooked').map(row => row.schedule_entry_id))
+    scheduleEntries.value = entries.map(entry => ({ ...entry, is_cooked: cooked.has(entry.id) }))
   } catch {
-    // offline or empty
-    scheduleEntries.value = []
+    if (revision === loadRevision) scheduleEntries.value = []
   }
 }
 
@@ -71,25 +74,10 @@ function resetToToday() {
   loadEntries()
 }
 
-function handleAdd(payload: { date: string; mealType: string }) {
-  if (intentRunner) {
-    intentRunner('entry:create', payload).catch(() => {
-      activeModal.value = payload
-    })
-  } else {
-    activeModal.value = payload
-  }
-}
-
-function handleInteract(entry: any) {
-  if (intentRunner) {
-    intentRunner('entry:interact', { entry })
-  }
-}
-
-onMounted(() => {
-  loadEntries()
-})
+function handleAdd(payload: { date: string; mealType: string }) { activeModal.value = payload }
+const stops = ['schedule:created', 'schedule:updated', 'schedule:deleted', 'journal:created', 'journal:updated', 'journal:deleted'].map(name => ss.on(name, loadEntries))
+onMounted(loadEntries)
+onBeforeUnmount(() => { ++loadRevision; stops.forEach(stop => { if (typeof stop === 'function') stop() }) })
 </script>
 
 <template>
@@ -125,7 +113,7 @@ onMounted(() => {
               :entries="entriesFor(d.date, meal)"
               :compact="d.isPast"
               @add="handleAdd"
-              @interact="handleInteract"
+              @changed="loadEntries"
             />
           </div>
 

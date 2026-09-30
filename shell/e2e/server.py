@@ -3,6 +3,10 @@ import sys
 import shutil
 import tempfile
 import asyncio
+import json
+import re
+from contextlib import asynccontextmanager
+from types import MethodType
 from pathlib import Path
 
 # Add project root to sys.path
@@ -11,12 +15,52 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from secretsauce.boot import boot
 from secretsauce.auth import hash_passphrase
+from secretsauce.app import build_app
 
 DATA_DIR = PROJECT_ROOT / ".e2e_data"
 if DATA_DIR.exists():
     shutil.rmtree(DATA_DIR, ignore_errors=True)
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 os.environ["SECRETSAUCE_DATA_DIR"] = str(DATA_DIR)
+# Never let a developer's real credential turn a browser test into a paid request.
+for variable in ("GEMINI_API_KEY", "OPENAI_API_KEY", "OPENROUTER_API_KEY"):
+    os.environ.pop(variable, None)
+
+
+async def deterministic_completion(self, base_url, api_key, model, schema, prompt, images=None):
+    """Replace only the outbound paid helper, not routes, validation or persistence."""
+    if schema.__name__ == "RecipeDraftSchema":
+        result = {"title": "Chickpea lemon soup", "description": "A bright weeknight soup", "servings": 3,
+                  "language": "en", "ingredients": [{"name": "Chickpeas", "quantity": 400, "unit": "g"}],
+                  "steps": [{"instruction": "Simmer for ten minutes."}], "tags": ["soup"]}
+    elif schema.__name__ == "RecipeTranslationSchema":
+        language = re.search(r"to language '([^']+)'", prompt).group(1)
+        result = {"title": "Pasta traducida" if language == "es" else f"Translated pasta ({language})",
+                  "ingredients": [{"name": "Tomates", "quantity": 400, "unit": "g"}],
+                  "steps": [{"instruction": "Cocinar la pasta."}]}
+    elif schema.__name__ == "MealPlanSchema":
+        library = json.loads(re.search(r"Available recipes in library: ([^\n]+)", prompt).group(1))
+        result = {"title": "Weeknight suggestions", "suggestions": [
+            {"recipe_id": library[0]["id"], "recipe_title": library[0]["title"], "meal_type": "dinner",
+             "reasoning": "Easy weeknight meal", "confidence": 0.95}]} if library else {"suggestions": []}
+    else:
+        raise AssertionError(f"Unexpected paid AI schema: {schema}")
+    return schema.model_validate(result).model_dump(), 12, 8
+
+
+def build_e2e_app():
+    app = build_app()
+    production_lifespan = app.router.lifespan_context
+
+    @asynccontextmanager
+    async def lifespan(app):
+        async with production_lifespan(app):
+            service = app.state.kernel.services.get("core-ai-provider")
+            service._complete_openai_compatible = MethodType(deterministic_completion, service)
+            yield
+
+    app.router.lifespan_context = lifespan
+    return app
 
 async def seed_e2e_data():
     kernel = await boot(DATA_DIR)
@@ -31,6 +75,9 @@ async def seed_e2e_data():
         ],
     })
     await kernel.household.set_passphrase(pass_hash)
+    await kernel.services.get("core-ai-provider").update_settings({
+        "provider": "openai", "model": "gpt-4o-mini", "openai_api_key": "e2e-test-key",
+    })
 
     alex = await kernel.members.create_member({
         "name": "Alex",
@@ -70,9 +117,8 @@ if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8998
     print(f"Starting E2E server on port {port}...")
     uvicorn.run(
-        "secretsauce.app:build_app",
+        build_e2e_app(),
         host="127.0.0.1",
         port=port,
-        factory=True,
         log_level="info",
     )

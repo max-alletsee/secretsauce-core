@@ -1,172 +1,181 @@
-import { defineComponent as f, openBlock as l, createElementBlock as u, createCommentVNode as m, inject as k, ref as g, onMounted as h, createElementVNode as d, Fragment as b, renderList as j, toDisplayString as p, createVNode as S, unref as C } from "vue";
-import { Slot as D } from "@secretsauce/ui";
-const $ = {
-  key: 0,
-  class: "cooked-checkmark",
-  title: "Cooked"
-}, x = /* @__PURE__ */ f({
+import { defineComponent as h, resolveComponent as m, openBlock as s, createBlock as k, createCommentVNode as _, ref as y, onMounted as S, createElementBlock as p, createElementVNode as f, withCtx as c, createTextVNode as v, toDisplayString as u, Fragment as j, renderList as M, createVNode as D, unref as w } from "vue";
+import { useSecretSauce as T, Slot as N } from "@secretsauce/ui";
+const $ = /* @__PURE__ */ h({
   __name: "CookedBadge",
   props: {
     context: {}
   },
-  setup(e) {
-    return (i, o) => {
-      var t, s;
-      return (s = (t = e.context) == null ? void 0 : t.entry) != null && s.is_cooked ? (l(), u("span", $, " ✓ ")) : m("v-if", !0);
+  setup(o) {
+    return (t, e) => {
+      var a, n;
+      const r = m("Tag");
+      return (n = (a = o.context) == null ? void 0 : a.entry) != null && n.is_cooked ? (s(), k(r, {
+        key: 0,
+        value: "Cooked",
+        icon: "pi pi-check",
+        severity: "success",
+        title: "Cooked"
+      })) : _("v-if", !0);
     };
   }
-}), v = (e, i) => {
-  const o = e.__vccOpts || e;
-  for (const [t, s] of i)
-    o[t] = s;
-  return o;
-}, J = /* @__PURE__ */ v(x, [["__scopeId", "data-v-2331e973"]]), M = { class: "journal-page" }, w = {
-  key: 0,
-  class: "journal-list"
-}, I = { class: "entry-header" }, B = { class: "entry-date" }, L = { class: "entry-servings" }, N = { class: "entry-body" }, P = { class: "recipe-title" }, A = {
-  key: 0,
-  class: "entry-notes"
-}, V = { class: "entry-footer" }, q = {
+}), B = { class: "journal-page" }, J = { class: "journal-list" }, V = { key: 1 }, L = {
   key: 1,
   class: "empty-hint"
-}, E = /* @__PURE__ */ f({
+}, P = /* @__PURE__ */ h({
   __name: "JournalPage",
-  setup(e) {
-    const i = k("__SS_API__", null), o = g([]);
-    function t(r) {
-      const a = r.getFullYear(), n = String(r.getMonth() + 1).padStart(2, "0"), c = String(r.getDate()).padStart(2, "0");
-      return `${a}-${n}-${c}`;
+  setup(o) {
+    const t = T(), e = y([]), r = y("");
+    function a(n) {
+      return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
     }
-    async function s() {
-      if (i)
-        try {
-          const r = /* @__PURE__ */ new Date(), a = /* @__PURE__ */ new Date();
-          a.setDate(r.getDate() - 30);
-          const n = await i.get(`/api/journal?from=${t(a)}&to=${t(r)}`);
-          o.value = Array.isArray(n) ? n : [];
-        } catch {
-          o.value = [];
-        }
-    }
-    return h(() => {
-      s();
-    }), (r, a) => (l(), u("div", M, [
-      a[0] || (a[0] = d(
-        "h2",
-        null,
-        "Cooking Journal",
-        -1
-        /* CACHED */
-      )),
-      o.value.length ? (l(), u("div", w, [
-        (l(!0), u(
-          b,
+    return S(async () => {
+      const n = /* @__PURE__ */ new Date(), l = /* @__PURE__ */ new Date();
+      l.setDate(n.getDate() - 30);
+      try {
+        e.value = await t.api.get("/api/journal", { from: a(l), to: a(n) });
+      } catch (d) {
+        r.value = (d == null ? void 0 : d.message) || "Could not load cooking journal";
+      }
+    }), (n, l) => {
+      const d = m("Message"), b = m("Tag"), C = m("Card");
+      return s(), p("div", B, [
+        l[0] || (l[0] = f(
+          "h2",
           null,
-          j(o.value, (n) => {
-            var c;
-            return l(), u("div", {
-              key: n.id,
-              class: "journal-entry-card"
-            }, [
-              d("div", I, [
-                d(
-                  "span",
-                  B,
-                  p(n.date) + " (" + p(n.meal_type || "meal") + ")",
-                  1
-                  /* TEXT */
-                ),
-                d(
-                  "span",
-                  L,
-                  p(n.servings) + " servings",
-                  1
-                  /* TEXT */
-                )
-              ]),
-              d("div", N, [
-                d(
-                  "h4",
-                  P,
-                  p(((c = n.recipe) == null ? void 0 : c.title) || n.title || "Cooked meal"),
-                  1
-                  /* TEXT */
-                ),
-                n.notes ? (l(), u(
-                  "p",
-                  A,
-                  p(n.notes),
-                  1
-                  /* TEXT */
-                )) : m("v-if", !0)
-              ]),
-              d("div", V, [
-                S(C(D), {
-                  name: "journal.entry.footer",
-                  context: { entry: n }
-                }, null, 8, ["context"])
-              ])
-            ]);
-          }),
-          128
-          /* KEYED_FRAGMENT */
-        ))
-      ])) : (l(), u("p", q, "No meals recorded in journal yet."))
-    ]));
+          "Cooking Journal",
+          -1
+          /* CACHED */
+        )),
+        r.value ? (s(), k(d, {
+          key: 0,
+          severity: "error"
+        }, {
+          default: c(() => [
+            v(
+              u(r.value),
+              1
+              /* TEXT */
+            )
+          ]),
+          _: 1
+          /* STABLE */
+        })) : _("v-if", !0),
+        f("div", J, [
+          (s(!0), p(
+            j,
+            null,
+            M(e.value, (i) => (s(), k(
+              C,
+              {
+                key: i.id,
+                class: "journal-entry-card"
+              },
+              {
+                title: c(() => {
+                  var g;
+                  return [
+                    v(
+                      u(((g = i.recipe) == null ? void 0 : g.title) || i.title || "Cooked meal"),
+                      1
+                      /* TEXT */
+                    )
+                  ];
+                }),
+                subtitle: c(() => [
+                  v(
+                    u(i.date) + " · " + u(i.meal_type || "Meal"),
+                    1
+                    /* TEXT */
+                  )
+                ]),
+                content: c(() => [
+                  i.servings_cooked != null ? (s(), k(b, {
+                    key: 0,
+                    value: `${i.servings_cooked} servings`,
+                    severity: "secondary"
+                  }, null, 8, ["value"])) : _("v-if", !0),
+                  i.notes ? (s(), p(
+                    "p",
+                    V,
+                    u(i.notes),
+                    1
+                    /* TEXT */
+                  )) : _("v-if", !0)
+                ]),
+                footer: c(() => [
+                  D(w(N), {
+                    name: "journal.entry.footer",
+                    context: { entry: i }
+                  }, null, 8, ["context"])
+                ]),
+                _: 2
+                /* DYNAMIC */
+              },
+              1024
+              /* DYNAMIC_SLOTS */
+            ))),
+            128
+            /* KEYED_FRAGMENT */
+          ))
+        ]),
+        !e.value.length && !r.value ? (s(), p("p", L, "No meals recorded in journal yet.")) : _("v-if", !0)
+      ]);
+    };
   }
-}), F = /* @__PURE__ */ v(E, [["__scopeId", "data-v-201a14da"]]);
-function T(e) {
-  var i;
-  e.route({
-    path: "/journal",
-    component: F,
-    nav: { label: "Journal", icon: "book-open", order: 15 }
-  }), typeof e.nav == "function" && e.nav({ label: "Journal", icon: "book-open", path: "/journal", order: 15 }), e.slot("timeline.entry.badge", J, { order: 10 }), (i = e.intent) != null && i.provider && (e.intent.provider({
+}), x = (o, t) => {
+  const e = o.__vccOpts || o;
+  for (const [r, a] of t)
+    e[r] = a;
+  return e;
+}, A = /* @__PURE__ */ x(P, [["__scopeId", "data-v-ea38eb93"]]);
+function I(o) {
+  o.route({ path: "/journal", component: A, nav: { label: "Journal", icon: "history", order: 15 } }), o.slot("timeline.entry.badge", $, { order: 10 }), o.intent.provider({
     hub: "entry:interact",
     id: "mark-cooked",
-    title: "Mark as Cooked",
+    title: "Mark as cooked",
+    icon: "check",
     order: 20,
     kind: "headless",
-    execute: async (o) => {
-      var n, c, _, y;
-      const t = o == null ? void 0 : o.entry;
-      if (!t) return;
-      const s = crypto.randomUUID(), r = (c = (n = e.store) == null ? void 0 : n.currentMember) == null ? void 0 : c.value, a = {
-        id: s,
-        date: t.date,
-        meal_type: t.meal_type,
-        recipe_id: t.recipe_id,
-        servings: t.servings_override || 2,
-        assigned_cook_id: t.assigned_cook_id || (r == null ? void 0 : r.id),
-        schedule_entry_id: t.id
-      };
-      (_ = e.outbox) != null && _.enqueue ? await e.outbox.enqueue({
-        method: "POST",
-        url: "/api/journal",
-        body: a
-      }) : (y = e.api) != null && y.post && await e.api.post("/api/journal", a), t.is_cooked = !0, typeof e.notify == "function" && e.notify({ level: "success", message: "Meal marked as cooked!" });
+    isAvailable: (t) => !!(t != null && t.entry),
+    isDisabled: (t) => {
+      var e;
+      return (e = t == null ? void 0 : t.entry) != null && e.is_cooked ? "Already marked as cooked" : !1;
+    },
+    execute: async (t) => {
+      var r, a;
+      const e = t.entry;
+      await o.outbox.enqueue({ method: "POST", path: "/api/journal", body: {
+        id: crypto.randomUUID(),
+        date: e.date,
+        meal_type: e.meal_type,
+        recipe_id: e.recipe_id,
+        title: ((r = e.recipe) == null ? void 0 : r.title) || e.title,
+        servings_cooked: e.servings_override || 2,
+        cooked_by_member_id: e.assigned_cook_id || ((a = o.store.currentMember.value) == null ? void 0 : a.id),
+        schedule_entry_id: e.id,
+        status: "cooked"
+      } }), e.is_cooked = !0, o.notify({ level: "success", message: "Meal marked as cooked!" });
     }
-  }), e.intent.provider({
+  }), o.intent.provider({
     hub: "entry:interact",
     id: "skip",
-    title: "Skip Meal",
+    title: "Skip meal",
+    icon: "forward",
     order: 30,
     kind: "headless",
-    execute: async (o) => {
-      const t = o == null ? void 0 : o.entry;
-      t && (t.is_skipped = !0, typeof e.notify == "function" && e.notify({ level: "info", message: "Meal marked as skipped." }));
+    execute: (t) => {
+      t != null && t.entry && (t.entry.is_skipped = !0), o.notify({ level: "info", message: "Meal marked as skipped." });
     }
-  }), e.intent.provider({
+  }), o.intent.provider({
     hub: "entry:interact",
     id: "log-leftover",
-    title: "Log Leftovers",
+    title: "Log leftovers",
+    icon: "box",
     order: 40,
     kind: "headless",
-    execute: async (o) => {
-      typeof e.notify == "function" && e.notify({ level: "info", message: "Leftovers recorded for upcoming meals." });
-    }
-  }));
+    execute: () => o.notify({ level: "info", message: "Leftovers recorded for upcoming meals." })
+  });
 }
 export {
-  T as default
+  I as default
 };

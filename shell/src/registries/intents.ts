@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, markRaw } from 'vue'
 import type { IntentHub, IntentProvider } from '@secretsauce/ui'
 
 export function createIntentRegistry() {
@@ -15,7 +15,7 @@ export function createIntentRegistry() {
       console.error(`Invalid intent provider ${pluginId}/${provider.id}: expected ui/component or headless/execute`)
       return
     }
-    providers.value.push({ ...provider, pluginId })
+    providers.value.push({ ...provider, ...(provider.component ? { component: markRaw(provider.component) } : {}), pluginId })
   }
 
   function unregister(pluginId: string) {

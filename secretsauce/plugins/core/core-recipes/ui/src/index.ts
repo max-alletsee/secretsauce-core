@@ -14,7 +14,8 @@ export default function activate(ss: any) {
   ss.intent.provider({
     hub: 'recipe:create',
     id: 'manual',
-    title: 'Manual Recipe',
+    title: 'Blank recipe',
+    icon: 'plus',
     order: 100,
     kind: 'headless',
     execute: () => {

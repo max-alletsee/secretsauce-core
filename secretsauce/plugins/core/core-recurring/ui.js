@@ -1,103 +1,113 @@
-import { defineComponent as _, ref as f, onMounted as v, openBlock as t, createElementBlock as s, createElementVNode as e, Fragment as x, renderList as k, toDisplayString as l } from "vue";
-const b = { class: "p-4 space-y-4" }, h = {
-  key: 0,
-  class: "text-surface-500"
-}, w = {
-  key: 1,
-  class: "text-surface-500"
-}, M = {
-  key: 2,
-  class: "space-y-2"
-}, S = { class: "font-medium text-surface-800 dark:text-surface-100" }, R = { class: "ml-2 text-sm text-surface-500" }, z = { class: "ml-1 text-sm font-semibold" }, C = ["onClick"], D = /* @__PURE__ */ _({
+import { defineComponent as w, ref as d, onMounted as x, resolveComponent as y, openBlock as r, createElementBlock as c, createVNode as _, createBlock as m, withCtx as b, createTextVNode as M, toDisplayString as g, createCommentVNode as N, Fragment as B, renderList as R, createElementVNode as z } from "vue";
+import { useSecretSauce as V } from "@secretsauce/ui";
+const D = { class: "recurring-settings" }, T = { key: 2 }, $ = { key: 3 }, E = /* @__PURE__ */ w({
   __name: "RecurringSettings",
-  props: {
-    ss: {}
-  },
-  setup(i) {
-    const a = i, c = f([]), o = f(!0), p = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    function y(n) {
-      return p[n] || `Day ${n}`;
-    }
-    async function u() {
-      o.value = !0;
+  setup(s) {
+    const n = V(), o = d([]), i = d(!0), e = d(!1), a = d(""), f = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    async function p() {
+      i.value = !0;
       try {
-        c.value = await a.ss.api.get("/api/x/core-recurring/rules");
+        o.value = await n.api.get("/api/x/core-recurring/rules");
+      } catch (t) {
+        a.value = (t == null ? void 0 : t.message) || "Could not load recurring rules";
       } finally {
-        o.value = !1;
+        i.value = !1;
       }
     }
-    async function g(n) {
-      await a.ss.api.delete(`/api/x/core-recurring/rules/${n}`), await u();
+    async function k(t) {
+      if (!e.value) {
+        e.value = !0, a.value = "";
+        try {
+          await n.api.delete(`/api/x/core-recurring/rules/${t}`), await p();
+        } catch (u) {
+          a.value = (u == null ? void 0 : u.message) || "Could not delete rule";
+        } finally {
+          e.value = !1;
+        }
+      }
     }
-    async function m() {
-      a.ss.notify({ level: "info", message: "Materializing recurring meals..." }), await a.ss.api.post("/api/x/core-recurring/materialize", {}), a.ss.notify({ level: "success", message: "Schedule updated." });
+    async function h() {
+      if (!e.value) {
+        e.value = !0, a.value = "";
+        try {
+          await n.api.post("/api/x/core-recurring/materialize", {}), n.notify({ level: "success", message: "Schedule updated." });
+        } catch (t) {
+          a.value = (t == null ? void 0 : t.message) || "Could not materialize recurring meals";
+        } finally {
+          e.value = !1;
+        }
+      }
     }
-    return v(() => {
-      u();
-    }), (n, d) => (t(), s("div", b, [
-      e("div", { class: "flex items-center justify-between" }, [
-        d[0] || (d[0] = e(
-          "h3",
-          { class: "text-lg font-semibold text-surface-900 dark:text-surface-0" },
-          "Recurring Meals",
-          -1
-          /* CACHED */
-        )),
-        e("button", {
-          class: "btn btn-secondary",
-          onClick: m
-        }, "Materialize Now")
-      ]),
-      o.value ? (t(), s("div", h, "Loading rules...")) : c.value.length === 0 ? (t(), s("div", w, "No recurring rules configured.")) : (t(), s("div", M, [
-        (t(!0), s(
-          x,
-          null,
-          k(c.value, (r) => (t(), s("div", {
-            key: r.id,
-            class: "flex items-center justify-between p-3 border rounded border-surface-200 dark:border-surface-700"
-          }, [
-            e("div", null, [
-              e(
+    return x(p), (t, u) => {
+      const v = y("Button"), C = y("Message"), S = y("ProgressSpinner");
+      return r(), c("div", D, [
+        _(v, {
+          label: "Materialize Now",
+          severity: "secondary",
+          outlined: "",
+          loading: e.value,
+          onClick: h
+        }, null, 8, ["loading"]),
+        a.value ? (r(), m(C, {
+          key: 0,
+          severity: "error"
+        }, {
+          default: b(() => [
+            M(
+              g(a.value),
+              1
+              /* TEXT */
+            )
+          ]),
+          _: 1
+          /* STABLE */
+        })) : N("v-if", !0),
+        i.value ? (r(), m(S, {
+          key: 1,
+          "aria-label": "Loading recurring rules"
+        })) : o.value.length ? (r(), c("ul", $, [
+          (r(!0), c(
+            B,
+            null,
+            R(o.value, (l) => (r(), c("li", {
+              key: l.id
+            }, [
+              z(
                 "span",
-                S,
-                l(y(r.weekday)),
+                null,
+                g(f[l.weekday] || `Day ${l.weekday}`) + " · " + g(l.meal_type) + " · " + g(l.recipe_title),
                 1
                 /* TEXT */
               ),
-              e(
-                "span",
-                R,
-                l(r.meal_type) + ":",
-                1
-                /* TEXT */
-              ),
-              e(
-                "span",
-                z,
-                l(r.recipe_title),
-                1
-                /* TEXT */
-              )
-            ]),
-            e("button", {
-              class: "btn btn-danger",
-              onClick: (E) => g(r.id)
-            }, "Delete", 8, C)
-          ]))),
-          128
-          /* KEYED_FRAGMENT */
-        ))
-      ]))
-    ]));
+              _(v, {
+                label: "Delete",
+                icon: "pi pi-trash",
+                text: "",
+                severity: "danger",
+                disabled: e.value,
+                onClick: (P) => k(l.id)
+              }, null, 8, ["disabled", "onClick"])
+            ]))),
+            128
+            /* KEYED_FRAGMENT */
+          ))
+        ])) : (r(), c("p", T, "No recurring rules configured."))
+      ]);
+    };
   }
-});
-function $(i) {
-  i.settings.section({
+}), F = (s, n) => {
+  const o = s.__vccOpts || s;
+  for (const [i, e] of n)
+    o[i] = e;
+  return o;
+}, L = /* @__PURE__ */ F(E, [["__scopeId", "data-v-0d279ab5"]]);
+function W(s) {
+  s.settings.section({
     id: "core-recurring",
     title: "Recurring Meals",
-    component: D
+    component: L
   });
 }
 export {
-  $ as default
+  W as default
 };

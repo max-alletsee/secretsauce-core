@@ -1,83 +1,111 @@
-import { defineComponent as g, inject as f, ref as m, onMounted as b, openBlock as R, createElementBlock as S, createElementVNode as d, normalizeClass as y, toDisplayString as V } from "vue";
-const $ = { class: "vote-rating" }, j = { class: "net-score" }, k = /* @__PURE__ */ g({
+import { defineComponent as B, ref as b, watch as j, resolveComponent as w, resolveDirective as D, openBlock as _, createElementBlock as g, withDirectives as C, createVNode as M, unref as f, createElementVNode as N, toDisplayString as V, createBlock as S, withCtx as I, createTextVNode as R, createCommentVNode as $ } from "vue";
+import { useSecretSauce as q } from "@secretsauce/ui";
+const z = { class: "vote-rating" }, E = {
+  class: "net-score",
+  "aria-live": "polite"
+}, O = /* @__PURE__ */ B({
   __name: "VoteRating",
   props: {
     context: {}
   },
-  setup(c) {
-    const i = c, n = f("__SS_API__", null), a = f("__SS_CURRENT_MEMBER__", null), o = m(0), s = m(null);
+  setup(i) {
+    const v = i, e = q(), u = b(0), r = b(null), m = b(!1), p = b("");
+    let y = 0;
     async function x() {
-      var t, e, l;
-      if (!(!n || !((e = (t = i.context) == null ? void 0 : t.entry) != null && e.id)))
+      var s, n, l, c;
+      const o = (n = (s = v.context) == null ? void 0 : s.entry) == null ? void 0 : n.id, t = (l = e.store.currentMember.value) == null ? void 0 : l.id, a = ++y;
+      if (r.value = null, !!o)
         try {
-          const r = await n.get(`/api/x/core-ratings?journal_id=${i.context.entry.id}`);
-          o.value = r.net_score ?? 0;
-          const u = (l = a == null ? void 0 : a.value) == null ? void 0 : l.id;
-          if (u && Array.isArray(r.scores)) {
-            const _ = r.scores.find((v) => v.member_id === u);
-            _ && (s.value = _.score);
-          }
-        } catch {
+          const d = await e.api.get("/api/x/core-ratings", { journal_id: o });
+          if (a !== y) return;
+          u.value = d.net_score, r.value = ((c = d.scores.find((k) => k.member_id === t)) == null ? void 0 : c.score) ?? null;
+        } catch (d) {
+          a === y && (p.value = (d == null ? void 0 : d.message) || "Could not load ratings");
         }
     }
-    async function p(t) {
-      var l, r, u;
-      if (!n || !((r = (l = i.context) == null ? void 0 : l.entry) != null && r.id)) return;
-      const e = ((u = a == null ? void 0 : a.value) == null ? void 0 : u.id) || "anonymous";
-      if (s.value === t)
-        n.delete && await n.delete(`/api/x/core-ratings?journal_id=${i.context.entry.id}&member_id=${e}`), s.value = null, o.value -= t;
-      else {
-        const _ = s.value, v = await n.put("/api/x/core-ratings", {
-          journal_id: i.context.entry.id,
-          member_id: e,
-          score: t
-        });
-        s.value = t, v && v.net_score !== void 0 ? o.value = v.net_score : o.value += _ ? t * 2 : t;
+    j(() => {
+      var o, t, a;
+      return [(t = (o = v.context) == null ? void 0 : o.entry) == null ? void 0 : t.id, (a = e.store.currentMember.value) == null ? void 0 : a.id];
+    }, x, { immediate: !0 });
+    async function h(o) {
+      var s, n, l;
+      const t = (n = (s = v.context) == null ? void 0 : s.entry) == null ? void 0 : n.id, a = (l = e.store.currentMember.value) == null ? void 0 : l.id;
+      if (!(!t || !a || m.value)) {
+        m.value = !0, p.value = "";
+        try {
+          r.value === o ? await e.api.delete("/api/x/core-ratings", { journal_id: t, member_id: a }) : await e.api.put("/api/x/core-ratings", { journal_id: t, member_id: a, score: o }), await x();
+        } catch (c) {
+          p.value = (c == null ? void 0 : c.message) || "Could not save rating";
+        } finally {
+          m.value = !1;
+        }
       }
     }
-    return b(() => {
-      x();
-    }), (t, e) => (R(), S("div", $, [
-      d(
-        "button",
-        {
-          class: y(["vote-btn upvote-btn", { active: s.value === 1 }]),
-          title: "Upvote",
-          onClick: e[0] || (e[0] = (l) => p(1))
-        },
-        " 👍 ",
-        2
-        /* CLASS */
-      ),
-      d(
-        "span",
-        j,
-        V(o.value > 0 ? `+${o.value}` : o.value),
-        1
-        /* TEXT */
-      ),
-      d(
-        "button",
-        {
-          class: y(["vote-btn downvote-btn", { active: s.value === -1 }]),
-          title: "Downvote",
-          onClick: e[1] || (e[1] = (l) => p(-1))
-        },
-        " 👎 ",
-        2
-        /* CLASS */
-      )
-    ]));
+    return (o, t) => {
+      const a = w("Button"), s = w("Message"), n = D("tooltip");
+      return _(), g("div", z, [
+        C((_(), g("span", null, [
+          M(a, {
+            class: "upvote-btn",
+            icon: "pi pi-thumbs-up",
+            "aria-label": "Upvote",
+            "aria-pressed": r.value === 1,
+            outlined: r.value !== 1,
+            size: "small",
+            disabled: m.value || !f(e).store.currentMember.value,
+            onClick: t[0] || (t[0] = (l) => h(1))
+          }, null, 8, ["aria-pressed", "outlined", "disabled"])
+        ])), [
+          [n, f(e).store.currentMember.value ? "" : "Choose a member to rate this meal"]
+        ]),
+        N(
+          "span",
+          E,
+          V(u.value > 0 ? `+${u.value}` : u.value),
+          1
+          /* TEXT */
+        ),
+        C((_(), g("span", null, [
+          M(a, {
+            class: "downvote-btn",
+            icon: "pi pi-thumbs-down",
+            "aria-label": "Downvote",
+            "aria-pressed": r.value === -1,
+            outlined: r.value !== -1,
+            severity: "secondary",
+            size: "small",
+            disabled: m.value || !f(e).store.currentMember.value,
+            onClick: t[1] || (t[1] = (l) => h(-1))
+          }, null, 8, ["aria-pressed", "outlined", "disabled"])
+        ])), [
+          [n, f(e).store.currentMember.value ? "" : "Choose a member to rate this meal"]
+        ]),
+        p.value ? (_(), S(s, {
+          key: 0,
+          severity: "error"
+        }, {
+          default: I(() => [
+            R(
+              V(p.value),
+              1
+              /* TEXT */
+            )
+          ]),
+          _: 1
+          /* STABLE */
+        })) : $("v-if", !0)
+      ]);
+    };
   }
-}), w = (c, i) => {
-  const n = c.__vccOpts || c;
-  for (const [a, o] of i)
-    n[a] = o;
-  return n;
-}, C = /* @__PURE__ */ w(k, [["__scopeId", "data-v-97366ee4"]]);
-function I(c) {
-  c.slot("journal.entry.footer", C, { order: 10 });
+}), T = (i, v) => {
+  const e = i.__vccOpts || i;
+  for (const [u, r] of v)
+    e[u] = r;
+  return e;
+}, U = /* @__PURE__ */ T(O, [["__scopeId", "data-v-9b5a6e58"]]);
+function G(i) {
+  i.slot("journal.entry.footer", U, { order: 10 });
 }
 export {
-  I as default
+  G as default
 };

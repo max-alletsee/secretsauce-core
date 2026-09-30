@@ -1,64 +1,72 @@
-import { defineComponent as N, openBlock as s, createElementBlock as l, createElementVNode as t, toDisplayString as p, createVNode as M, unref as x, createCommentVNode as y, normalizeClass as T, Fragment as k, renderList as D, createBlock as Q, inject as U, ref as b, onMounted as j, withModifiers as q, withDirectives as B, vModelText as O, createTextVNode as F, computed as A } from "vue";
-import { Slot as V } from "@secretsauce/ui";
-const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
+import { defineComponent as j, resolveComponent as q, openBlock as s, createBlock as E, withCtx as Q, createElementVNode as e, toDisplayString as h, createVNode as I, unref as U, createElementBlock as d, createCommentVNode as y, normalizeClass as w, Fragment as k, renderList as A, inject as G, ref as g, onMounted as Y, withModifiers as H, withDirectives as O, vModelText as z, createTextVNode as F, computed as B, onBeforeUnmount as J } from "vue";
+import { Slot as V, IntentTrigger as K, useSecretSauce as W } from "@secretsauce/ui";
+const X = { class: "card-header" }, Z = { class: "card-title" }, ee = {
   key: 0,
   class: "card-servings"
-}, H = {
+}, te = {
   key: 1,
   class: "card-note"
-}, J = /* @__PURE__ */ N({
+}, ne = /* @__PURE__ */ j({
   __name: "ScheduleCard",
   props: {
     entry: {}
   },
   emits: ["interact"],
-  setup(e, { emit: v }) {
-    const a = v;
-    return (r, o) => {
-      var i;
-      return s(), l("div", {
+  setup(t, { emit: p }) {
+    const n = p;
+    return (i, a) => {
+      const u = q("Button");
+      return s(), E(u, {
         class: "schedule-card",
-        onClick: o[0] || (o[0] = (m) => a("interact", e.entry))
-      }, [
-        t("div", z, [
-          t(
-            "span",
-            Y,
-            p(((i = e.entry.recipe) == null ? void 0 : i.title) || e.entry.title || "Planned Meal"),
-            1
-            /* TEXT */
-          ),
-          M(x(V), {
-            name: "timeline.entry.badge",
-            context: { entry: e.entry }
-          }, null, 8, ["context"])
-        ]),
-        e.entry.servings_override ? (s(), l(
-          "div",
-          G,
-          p(e.entry.servings_override) + " servings ",
-          1
-          /* TEXT */
-        )) : y("v-if", !0),
-        e.entry.note ? (s(), l(
-          "div",
-          H,
-          p(e.entry.note),
-          1
-          /* TEXT */
-        )) : y("v-if", !0)
-      ]);
+        variant: "text",
+        onClick: a[0] || (a[0] = (o) => n("interact", o))
+      }, {
+        default: Q(() => {
+          var o;
+          return [
+            e("div", X, [
+              e(
+                "span",
+                Z,
+                h(((o = t.entry.recipe) == null ? void 0 : o.title) || t.entry.title || "Planned Meal"),
+                1
+                /* TEXT */
+              ),
+              I(U(V), {
+                name: "timeline.entry.badge",
+                context: { entry: t.entry }
+              }, null, 8, ["context"])
+            ]),
+            t.entry.servings_override ? (s(), d(
+              "div",
+              ee,
+              h(t.entry.servings_override) + " servings",
+              1
+              /* TEXT */
+            )) : y("v-if", !0),
+            t.entry.note ? (s(), d(
+              "div",
+              te,
+              h(t.entry.note),
+              1
+              /* TEXT */
+            )) : y("v-if", !0)
+          ];
+        }),
+        _: 1
+        /* STABLE */
+      });
     };
   }
-}), P = (e, v) => {
-  const a = e.__vccOpts || e;
-  for (const [r, o] of v)
-    a[r] = o;
-  return a;
-}, K = /* @__PURE__ */ P(J, [["__scopeId", "data-v-77c6af5a"]]), W = { class: "slot-header" }, X = { class: "slot-name" }, Z = { class: "entries-list" }, ee = {
+}), L = (t, p) => {
+  const n = t.__vccOpts || t;
+  for (const [i, a] of p)
+    n[i] = a;
+  return n;
+}, ae = /* @__PURE__ */ L(ne, [["__scopeId", "data-v-6dd69cdc"]]), se = { class: "slot-header" }, ie = { class: "slot-name" }, oe = { class: "entries-list" }, le = {
   key: 0,
   class: "empty-slot"
-}, te = /* @__PURE__ */ N({
+}, ce = /* @__PURE__ */ j({
   __name: "MealSlot",
   props: {
     mealType: {},
@@ -66,272 +74,293 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
     entries: {},
     compact: { type: Boolean }
   },
-  emits: ["add", "interact"],
-  setup(e, { emit: v }) {
-    const a = v;
-    return (r, o) => (s(), l(
-      "div",
-      {
-        class: T(["meal-slot", { "is-compact": e.compact }])
-      },
-      [
-        t("div", W, [
-          t(
-            "span",
-            X,
-            p(e.mealType),
-            1
-            /* TEXT */
-          ),
-          e.compact ? y("v-if", !0) : (s(), l("button", {
-            key: 0,
-            class: "add-btn",
-            title: "Add meal",
-            onClick: o[0] || (o[0] = (i) => a("add", { date: e.date, mealType: e.mealType }))
-          }, " + "))
-        ]),
-        t("div", Z, [
-          (s(!0), l(
-            k,
-            null,
-            D(e.entries, (i) => (s(), Q(K, {
-              key: i.id,
-              entry: i,
-              onInteract: o[1] || (o[1] = (m) => a("interact", m))
-            }, null, 8, ["entry"]))),
-            128
-            /* KEYED_FRAGMENT */
-          )),
-          !e.entries.length && !e.compact ? (s(), l("div", ee, [
-            t("button", {
-              class: "empty-add-link",
-              onClick: o[2] || (o[2] = (i) => a("add", { date: e.date, mealType: e.mealType }))
-            }, " + Add ")
-          ])) : y("v-if", !0)
-        ])
-      ],
-      2
-      /* CLASS */
-    ));
+  emits: ["add", "changed"],
+  setup(t, { emit: p }) {
+    const n = p;
+    return (i, a) => {
+      const u = q("Button");
+      return s(), d(
+        "div",
+        {
+          class: w(["meal-slot", { "is-compact": t.compact }])
+        },
+        [
+          e("div", se, [
+            e(
+              "span",
+              ie,
+              h(t.mealType),
+              1
+              /* TEXT */
+            ),
+            t.compact ? y("v-if", !0) : (s(), E(u, {
+              key: 0,
+              class: "add-btn",
+              icon: "pi pi-plus",
+              "aria-label": "Add meal",
+              title: "Add meal",
+              variant: "text",
+              size: "small",
+              onClick: a[0] || (a[0] = (o) => n("add", { date: t.date, mealType: t.mealType }))
+            }))
+          ]),
+          e("div", oe, [
+            (s(!0), d(
+              k,
+              null,
+              A(t.entries, (o) => (s(), E(U(K), {
+                key: o.id,
+                hub: "entry:interact",
+                context: { entry: o },
+                onResolve: a[1] || (a[1] = (f) => n("changed"))
+              }, {
+                default: Q(({ open: f }) => [
+                  I(ae, {
+                    entry: o,
+                    onInteract: f
+                  }, null, 8, ["entry", "onInteract"])
+                ]),
+                _: 2
+                /* DYNAMIC */
+              }, 1032, ["context"]))),
+              128
+              /* KEYED_FRAGMENT */
+            )),
+            !t.entries.length && !t.compact ? (s(), d("div", le, [
+              I(u, {
+                class: "empty-add-link",
+                label: "Add",
+                icon: "pi pi-plus",
+                variant: "text",
+                size: "small",
+                onClick: a[2] || (a[2] = (o) => n("add", { date: t.date, mealType: t.mealType }))
+              })
+            ])) : y("v-if", !0)
+          ])
+        ],
+        2
+        /* CLASS */
+      );
+    };
   }
-}), ne = /* @__PURE__ */ P(te, [["__scopeId", "data-v-678d52a3"]]), ae = { class: "modal-dialog" }, ie = { class: "modal-header" }, oe = { class: "modal-tabs" }, se = { class: "modal-body" }, le = {
+}), re = /* @__PURE__ */ L(ce, [["__scopeId", "data-v-c585dd10"]]), de = { class: "modal-dialog" }, ue = { class: "modal-header" }, ve = { class: "modal-tabs" }, me = { class: "modal-body" }, pe = {
   key: 0,
   class: "tab-pane"
-}, re = { class: "search-box" }, ce = {
+}, ye = { class: "search-box" }, he = {
   key: 0,
   class: "recipe-results"
-}, de = ["onClick"], ue = {
+}, _e = ["onClick"], fe = {
   key: 1,
   class: "empty-hint"
-}, ve = { class: "tab-pane" }, me = {
+}, be = { class: "tab-pane" }, ge = {
   key: 0,
   class: "recipe-results"
-}, ye = ["onClick"], pe = {
+}, ke = ["onClick"], $e = {
   key: 1,
   class: "empty-hint"
-}, he = { class: "tab-pane" }, fe = { class: "category-chips" }, _e = ["onClick"], be = ["disabled"], ge = /* @__PURE__ */ N({
+}, Ce = { class: "tab-pane" }, Se = { class: "category-chips" }, Te = ["onClick"], we = ["disabled"], De = /* @__PURE__ */ j({
   __name: "AddEntryModal",
   props: {
     date: {},
     mealType: {}
   },
   emits: ["close", "created"],
-  setup(e, { emit: v }) {
-    const a = e, r = v, o = U("__SS_API__", null), i = b("search"), m = b(""), h = b([]), g = b([]), f = b(""), S = b("Dinner"), C = b(2);
-    async function w() {
-      if (!o || !m.value.trim()) {
-        h.value = [];
+  setup(t, { emit: p }) {
+    const n = t, i = p, a = G("__SS_API__", null), u = g("search"), o = g(""), f = g([]), S = g([]), T = g(""), $ = g("Dinner"), D = g(2);
+    async function M() {
+      if (!a || !o.value.trim()) {
+        f.value = [];
         return;
       }
       try {
-        const _ = await o.get(`/api/recipes?q=${encodeURIComponent(m.value.trim())}`);
-        h.value = _.items || _ || [];
+        const b = await a.get(`/api/recipes?q=${encodeURIComponent(o.value.trim())}`);
+        f.value = b.items || b || [];
       } catch {
-        h.value = [];
+        f.value = [];
       }
     }
-    async function E() {
-      if (o)
+    async function C() {
+      if (a)
         try {
-          g.value = await o.get("/api/x/core-shortlist");
+          S.value = await a.get("/api/x/core-shortlist");
         } catch {
-          g.value = [];
+          S.value = [];
         }
     }
-    async function I(_) {
-      if (!o) return;
-      const c = crypto.randomUUID();
-      await o.post("/api/schedule", {
-        id: c,
-        date: a.date,
-        meal_type: a.mealType || "dinner",
+    async function R(b) {
+      if (!a) return;
+      const v = crypto.randomUUID();
+      await a.post("/api/schedule", {
+        id: v,
+        date: n.date,
+        meal_type: n.mealType || "dinner",
         entry_type: "recipe",
-        recipe_id: _.id,
-        servings_override: C.value
-      }), r("created"), r("close");
+        recipe_id: b.id,
+        servings_override: D.value
+      }), i("created"), i("close");
     }
-    async function R() {
-      if (!o || !f.value.trim()) return;
-      const _ = crypto.randomUUID();
-      await o.post("/api/schedule", {
-        id: _,
-        date: a.date,
-        meal_type: a.mealType || "dinner",
+    async function N() {
+      if (!a || !T.value.trim()) return;
+      const b = crypto.randomUUID();
+      await a.post("/api/schedule", {
+        id: b,
+        date: n.date,
+        meal_type: n.mealType || "dinner",
         entry_type: "note",
-        title: `[${S.value}] ${f.value.trim()}`,
-        servings_override: C.value
-      }), r("created"), r("close");
+        title: `[${$.value}] ${T.value.trim()}`,
+        servings_override: D.value
+      }), i("created"), i("close");
     }
-    return j(() => {
-      E();
-    }), (_, c) => (s(), l("div", {
+    return Y(() => {
+      C();
+    }), (b, v) => (s(), d("div", {
       class: "modal-backdrop",
-      onClick: c[7] || (c[7] = q((n) => r("close"), ["self"]))
+      onClick: v[7] || (v[7] = H((l) => i("close"), ["self"]))
     }, [
-      t("div", ae, [
-        t("div", ie, [
-          t(
+      e("div", de, [
+        e("div", ue, [
+          e(
             "h3",
             null,
-            "Add Meal — " + p(e.date) + " (" + p(e.mealType) + ")",
+            "Add Meal — " + h(t.date) + " (" + h(t.mealType) + ")",
             1
             /* TEXT */
           ),
-          t("button", {
+          e("button", {
             class: "close-btn",
-            onClick: c[0] || (c[0] = (n) => r("close"))
+            onClick: v[0] || (v[0] = (l) => i("close"))
           }, "×")
         ]),
-        t("div", oe, [
-          t(
+        e("div", ve, [
+          e(
             "button",
             {
-              class: T({ active: i.value === "search" }),
-              onClick: c[1] || (c[1] = (n) => i.value = "search")
+              class: w({ active: u.value === "search" }),
+              onClick: v[1] || (v[1] = (l) => u.value = "search")
             },
             " Recipe Search ",
             2
             /* CLASS */
           ),
-          t(
+          e(
             "button",
             {
-              class: T({ active: i.value === "shortlist" }),
-              onClick: c[2] || (c[2] = (n) => i.value = "shortlist")
+              class: w({ active: u.value === "shortlist" }),
+              onClick: v[2] || (v[2] = (l) => u.value = "shortlist")
             },
             " Shortlist ",
             2
             /* CLASS */
           ),
-          t(
+          e(
             "button",
             {
-              class: T({ active: i.value === "ai" }),
-              onClick: c[3] || (c[3] = (n) => i.value = "ai")
+              class: w({ active: u.value === "ai" }),
+              onClick: v[3] || (v[3] = (l) => u.value = "ai")
             },
             " AI Suggestions ",
             2
             /* CLASS */
           ),
-          t(
+          e(
             "button",
             {
-              class: T({ active: i.value === "custom" }),
-              onClick: c[4] || (c[4] = (n) => i.value = "custom")
+              class: w({ active: u.value === "custom" }),
+              onClick: v[4] || (v[4] = (l) => u.value = "custom")
             },
             " Custom Note ",
             2
             /* CLASS */
           )
         ]),
-        t("div", se, [
+        e("div", me, [
           y(" 1. Search Tab "),
-          i.value === "search" ? (s(), l("div", le, [
-            t("div", re, [
-              B(t(
+          u.value === "search" ? (s(), d("div", pe, [
+            e("div", ye, [
+              O(e(
                 "input",
                 {
-                  "onUpdate:modelValue": c[5] || (c[5] = (n) => m.value = n),
+                  "onUpdate:modelValue": v[5] || (v[5] = (l) => o.value = l),
                   placeholder: "Search recipes...",
-                  onInput: w
+                  onInput: M
                 },
                 null,
                 544
                 /* NEED_HYDRATION, NEED_PATCH */
               ), [
-                [O, m.value]
+                [z, o.value]
               ])
             ]),
-            h.value.length ? (s(), l("ul", ce, [
-              (s(!0), l(
+            f.value.length ? (s(), d("ul", he, [
+              (s(!0), d(
                 k,
                 null,
-                D(h.value, (n) => (s(), l("li", {
-                  key: n.id
+                A(f.value, (l) => (s(), d("li", {
+                  key: l.id
                 }, [
-                  t(
+                  e(
                     "span",
                     null,
-                    p(n.title),
+                    h(l.title),
                     1
                     /* TEXT */
                   ),
-                  t("button", {
+                  e("button", {
                     class: "select-btn",
-                    onClick: (u) => I(n)
-                  }, "Schedule", 8, de)
+                    onClick: (c) => R(l)
+                  }, "Schedule", 8, _e)
                 ]))),
                 128
                 /* KEYED_FRAGMENT */
               ))
-            ])) : m.value.trim() ? (s(), l("p", ue, "No recipes found.")) : y("v-if", !0)
-          ])) : i.value === "shortlist" ? (s(), l(
+            ])) : o.value.trim() ? (s(), d("p", fe, "No recipes found.")) : y("v-if", !0)
+          ])) : u.value === "shortlist" ? (s(), d(
             k,
             { key: 1 },
             [
               y(" 2. Shortlist Tab "),
-              t("div", ve, [
-                g.value.length ? (s(), l("ul", me, [
-                  (s(!0), l(
+              e("div", be, [
+                S.value.length ? (s(), d("ul", ge, [
+                  (s(!0), d(
                     k,
                     null,
-                    D(g.value, (n) => (s(), l("li", {
-                      key: n.id
+                    A(S.value, (l) => (s(), d("li", {
+                      key: l.id
                     }, [
-                      t(
+                      e(
                         "span",
                         null,
-                        p(n.recipe_title || "Recipe"),
+                        h(l.recipe_title || "Recipe"),
                         1
                         /* TEXT */
                       ),
-                      t("button", {
+                      e("button", {
                         class: "select-btn",
-                        onClick: (u) => I({ id: n.recipe_id, title: n.recipe_title })
-                      }, " Schedule ", 8, ye)
+                        onClick: (c) => R({ id: l.recipe_id, title: l.recipe_title })
+                      }, " Schedule ", 8, ke)
                     ]))),
                     128
                     /* KEYED_FRAGMENT */
                   ))
-                ])) : (s(), l("p", pe, "No favorites in shortlist."))
+                ])) : (s(), d("p", $e, "No favorites in shortlist."))
               ])
             ],
             2112
             /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
-          )) : i.value === "ai" ? (s(), l(
+          )) : u.value === "ai" ? (s(), d(
             k,
             { key: 2 },
             [
               y(" 3. AI Suggestions Tab "),
-              c[8] || (c[8] = t(
+              v[8] || (v[8] = e(
                 "div",
                 { class: "tab-pane" },
                 [
-                  t("div", { class: "ai-info-card" }, [
-                    t("h4", null, "AI Meal Planner"),
-                    t("p", null, [
+                  e("div", { class: "ai-info-card" }, [
+                    e("h4", null, "AI Meal Planner"),
+                    e("p", null, [
                       F("Automated suggestions become active when the "),
-                      t("code", null, "meal-planner"),
+                      e("code", null, "meal-planner"),
                       F(" plugin is enabled.")
                     ])
                   ])
@@ -342,29 +371,29 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
             ],
             2112
             /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
-          )) : i.value === "custom" ? (s(), l(
+          )) : u.value === "custom" ? (s(), d(
             k,
             { key: 3 },
             [
               y(" 4. Custom Note Tab "),
-              t("div", he, [
-                t("div", fe, [
-                  (s(), l(
+              e("div", Ce, [
+                e("div", Se, [
+                  (s(), d(
                     k,
                     null,
-                    D(["Dining Out", "Leftovers", "Takeout", "Quick Meal"], (n) => t("button", {
-                      key: n,
-                      class: T({ active: S.value === n }),
-                      onClick: (u) => S.value = n
-                    }, p(n), 11, _e)),
+                    A(["Dining Out", "Leftovers", "Takeout", "Quick Meal"], (l) => e("button", {
+                      key: l,
+                      class: w({ active: $.value === l }),
+                      onClick: (c) => $.value = l
+                    }, h(l), 11, Te)),
                     64
                     /* STABLE_FRAGMENT */
                   ))
                 ]),
-                B(t(
+                O(e(
                   "textarea",
                   {
-                    "onUpdate:modelValue": c[6] || (c[6] = (n) => f.value = n),
+                    "onUpdate:modelValue": v[6] || (v[6] = (l) => T.value = l),
                     placeholder: "Enter meal details or notes...",
                     rows: "3"
                   },
@@ -372,13 +401,13 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
                   512
                   /* NEED_PATCH */
                 ), [
-                  [O, f.value]
+                  [z, T.value]
                 ]),
-                t("button", {
+                e("button", {
                   class: "primary-btn",
-                  disabled: !f.value.trim(),
-                  onClick: R
-                }, " Save Note ", 8, be)
+                  disabled: !T.value.trim(),
+                  onClick: N
+                }, " Save Note ", 8, we)
               ])
             ],
             2112
@@ -388,130 +417,132 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
       ])
     ]));
   }
-}), $e = /* @__PURE__ */ P(ge, [["__scopeId", "data-v-fcc49ba9"]]), ke = { class: "timeline-page" }, Se = { class: "timeline-toolbar" }, Te = { class: "nav-controls" }, Ce = { class: "range-display" }, we = { class: "timeline-container" }, De = { class: "timeline-grid" }, Ie = { class: "day-header" }, Ae = { class: "day-label" }, Me = {
+}), xe = /* @__PURE__ */ L(De, [["__scopeId", "data-v-fcc49ba9"]]), Ie = { class: "timeline-page" }, Ae = { class: "timeline-toolbar" }, Me = { class: "nav-controls" }, Re = { class: "range-display" }, Ne = { class: "timeline-container" }, Pe = { class: "timeline-grid" }, Be = { class: "day-header" }, Ee = { class: "day-label" }, Ue = {
   key: 0,
   class: "today-badge"
-}, Ne = { class: "day-slots" }, Pe = { class: "day-footer" }, Ee = { class: "timeline-sidebar-wrapper" }, Re = /* @__PURE__ */ N({
+}, je = { class: "day-slots" }, Le = { class: "day-footer" }, Ve = { class: "timeline-sidebar-wrapper" }, Oe = /* @__PURE__ */ j({
   __name: "TimelinePage",
-  setup(e) {
-    const v = U("__SS_API__", null), a = U("__SS_INTENT__", null), r = b(/* @__PURE__ */ new Date()), o = b([]), i = b(null), m = ["Dinner"];
-    function h(n) {
-      const u = n.getFullYear(), d = String(n.getMonth() + 1).padStart(2, "0"), $ = String(n.getDate()).padStart(2, "0");
-      return `${u}-${d}-${$}`;
+  setup(t) {
+    const p = W(), n = p.api;
+    let i = 0;
+    const a = g(/* @__PURE__ */ new Date()), u = g([]), o = g(null), f = ["Dinner"];
+    function S(c) {
+      const m = c.getFullYear(), r = String(c.getMonth() + 1).padStart(2, "0"), _ = String(c.getDate()).padStart(2, "0");
+      return `${m}-${r}-${_}`;
     }
-    const g = A(() => h(/* @__PURE__ */ new Date())), f = A(() => {
-      const n = [], u = new Date(r.value);
-      for (let d = -2; d <= 6; d++) {
-        const $ = new Date(u);
-        $.setDate(u.getDate() + d);
-        const L = h($);
-        n.push({
-          date: L,
-          isPast: d < 0,
-          isToday: L === g.value,
-          label: $.toLocaleDateString(void 0, { weekday: "short", month: "short", day: "numeric" })
+    const T = B(() => S(/* @__PURE__ */ new Date())), $ = B(() => {
+      const c = [], m = new Date(a.value);
+      for (let r = -2; r <= 6; r++) {
+        const _ = new Date(m);
+        _.setDate(m.getDate() + r);
+        const P = S(_);
+        c.push({
+          date: P,
+          isPast: r < 0,
+          isToday: P === T.value,
+          label: _.toLocaleDateString(void 0, { weekday: "short", month: "short", day: "numeric" })
         });
       }
-      return n;
-    }), S = A(() => f.value[0].date), C = A(() => f.value[f.value.length - 1].date);
-    async function w() {
-      if (v)
-        try {
-          const n = await v.get(`/api/schedule?from=${S.value}&to=${C.value}`);
-          o.value = Array.isArray(n) ? n : [];
-        } catch {
-          o.value = [];
-        }
+      return c;
+    }), D = B(() => $.value[0].date), M = B(() => $.value[$.value.length - 1].date);
+    async function C() {
+      const c = ++i;
+      try {
+        const m = `?from=${D.value}&to=${M.value}`, [r, _] = await Promise.all([n.get(`/api/schedule${m}`), n.get(`/api/journal${m}`)]);
+        if (c !== i) return;
+        const P = new Set(_.filter((x) => x.status === "cooked").map((x) => x.schedule_entry_id));
+        u.value = r.map((x) => ({ ...x, is_cooked: P.has(x.id) }));
+      } catch {
+        c === i && (u.value = []);
+      }
     }
-    function E(n, u) {
-      return o.value.filter(
-        (d) => d.date === n && String(d.meal_type).toLowerCase() === u.toLowerCase()
+    function R(c, m) {
+      return u.value.filter(
+        (r) => r.date === c && String(r.meal_type).toLowerCase() === m.toLowerCase()
       );
     }
-    function I(n) {
-      const u = new Date(r.value);
-      u.setDate(u.getDate() + n), r.value = u, w();
+    function N(c) {
+      const m = new Date(a.value);
+      m.setDate(m.getDate() + c), a.value = m, C();
     }
-    function R() {
-      r.value = /* @__PURE__ */ new Date(), w();
+    function b() {
+      a.value = /* @__PURE__ */ new Date(), C();
     }
-    function _(n) {
-      a ? a("entry:create", n).catch(() => {
-        i.value = n;
-      }) : i.value = n;
+    function v(c) {
+      o.value = c;
     }
-    function c(n) {
-      a && a("entry:interact", { entry: n });
-    }
-    return j(() => {
-      w();
-    }), (n, u) => (s(), l("div", ke, [
-      t("div", Se, [
-        t("div", Te, [
-          t("button", {
+    const l = ["schedule:created", "schedule:updated", "schedule:deleted", "journal:created", "journal:updated", "journal:deleted"].map((c) => p.on(c, C));
+    return Y(C), J(() => {
+      ++i, l.forEach((c) => {
+        typeof c == "function" && c();
+      });
+    }), (c, m) => (s(), d("div", Ie, [
+      e("div", Ae, [
+        e("div", Me, [
+          e("button", {
             class: "btn",
-            onClick: u[0] || (u[0] = (d) => I(-7))
+            onClick: m[0] || (m[0] = (r) => N(-7))
           }, "◀ Prev"),
-          t("button", {
+          e("button", {
             class: "btn today-btn",
-            onClick: R
+            onClick: b
           }, "Today"),
-          t("button", {
+          e("button", {
             class: "btn",
-            onClick: u[1] || (u[1] = (d) => I(7))
+            onClick: m[1] || (m[1] = (r) => N(7))
           }, "Next ▶")
         ]),
-        t(
+        e(
           "span",
-          Ce,
-          p(S.value) + " — " + p(C.value),
+          Re,
+          h(D.value) + " — " + h(M.value),
           1
           /* TEXT */
         )
       ]),
-      t("div", we, [
-        t("div", De, [
-          (s(!0), l(
+      e("div", Ne, [
+        e("div", Pe, [
+          (s(!0), d(
             k,
             null,
-            D(f.value, (d) => (s(), l(
+            A($.value, (r) => (s(), d(
               "div",
               {
-                key: d.date,
-                class: T(["timeline-day-column", { "is-past": d.isPast, "is-today": d.isToday }])
+                key: r.date,
+                class: w(["timeline-day-column", { "is-past": r.isPast, "is-today": r.isToday }])
               },
               [
-                t("div", Ie, [
-                  t(
+                e("div", Be, [
+                  e(
                     "span",
-                    Ae,
-                    p(d.label),
+                    Ee,
+                    h(r.label),
                     1
                     /* TEXT */
                   ),
-                  d.isToday ? (s(), l("span", Me, "Today")) : y("v-if", !0)
+                  r.isToday ? (s(), d("span", Ue, "Today")) : y("v-if", !0)
                 ]),
-                t("div", Ne, [
-                  (s(), l(
+                e("div", je, [
+                  (s(), d(
                     k,
                     null,
-                    D(m, ($) => M(ne, {
-                      key: $,
-                      "meal-type": $,
-                      date: d.date,
-                      entries: E(d.date, $),
-                      compact: d.isPast,
-                      onAdd: _,
-                      onInteract: c
+                    A(f, (_) => I(re, {
+                      key: _,
+                      "meal-type": _,
+                      date: r.date,
+                      entries: R(r.date, _),
+                      compact: r.isPast,
+                      onAdd: v,
+                      onChanged: C
                     }, null, 8, ["meal-type", "date", "entries", "compact"])),
                     64
                     /* STABLE_FRAGMENT */
                   ))
                 ]),
-                t("div", Pe, [
-                  M(x(V), {
+                e("div", Le, [
+                  I(U(V), {
                     name: "timeline.day.footer",
-                    context: { date: d.date }
+                    context: { date: r.date }
                   }, null, 8, ["context"])
                 ])
               ],
@@ -522,72 +553,61 @@ const z = { class: "card-header" }, Y = { class: "card-title" }, G = {
             /* KEYED_FRAGMENT */
           ))
         ]),
-        t("div", Ee, [
-          M(x(V), {
+        e("div", Ve, [
+          I(U(V), {
             name: "timeline.sidebar",
-            context: { from: S.value, to: C.value }
+            context: { from: D.value, to: M.value }
           }, null, 8, ["context"])
         ])
       ]),
-      i.value ? (s(), Q($e, {
+      o.value ? (s(), E(xe, {
         key: 0,
-        date: i.value.date,
-        "meal-type": i.value.mealType,
-        onClose: u[2] || (u[2] = (d) => i.value = null),
-        onCreated: w
+        date: o.value.date,
+        "meal-type": o.value.mealType,
+        onClose: m[2] || (m[2] = (r) => o.value = null),
+        onCreated: C
       }, null, 8, ["date", "meal-type"])) : y("v-if", !0)
     ]));
   }
-}), xe = /* @__PURE__ */ P(Re, [["__scopeId", "data-v-ee77abe4"]]);
-function Le(e) {
-  e.route({
-    path: "/timeline",
-    component: xe,
-    nav: { label: "Timeline", icon: "calendar", order: 5 }
-  }), typeof e.nav == "function" && e.nav({ label: "Timeline", icon: "calendar", path: "/timeline", order: 5 }), e.intent && (e.intent.hub({ id: "entry:create", title: "Add Entry to Timeline" }), e.intent.hub({ id: "entry:interact", title: "Meal Slot Interaction" }), e.intent.hub({ id: "timeline:assist", title: "Timeline Planning Assistance" }), e.intent.provider({
+}), ze = /* @__PURE__ */ L(Oe, [["__scopeId", "data-v-5bdcd938"]]);
+function Qe(t) {
+  t.route({ path: "/timeline", component: ze, nav: { label: "Timeline", icon: "calendar", order: 5 } }), t.intent.hub({ id: "entry:create", title: "Add entry to timeline" }), t.intent.hub({ id: "entry:interact", title: "Meal actions" }), t.intent.hub({ id: "timeline:assist", title: "Timeline planning assistance" }), t.intent.provider({
     hub: "entry:interact",
     id: "view-recipe",
-    title: "View Recipe",
+    title: "View recipe",
+    icon: "book",
     order: 10,
     kind: "headless",
-    execute: (a) => {
-      var r;
-      (r = a == null ? void 0 : a.entry) != null && r.recipe_id && (e.navigate ? e.navigate(`/recipes/${a.entry.recipe_id}`) : window.location.href = e.url ? e.url(`/recipes/${a.entry.recipe_id}`) : `/recipes/${a.entry.recipe_id}`);
-    }
-  }), e.intent.provider({
+    isAvailable: (n) => {
+      var i;
+      return !!((i = n == null ? void 0 : n.entry) != null && i.recipe_id);
+    },
+    execute: (n) => t.navigate(`/recipes/${n.entry.recipe_id}`)
+  }), t.intent.provider({
     hub: "entry:interact",
     id: "remove",
-    title: "Remove from Plan",
+    title: "Remove from plan",
+    icon: "trash",
     order: 999,
     kind: "headless",
-    execute: async (a) => {
-      var r;
-      (r = a == null ? void 0 : a.entry) != null && r.id && confirm("Remove this meal from timeline?") && (await e.api.delete(`/api/schedule/${a.entry.id}?revision=${a.entry.revision || 1}`), window.location.reload());
+    execute: async (n) => {
+      const i = n == null ? void 0 : n.entry;
+      !i || !await t.confirm({ header: "Remove meal", message: "Remove this meal from the plan?", acceptLabel: "Remove", rejectLabel: "Cancel", severity: "danger" }) || (await t.api.delete(`/api/schedule/${i.id}?revision=${i.revision}`), t.notify({ level: "success", message: "Meal removed from plan" }));
     }
-  })), typeof e.hub == "function" && (e.hub("entry:create", {
-    defaultProvider: {
-      id: "manual-add",
-      order: 100,
-      run: async () => {
-      }
-    }
-  }), e.hub("entry:interact", { providers: [] }), e.hub("timeline:assist", { providers: [] }));
-  const v = async () => {
+  });
+  const p = async () => {
     try {
-      if (!e.api) return;
-      const a = /* @__PURE__ */ new Date(), r = new Date(a);
-      r.setDate(r.getDate() - 2);
-      const o = new Date(a);
-      o.setDate(o.getDate() + 14);
-      const i = r.toISOString().slice(0, 10), m = o.toISOString().slice(0, 10), h = await e.api.get(`/api/schedule?from=${i}&to=${m}`);
-      for (const g of h || [])
-        g.recipe_id && e.api.get(`/api/recipes/${g.recipe_id}`).catch(() => {
-        });
+      const n = /* @__PURE__ */ new Date(), i = new Date(n), a = new Date(n);
+      i.setDate(i.getDate() - 2), a.setDate(a.getDate() + 14);
+      const u = await t.api.get(`/api/schedule?from=${i.toISOString().slice(0, 10)}&to=${a.toISOString().slice(0, 10)}`);
+      for (const o of u) o.recipe_id && t.api.get(`/api/recipes/${o.recipe_id}`).catch(() => {
+      });
     } catch {
     }
   };
-  v(), typeof e.on == "function" && (e.on("schedule:created", v), e.on("schedule:updated", v), e.on("schedule:deleted", v));
+  p();
+  for (const n of ["schedule:created", "schedule:updated", "schedule:deleted"]) t.on(n, p);
 }
 export {
-  Le as default
+  Qe as default
 };

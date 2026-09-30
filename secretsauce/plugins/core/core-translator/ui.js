@@ -1,174 +1,128 @@
-import { defineComponent as A, computed as D, inject as k, ref as x, openBlock as r, createElementBlock as d, createElementVNode as t, createCommentVNode as u, createTextVNode as C, toDisplayString as b, withDirectives as N, createStaticVNode as V, vModelSelect as E } from "vue";
-const F = { class: "translator-widget inline-flex items-center gap-2" }, M = { key: 0 }, P = ["title"], R = {
-  key: 1,
-  class: "fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-}, z = { class: "bg-white rounded-lg shadow-xl w-full max-w-sm p-4 space-y-3" }, B = { class: "text-xs text-stone-600" }, L = { class: "space-y-1" }, U = ["disabled"], $ = {
-  key: 0,
-  class: "text-xs text-red-600 bg-red-50 p-2 rounded"
-}, G = { class: "flex justify-end gap-2 pt-2 border-t" }, J = ["disabled"], O = ["disabled"], Y = {
-  key: 0,
-  class: "animate-spin"
-}, S = /* @__PURE__ */ A({
-  __name: "TranslateAction",
+import { defineComponent as N, ref as u, resolveComponent as b, openBlock as m, createElementBlock as w, createElementVNode as f, toDisplayString as V, createVNode as d, createBlock as h, withCtx as S, createTextVNode as x, createCommentVNode as E } from "vue";
+import { useSecretSauce as M } from "@secretsauce/ui";
+const O = { class: "translate-dialog" }, $ = { class: "dialog-actions" }, j = /* @__PURE__ */ N({
+  inheritAttrs: !1,
+  __name: "TranslateDialog",
   props: {
-    context: {},
-    recipe: {},
-    ss: {}
+    context: {}
   },
-  emits: ["translated"],
-  setup(s, { emit: p }) {
-    var _, y;
-    const a = s, I = p, c = D(() => {
-      var n;
-      return a.recipe || ((n = a.context) == null ? void 0 : n.recipe);
-    }), g = ((_ = a.ss) == null ? void 0 : _.api) || k("__SS_API__", null), m = ((y = a.ss) == null ? void 0 : y.notify) || k("__SS_NOTIFY__", null), v = x(!1), l = x("es"), o = x(!1), i = x("");
-    function f() {
-      v.value = !1, i.value = "";
-    }
-    async function j() {
-      var n;
-      if (!(!g || !((n = c.value) != null && n.id))) {
-        o.value = !0, i.value = "";
-        try {
-          const e = await g.post("/api/x/core-translator/translate", {
-            recipe_id: c.value.id,
-            target_language: l.value
-          });
-          m && m({ level: "success", message: `Recipe translated to ${l.value.toUpperCase()}!` }), I("translated", e), f();
-        } catch (e) {
-          i.value = (e == null ? void 0 : e.message) || "Translation failed";
-        } finally {
-          o.value = !1;
-        }
+  emits: ["resolve", "cancel"],
+  setup(n, { emit: o }) {
+    var _, y, k;
+    const a = n, i = o, t = M(), p = (_ = t.store.currentMember.value) == null ? void 0 : _.preferred_language, s = u(p && p !== a.context.recipe.language ? p : ((k = (y = t.store.household.value) == null ? void 0 : y.languages.translations) == null ? void 0 : k[0]) || "de"), B = [{ id: "en", label: "English" }, { id: "de", label: "German" }, { id: "es", label: "Spanish" }, { id: "fr", label: "French" }, { id: "it", label: "Italian" }, { id: "pt", label: "Portuguese" }, { id: "nl", label: "Dutch" }, { id: "ja", label: "Japanese" }, { id: "zh", label: "Chinese" }], r = u(!1), c = u(""), g = u(!1);
+    async function I() {
+      r.value = !0, c.value = "", g.value = !1;
+      try {
+        const e = await t.api.post("/api/x/core-translator/translate", { recipe_id: a.context.recipe.id, target_language: s.value });
+        t.notify({ level: "success", message: "Recipe translated" }), i("resolve", e), t.navigate(`/recipes/${e.id}`);
+      } catch (e) {
+        g.value = (e == null ? void 0 : e.code) === "unavailable", c.value = (e == null ? void 0 : e.message) || "Translation failed";
+      } finally {
+        r.value = !1;
       }
     }
-    return (n, e) => {
-      var h, w;
-      return r(), d("div", F, [
-        v.value ? u("v-if", !0) : (r(), d("div", M, [
-          t("button", {
-            type: "button",
-            class: "btn-open-translate text-xs px-2.5 py-1.5 rounded border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 flex items-center gap-1.5 shadow-sm transition",
-            title: "Translate " + (((h = c.value) == null ? void 0 : h.title) || "recipe"),
-            onClick: e[0] || (e[0] = (T) => v.value = !0)
-          }, [...e[2] || (e[2] = [
-            t(
-              "span",
-              null,
-              "🌐",
+    function A() {
+      i("cancel"), t.navigate("/settings?section=core-ai-provider");
+    }
+    return (e, l) => {
+      const D = b("Select"), v = b("Button"), C = b("Message");
+      return m(), w("div", O, [
+        f(
+          "p",
+          null,
+          V(n.context.recipe.title),
+          1
+          /* TEXT */
+        ),
+        l[3] || (l[3] = f(
+          "label",
+          { for: "target-language" },
+          "Target language",
+          -1
+          /* CACHED */
+        )),
+        d(D, {
+          "aria-label": "Target language",
+          inputId: "target-language",
+          modelValue: s.value,
+          "onUpdate:modelValue": l[0] || (l[0] = (T) => s.value = T),
+          options: B,
+          optionLabel: "label",
+          optionValue: "id",
+          fluid: ""
+        }, null, 8, ["modelValue"]),
+        g.value ? (m(), h(C, {
+          key: 0,
+          severity: "warn"
+        }, {
+          default: S(() => [
+            l[2] || (l[2] = x(
+              "AI isn’t set up yet. ",
               -1
               /* CACHED */
-            ),
-            t(
-              "span",
-              { class: "font-medium" },
-              "Translate",
-              -1
-              /* CACHED */
-            )
-          ])], 8, P)
-        ])),
-        u(" Modal Dialog "),
-        v.value ? (r(), d("div", R, [
-          t("div", z, [
-            t("div", { class: "flex items-center justify-between border-b pb-2" }, [
-              e[3] || (e[3] = t(
-                "h4",
-                { class: "font-semibold text-stone-900 text-sm" },
-                "Translate Recipe",
-                -1
-                /* CACHED */
-              )),
-              t("button", {
-                class: "text-stone-400 hover:text-stone-600 font-bold",
-                onClick: f
-              }, "✕")
-            ]),
-            t("p", B, [
-              e[4] || (e[4] = C(
-                " Translate ",
-                -1
-                /* CACHED */
-              )),
-              t(
-                "strong",
-                null,
-                b((w = c.value) == null ? void 0 : w.title),
-                1
-                /* TEXT */
-              ),
-              e[5] || (e[5] = C(
-                " to another language using AI. ",
-                -1
-                /* CACHED */
-              ))
-            ]),
-            t("div", L, [
-              e[7] || (e[7] = t(
-                "label",
-                { class: "block text-xs font-medium text-stone-700" },
-                "Target Language",
-                -1
-                /* CACHED */
-              )),
-              N(t("select", {
-                "onUpdate:modelValue": e[1] || (e[1] = (T) => l.value = T),
-                class: "select-target-lang w-full border border-stone-300 rounded px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:border-emerald-500",
-                disabled: o.value
-              }, [...e[6] || (e[6] = [
-                V('<option value="es">Spanish (Español)</option><option value="fr">French (Français)</option><option value="de">German (Deutsch)</option><option value="it">Italian (Italiano)</option><option value="pt">Portuguese (Português)</option><option value="ja">Japanese (日本語)</option><option value="zh">Chinese (中文)</option><option value="en">English</option>', 8)
-              ])], 8, U), [
-                [E, l.value]
-              ])
-            ]),
-            i.value ? (r(), d(
-              "div",
-              $,
-              b(i.value),
+            )),
+            d(v, {
+              label: "Open AI settings",
+              severity: "secondary",
+              onClick: A
+            })
+          ]),
+          _: 1
+          /* STABLE */
+        })) : c.value ? (m(), h(C, {
+          key: 1,
+          severity: "error"
+        }, {
+          default: S(() => [
+            x(
+              V(c.value),
               1
               /* TEXT */
-            )) : u("v-if", !0),
-            t("div", G, [
-              t("button", {
-                type: "button",
-                class: "px-3 py-1.5 text-xs border border-stone-300 rounded text-stone-600 hover:bg-stone-50",
-                disabled: o.value,
-                onClick: f
-              }, " Cancel ", 8, J),
-              t("button", {
-                type: "button",
-                class: "btn-do-translate px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded transition flex items-center gap-1",
-                disabled: o.value || !l.value,
-                onClick: j
-              }, [
-                o.value ? (r(), d("span", Y, "⏳")) : u("v-if", !0),
-                t(
-                  "span",
-                  null,
-                  b(o.value ? "Translating..." : "Translate"),
-                  1
-                  /* TEXT */
-                )
-              ], 8, O)
-            ])
-          ])
-        ])) : u("v-if", !0)
+            )
+          ]),
+          _: 1
+          /* STABLE */
+        })) : E("v-if", !0),
+        f("div", $, [
+          d(v, {
+            label: "Cancel",
+            severity: "secondary",
+            disabled: r.value,
+            onClick: l[1] || (l[1] = (T) => i("cancel"))
+          }, null, 8, ["disabled"]),
+          d(v, {
+            label: "Translate recipe",
+            icon: "pi pi-language",
+            loading: r.value,
+            disabled: !s.value,
+            onClick: I
+          }, null, 8, ["loading", "disabled"])
+        ])
       ]);
     };
   }
-});
-function H(s) {
-  var p;
-  s.slot && (s.slot("recipe.card.actions", S, { order: 30 }), s.slot("recipe.detail.sidebar", S, { order: 30 })), (p = s.intent) != null && p.provider && s.intent.provider({
+}), z = (n, o) => {
+  const a = n.__vccOpts || n;
+  for (const [i, t] of o)
+    a[i] = t;
+  return a;
+}, F = /* @__PURE__ */ z(j, [["__scopeId", "data-v-6f9d852e"]]);
+function L(n) {
+  n.intent.provider({
     hub: "recipe:actions",
     id: "ai-translate",
-    title: "Translate Recipe (AI)",
+    title: "Translate…",
+    kind: "ui",
+    icon: "language",
     order: 30,
-    execute: (a) => {
+    component: F,
+    isAvailable: (o) => {
+      var a;
+      return !!((a = o == null ? void 0 : o.recipe) != null && a.id);
     }
   });
 }
 export {
-  S as TranslateAction,
-  H as default
+  F as TranslateDialog,
+  L as default
 };

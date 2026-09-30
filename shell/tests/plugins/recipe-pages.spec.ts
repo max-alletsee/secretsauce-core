@@ -1,139 +1,40 @@
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import RecipeDetailPage from '../../../secretsauce/plugins/core/core-recipes/ui/src/pages/RecipeDetailPage.vue'
-import RecipeListPage from '../../../secretsauce/plugins/core/core-recipes/ui/src/pages/RecipeListPage.vue'
-import RecipeEditPage from '../../../secretsauce/plugins/core/core-recipes/ui/src/pages/RecipeEditPage.vue'
+import { describe, it, expect, afterEach } from 'vitest'
+import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import activate from '../../../secretsauce/plugins/core/core-recipes/ui/src/index'
-
-describe('Recipe Pages', () => {
-  it('RecipeDetailPage scales ingredient quantities dynamically when servings are adjusted', async () => {
-    const mockRecipe = {
-      id: 'r1_en',
-      group_id: 'grp_1',
-      language: 'en',
-      title: 'Crepes',
-      servings: 2,
-      languages: ['en', 'de'],
-      ingredients: [
-        { id: 'i1', quantity: 200, unit: 'g', name: 'Flour' },
-        { id: 'i2', quantity: 2, unit: 'piece', name: 'Eggs' },
-      ],
-      steps: [{ id: 's1', instruction: 'Mix and fry' }],
-    }
-
-    const mockApi = {
-      get: vi.fn().mockResolvedValue(mockRecipe),
-    }
-
-    const wrapper = mount(RecipeDetailPage, {
-      props: {
-        recipeId: 'r1_en',
-      },
-      global: {
-        provide: {
-          __SS_API__: mockApi,
-        },
-        stubs: {
-          Slot: true,
-          IntentTrigger: true,
-        },
-      },
-    })
-
-    // Wait for async fetch
-    await new Promise((r) => setTimeout(r, 20))
-
-    expect(wrapper.text()).toContain('Crepes')
-    expect(wrapper.text()).toContain('200') // base servings = 2
-
-    // Scale up to 4 servings
-    const plusBtn = wrapper.find('button.btn-scaler-plus')
-    await plusBtn.trigger('click')
-    await plusBtn.trigger('click')
-    expect(wrapper.text()).toContain('400') // scaled quantity = 400 for 4 servings
+import { registeredRoute, savedRecipe, clickButton } from '../helpers/registeredPlugin'
+const wrappers: VueWrapper[] = []
+afterEach(() => { wrappers.splice(0).forEach(w => w.unmount()); document.body.innerHTML = '' })
+describe('registered Recipe pages (API boundary double)', () => {
+  it('receives actual route id and scales ingredient quantities', async () => {
+    const { wrapper } = await registeredRoute(activate, 'core-recipes', { get: async (path: string) => {
+      if (path === '/api/recipes/cake_en') return { ...savedRecipe, servings: 2, ingredients: [{ ...savedRecipe.ingredients[0], name: 'Flour', quantity: 200 }] }
+      if (path === '/api/x/core-shortlist') return []
+      throw new Error(`Unexpected GET ${path}`)
+    } } as any, '/recipes/cake_en')
+    wrappers.push(wrapper)
+    expect(wrapper.text()).toContain('Chocolate cake'); expect(wrapper.find('.ingredient-item strong').text()).toBe('200')
+    await wrapper.find('.btn-scaler-plus').trigger('click'); await wrapper.find('.btn-scaler-plus').trigger('click')
+    expect(wrapper.find('.ingredient-item strong').text()).toBe('400')
   })
-
-  it('RecipeListPage renders search bar, filters slot, and empty state with intent', async () => {
-    const mockApi = {
-      get: vi.fn().mockResolvedValue({ items: [] }),
-    }
-
-    const wrapper = mount(RecipeListPage, {
-      global: {
-        provide: {
-          __SS_API__: mockApi,
-        },
-        stubs: {
-          Slot: {
-            template: '<div class="filters-slot-stub"><slot /></div>',
-          },
-          IntentTrigger: {
-            template: '<button class="intent-stub">{{ label }}</button>',
-            props: ['hub', 'label'],
-          },
-        },
-      },
-    })
-
-    await new Promise((r) => setTimeout(r, 20))
-    expect(wrapper.find('input[type="search"]').exists()).toBe(true)
-    expect(wrapper.find('.filters-slot-stub').exists()).toBe(true)
-    expect(wrapper.text()).toContain('No recipes found')
-    expect(wrapper.find('button.intent-stub').text()).toContain('Add / Import Recipe')
+  it('renders the real empty-state intents and navigates to manual creation', async () => {
+    const { wrapper, harness } = await registeredRoute(activate, 'core-recipes', { get: async (path: string) => path === '/api/recipes' ? { items: [], total: 0, limit: 50, offset: 0 } : [] } as any, '/recipes')
+    wrappers.push(wrapper)
+    expect(wrapper.find('input[type=search]').exists()).toBe(true); expect(wrapper.text()).toContain('No recipes found')
+    await clickButton('Add your first recipe')
+    expect(harness.router.currentRoute.value.path).toBe('/recipes/new')
+    expect(wrapper.text()).toContain('New Recipe')
   })
-
-  it('activator registers recipes routes and recipe:create/recipe:actions hubs', () => {
-    const mockSS = {
-      route: vi.fn(),
-      intent: {
-        hub: vi.fn(),
-        provider: vi.fn(),
-      },
-    }
-
-    activate(mockSS)
-
-    expect(mockSS.route).toHaveBeenCalledWith(
-      expect.objectContaining({ path: '/recipes' })
-    )
-    expect(mockSS.route).toHaveBeenCalledWith(
-      expect.objectContaining({ path: '/recipes/new' })
-    )
-    expect(mockSS.route).toHaveBeenCalledWith(
-      expect.objectContaining({ path: '/recipes/:id' })
-    )
-    expect(mockSS.route).toHaveBeenCalledWith(
-      expect.objectContaining({ path: '/recipes/:id/edit' })
-    )
-    expect(mockSS.intent.hub).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'recipe:create' })
-    )
-    expect(mockSS.intent.hub).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'recipe:actions' })
-    )
+  it('saves a manual draft through the route and navigates to its detail', async () => {
+    const { wrapper, harness } = await registeredRoute(activate, 'core-recipes', {
+      post: async (path: string, body: any) => { expect(path).toBe('/api/recipes'); expect(body.title).toBe('Manual cake'); expect(body.language).toBe('en'); return { ...savedRecipe, title: 'Manual cake' } },
+      get: async (path: string) => path === '/api/recipes/cake_en' ? { ...savedRecipe, title: 'Manual cake' } : [],
+    } as any, '/recipes/new')
+    wrappers.push(wrapper); await wrapper.find('.input-title').setValue('Manual cake'); await clickButton('Save Recipe')
+    expect(harness.router.currentRoute.value.path).toBe('/recipes/cake_en'); expect(wrapper.text()).toContain('Manual cake')
   })
-
-  it('RecipeEditPage saves new recipe via POST', async () => {
-    const mockApi = {
-      post: vi.fn().mockResolvedValue({ id: 'new_r1' }),
-    }
-
-    const wrapper = mount(RecipeEditPage, {
-      global: {
-        provide: {
-          __SS_API__: mockApi,
-        },
-      },
-    })
-
-    const titleInput = wrapper.find('input.input-title')
-    await titleInput.setValue('Grandma Chocolate Chip Cookies')
-    const saveBtn = wrapper.find('button.btn-primary')
-    await saveBtn.trigger('click')
-
-    expect(mockApi.post).toHaveBeenCalledWith(
-      '/api/recipes',
-      expect.objectContaining({ title: 'Grandma Chocolate Chip Cookies' })
-    )
+  it('keeps entered values and explains a failed manual save', async () => {
+    const { wrapper, harness } = await registeredRoute(activate, 'core-recipes', { post: async () => { throw new Error('Recipe write failed') } } as any, '/recipes/new')
+    wrappers.push(wrapper); await wrapper.find('.input-title').setValue('Unsaved cake'); await clickButton('Save Recipe')
+    expect(wrapper.text()).toContain('Recipe write failed'); expect((wrapper.find('.input-title').element as HTMLInputElement).value).toBe('Unsaved cake'); expect(harness.router.currentRoute.value.path).toBe('/recipes/new')
   })
 })

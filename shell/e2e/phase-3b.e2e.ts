@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './helpers/state'
+import { chooseMember } from './helpers/ui'
 
 test.describe('Phase 3B End-to-End Browser Tests', () => {
   test('authenticates, boots plugins, verifies member picker, recipe scaling, shortlisting, and creation', async ({
@@ -31,17 +32,15 @@ test.describe('Phase 3B End-to-End Browser Tests', () => {
     await expect(memberPicker).toBeVisible()
     const memberSelect = memberPicker.locator('.member-select')
     await expect(memberSelect).toBeVisible()
-    await expect(memberSelect.locator('option')).toHaveCount(3) // All Members, Alex, Charlie
-
-    // Switch active member to Charlie
-    await memberSelect.selectOption({ label: 'Charlie' })
-    await expect(memberSelect).toHaveValue(/^[a-zA-Z0-9_-]+$/)
+    // Switch the actual current-member context used by API headers.
+    await chooseMember(page, 'Charlie')
+    await expect(memberSelect).toContainText('Charlie')
 
     // 5. Verify core-recipes list page and shortlist plugin filter slot
     await expect(page.locator('.recipe-list-page h1')).toHaveText('Recipes')
     const shortlistFilter = page.locator('.shortlist-filter-chip')
     await expect(shortlistFilter).toBeVisible()
-    await expect(shortlistFilter).toHaveText('★ Shortlist')
+    await expect(shortlistFilter).toHaveText('Shortlist')
 
     // Verify initial recipe card exists
     const card = page.locator('.recipe-card', { hasText: "Grandma's Tomato Pasta" })
@@ -91,22 +90,22 @@ test.describe('Phase 3B End-to-End Browser Tests', () => {
 
     // Filter by shortlist
     await shortlistFilter.click()
-    await expect(shortlistFilter).toHaveClass(/active/)
+    await expect(shortlistFilter).toHaveAttribute('aria-pressed', 'true')
     await expect(page.locator('.recipe-card')).toHaveCount(1)
 
     // Unfilter
     await shortlistFilter.click()
-    await expect(shortlistFilter).not.toHaveClass(/active/)
+    await expect(shortlistFilter).toHaveAttribute('aria-pressed', 'false')
 
     // 10. Create new recipe via Intent Trigger
     const addIntentBtn = page.locator('.recipe-list-page .ss-intent-trigger', {
-      hasText: '+ Add / Import Recipe',
+      hasText: 'New recipe',
     })
     await expect(addIntentBtn).toBeVisible()
     await addIntentBtn.click()
 
     // With one valid provider the trigger navigates directly; with several it opens a menu.
-    const manualChoice = page.getByRole('button', { name: 'Manual Recipe', exact: true })
+    const manualChoice = page.getByRole('menuitem', { name: 'Blank recipe', exact: true })
     await expect(manualChoice.or(page.getByRole('heading', { name: 'New Recipe', exact: true }))).toBeVisible()
     if (await manualChoice.isVisible()) await manualChoice.click()
 
@@ -122,7 +121,8 @@ test.describe('Phase 3B End-to-End Browser Tests', () => {
     await page.locator('.btn-add-ingredient').click()
     const ingRow = page.locator('.ingredient-row').first()
     await ingRow.locator('.input-qty').fill('300')
-    await ingRow.locator('.select-unit').selectOption('g')
+    await ingRow.getByRole('combobox', { name: 'Ingredient 1 unit', exact: true }).click()
+    await page.getByRole('option', { name: 'g', exact: true }).click()
     await ingRow.locator('.input-name').fill('Flour')
 
     // Add step

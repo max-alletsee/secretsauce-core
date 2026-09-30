@@ -1,107 +1,47 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
-
-const props = defineProps<{
-  context?: {
-    entry?: any
-  }
-}>()
-
-const api = inject<any>('__SS_API__', null)
-const currentMember = inject<any>('__SS_CURRENT_MEMBER__', null)
-
-const netScore = ref(0)
-const myVote = ref<number | null>(null)
-
+import { ref, watch } from 'vue'
+import { useSecretSauce } from '@secretsauce/ui'
+const props = defineProps<{ context?: { entry?: any } }>()
+const ss = useSecretSauce()
+const netScore = ref(0), myVote = ref<number | null>(null), busy = ref(false), error = ref('')
+let request = 0
 async function loadRatings() {
-  if (!api || !props.context?.entry?.id) return
+  const id = props.context?.entry?.id, memberId = ss.store.currentMember.value?.id, sequence = ++request
+  myVote.value = null
+  if (!id) return
   try {
-    const res = await api.get(`/api/x/core-ratings?journal_id=${props.context.entry.id}`)
-    netScore.value = res.net_score ?? 0
-    const mId = currentMember?.value?.id
-    if (mId && Array.isArray(res.scores)) {
-      const mine = res.scores.find((s: any) => s.member_id === mId)
-      if (mine) myVote.value = mine.score
-    }
-  } catch {
-    // offline
-  }
+    const result = await ss.api.get<any>('/api/x/core-ratings', { journal_id: id })
+    if (sequence !== request) return
+    netScore.value = result.net_score
+    myVote.value = result.scores.find((score: any) => score.member_id === memberId)?.score ?? null
+  } catch (failure: any) { if (sequence === request) error.value = failure?.message || 'Could not load ratings' }
 }
-
+watch(() => [props.context?.entry?.id, ss.store.currentMember.value?.id], loadRatings, { immediate: true })
 async function castVote(score: number) {
-  if (!api || !props.context?.entry?.id) return
-  const mId = currentMember?.value?.id || 'anonymous'
-  if (myVote.value === score) {
-    // Toggle off
-    if (api.delete) {
-      await api.delete(`/api/x/core-ratings?journal_id=${props.context.entry.id}&member_id=${mId}`)
-    }
-    myVote.value = null
-    netScore.value -= score
-  } else {
-    const prevVote = myVote.value
-    const res = await api.put('/api/x/core-ratings', {
-      journal_id: props.context.entry.id,
-      member_id: mId,
-      score,
-    })
-    myVote.value = score
-    if (res && res.net_score !== undefined) {
-      netScore.value = res.net_score
-    } else {
-      netScore.value += prevVote ? score * 2 : score
-    }
-  }
+  const id = props.context?.entry?.id, memberId = ss.store.currentMember.value?.id
+  if (!id || !memberId || busy.value) return
+  busy.value = true; error.value = ''
+  try {
+    if (myVote.value === score) await ss.api.delete('/api/x/core-ratings', { journal_id: id, member_id: memberId })
+    else await ss.api.put('/api/x/core-ratings', { journal_id: id, member_id: memberId, score })
+    await loadRatings()
+  } catch (failure: any) { error.value = failure?.message || 'Could not save rating' }
+  finally { busy.value = false }
 }
-
-onMounted(() => {
-  loadRatings()
-})
 </script>
-
 <template>
   <div class="vote-rating">
-    <button
-      class="vote-btn upvote-btn"
-      :class="{ active: myVote === 1 }"
-      title="Upvote"
-      @click="castVote(1)"
-    >
-      👍
-    </button>
-    <span class="net-score">{{ netScore > 0 ? `+${netScore}` : netScore }}</span>
-    <button
-      class="vote-btn downvote-btn"
-      :class="{ active: myVote === -1 }"
-      title="Downvote"
-      @click="castVote(-1)"
-    >
-      👎
-    </button>
+    <span v-tooltip="ss.store.currentMember.value ? '' : 'Choose a member to rate this meal'">
+      <Button class="upvote-btn" icon="pi pi-thumbs-up" aria-label="Upvote" :aria-pressed="myVote === 1" :outlined="myVote !== 1" size="small" :disabled="busy || !ss.store.currentMember.value" @click="castVote(1)" />
+    </span>
+    <span class="net-score" aria-live="polite">{{ netScore > 0 ? `+${netScore}` : netScore }}</span>
+    <span v-tooltip="ss.store.currentMember.value ? '' : 'Choose a member to rate this meal'">
+      <Button class="downvote-btn" icon="pi pi-thumbs-down" aria-label="Downvote" :aria-pressed="myVote === -1" :outlined="myVote !== -1" severity="secondary" size="small" :disabled="busy || !ss.store.currentMember.value" @click="castVote(-1)" />
+    </span>
+    <Message v-if="error" severity="error">{{ error }}</Message>
   </div>
 </template>
-
 <style scoped>
-.vote-rating {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.vote-btn {
-  border: 1px solid #e7e5e4;
-  background: white;
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 2px 6px;
-  font-size: 0.85em;
-  line-height: 1.2;
-}
-.vote-btn:hover { background: #f5f5f4; }
-.vote-btn.active { border-color: #0284c7; background: #e0f2fe; }
-.net-score {
-  font-size: 0.8em;
-  color: #57534e;
-  min-width: 18px;
-  text-align: center;
-}
+.vote-rating { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.net-score { color: var(--p-text-muted-color); min-width: 1.5rem; text-align: center; }
 </style>

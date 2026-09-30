@@ -161,20 +161,25 @@ async def get_aggregated_shopping_list(
 async def toggle_checked_endpoint(req: ToggleCheckedRequest, ctx: PluginContext = Depends(current_ctx)):
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    await ctx.db.write(
-        """
-        INSERT INTO plugin_core_shopping_list_checked_state (item_key, checked, updated_at)
-        VALUES (?, ?, ?)
-        ON CONFLICT(item_key) DO UPDATE SET checked = excluded.checked, updated_at = excluded.updated_at
-        """,
-        (req.key, 1 if req.checked else 0, now),
-    )
-
-    # If it's a manual item, also update plugin_core_shopping_list_items
-    await ctx.db.write(
-        "UPDATE plugin_core_shopping_list_items SET checked = ?, updated_at = ? WHERE id = ?",
-        (1 if req.checked else 0, now, req.key),
-    )
+    async with ctx.db.transaction() as tx:
+        await tx.execute(
+            """
+            INSERT INTO plugin_core_shopping_list_checked_state (item_key, checked, updated_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(item_key) DO UPDATE SET checked = excluded.checked, updated_at = excluded.updated_at
+            """,
+            (req.key, int(req.checked), now),
+        )
+        # The aggregate's key is normalized name/unit, not the manual row's UUID.
+        rows = await ctx.db.read_all(
+            "SELECT id, name, unit FROM plugin_core_shopping_list_items", conn=tx,
+        )
+        for row in rows:
+            if _make_key(row["name"], row["unit"]) == req.key:
+                await tx.execute(
+                    "UPDATE plugin_core_shopping_list_items SET checked = ?, updated_at = ? WHERE id = ?",
+                    (int(req.checked), now, row["id"]),
+                )
 
     return {"key": req.key, "checked": req.checked}
 

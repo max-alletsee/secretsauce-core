@@ -6,6 +6,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from secretsauce.plugins.context import PluginContext, current_ctx
+from secretsauce.errors import SecretSauceError
 
 PLUGIN = {
     "id": "core-translator",
@@ -146,7 +147,7 @@ async def translate_recipe(
 async def translate_endpoint(req: TranslateRequest, ctx: PluginContext = Depends(current_ctx)):
     try:
         return await translate_recipe(ctx, req.recipe_id, req.target_language)
-    except HTTPException:
+    except (HTTPException, SecretSauceError):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Translation failed: {e}")

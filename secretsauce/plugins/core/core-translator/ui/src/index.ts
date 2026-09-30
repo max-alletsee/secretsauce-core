@@ -1,22 +1,8 @@
-import TranslateAction from './TranslateAction.vue'
+import type { SecretSauceUI } from '@secretsauce/ui'
+import TranslateDialog from './TranslateDialog.vue'
 
-export default function activate(ss: any) {
-  if (ss.slot) {
-    ss.slot('recipe.card.actions', TranslateAction, { order: 30 })
-    ss.slot('recipe.detail.sidebar', TranslateAction, { order: 30 })
-  }
-
-  if (ss.intent?.provider) {
-    ss.intent.provider({
-      hub: 'recipe:actions',
-      id: 'ai-translate',
-      title: 'Translate Recipe (AI)',
-      order: 30,
-      execute: (ctx: any) => {
-        // Can open translation dialog
-      },
-    })
-  }
+export default function activate(ss: SecretSauceUI) {
+  ss.intent.provider({ hub: 'recipe:actions', id: 'ai-translate', title: 'Translate…', kind: 'ui',
+    icon: 'language', order: 30, component: TranslateDialog, isAvailable: context => !!(context as any)?.recipe?.id })
 }
-
-export { TranslateAction }
+export { TranslateDialog }

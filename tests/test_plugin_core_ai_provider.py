@@ -40,6 +40,7 @@ async def test_gemini_driver_completion_with_schema(tmp_path: Path):
         svc = k.services.get("core-ai-provider")
         assert svc is not None
 
+        await svc.update_settings({"gemini_api_key": "test-key"})
         mock_response = MagicMock()
         mock_response.text = '{"title": "Pancake Recipe", "count": 4}'
         mock_response.usage_metadata = MagicMock(
@@ -86,6 +87,7 @@ async def test_budget_enforcement(tmp_path: Path):
         await svc.update_settings({
             "enforce_budget": True,
             "monthly_budget": 0.005,
+            "gemini_api_key": "test-key",
         })
 
         # Insert historical usage exceeding budget in the current month
@@ -100,7 +102,7 @@ async def test_budget_enforcement(tmp_path: Path):
         )
 
         # Attempting completion should raise budget error
-        with pytest.raises(Exception) as exc:
+        with pytest.raises(RuntimeError, match="AI budget exceeded") as exc:
             await svc.complete(
                 schema=None,
                 prompt="Hello",
@@ -230,6 +232,7 @@ async def test_budget_disabled_allows_overage(tmp_path: Path):
         await svc.update_settings({
             "enforce_budget": False,
             "monthly_budget": 0.001,
+            "gemini_api_key": "test-key",
         })
 
         # Insert high historical usage

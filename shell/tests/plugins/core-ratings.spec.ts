@@ -1,46 +1,32 @@
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import VoteRating from '../../../secretsauce/plugins/core/core-ratings/ui/src/VoteRating.vue'
+import { describe, it, expect, afterEach } from 'vitest'
+import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import activate from '../../../secretsauce/plugins/core/core-ratings/ui/src/index'
-
-describe('VoteRating.vue', () => {
-  it('renders upvote and downvote buttons and handles click toggle', async () => {
-    const mockApi = {
-      get: vi.fn().mockResolvedValue({ net_score: 2, scores: [] }),
-      put: vi.fn().mockResolvedValue({ net_score: 3 }),
-      delete: vi.fn().mockResolvedValue({}),
-    }
-    const wrapper = mount(VoteRating, {
-      props: {
-        context: {
-          entry: { id: 'journal-1' },
-        },
-      },
-      global: {
-        provide: {
-          __SS_API__: mockApi,
-          __SS_CURRENT_MEMBER__: { value: { id: 'member-1' } },
-        },
-      },
-    })
-    await wrapper.vm.$nextTick()
-    await new Promise((r) => setTimeout(r, 10))
-
-    expect(wrapper.find('.upvote-btn').exists()).toBe(true)
-    expect(wrapper.find('.downvote-btn').exists()).toBe(true)
-    expect(wrapper.text()).toContain('2')
-
-    await wrapper.find('.upvote-btn').trigger('click')
-    expect(mockApi.put).toHaveBeenCalledWith('/api/x/core-ratings', {
-      journal_id: 'journal-1',
-      member_id: 'member-1',
-      score: 1,
-    })
+import { registeredSlot, testMember } from '../helpers/registeredPlugin'
+const wrappers: VueWrapper[] = []
+afterEach(() => { wrappers.splice(0).forEach(w => w.unmount()); document.body.innerHTML = '' })
+describe('registered ratings footer (API boundary double)', () => {
+  it('votes, switches members, and toggles the selected member vote off', async () => {
+    const scores: { member_id: string; score: number }[] = []
+    const { wrapper, harness } = registeredSlot(activate, 'core-ratings', {
+      get: async (path: string, query: any) => { expect(path).toBe('/api/x/core-ratings'); expect(query).toEqual({ journal_id: 'journal-1' }); return { scores: scores.map(s => ({ ...s })), net_score: scores.reduce((sum, s) => sum + s.score, 0) } },
+      put: async (path: string, body: any) => { expect(path).toBe('/api/x/core-ratings'); expect(body).toEqual({ journal_id: 'journal-1', member_id: 'member-1', score: 1 }); scores.push({ member_id: body.member_id, score: body.score }); return { status: 'ok', net_score: 1 } },
+      delete: async (path: string, query: any) => { expect(path).toBe('/api/x/core-ratings'); expect(query).toEqual({ journal_id: 'journal-1', member_id: 'member-1' }); scores.splice(0); },
+    } as any, 'journal.entry.footer', { entry: { id: 'journal-1' } })
+    wrappers.push(wrapper)
+    harness.memberStore.setMembers([testMember, { ...testMember, id: 'member-2', name: 'Bob' }]); harness.memberStore.setCurrentMember('member-1')
+    await flushPromises(); await wrapper.find('.upvote-btn').trigger('click'); await flushPromises()
+    expect(wrapper.find('.upvote-btn').attributes('aria-pressed')).toBe('true'); expect(wrapper.text()).toContain('+1')
+    harness.memberStore.setCurrentMember('member-2'); await flushPromises()
+    expect(wrapper.find('.upvote-btn').attributes('aria-pressed')).toBe('false')
+    harness.memberStore.setCurrentMember('member-1'); await flushPromises(); await wrapper.find('.upvote-btn').trigger('click'); await flushPromises()
+    expect(wrapper.find('.upvote-btn').attributes('aria-pressed')).toBe('false'); expect(wrapper.text()).toContain('0')
   })
-
-  it('activator registers journal.entry.footer slot', () => {
-    const mockSS = { slot: vi.fn() }
-    activate(mockSS)
-    expect(mockSS.slot).toHaveBeenCalledWith('journal.entry.footer', VoteRating, expect.any(Object))
+  it('requires a real member and explains write failures without inventing a vote', async () => {
+    const { wrapper, harness } = registeredSlot(activate, 'core-ratings', { get: async () => ({ scores: [], net_score: 0 }), put: async () => { throw new Error('Vote not saved') } } as any, 'journal.entry.footer', { entry: { id: 'journal-1' } })
+    wrappers.push(wrapper); await flushPromises()
+    expect(wrapper.find('.upvote-btn').attributes('disabled')).toBeDefined()
+    harness.memberStore.setMembers([testMember]); harness.memberStore.setCurrentMember(testMember.id); await flushPromises()
+    await wrapper.find('.upvote-btn').trigger('click'); await flushPromises()
+    expect(wrapper.text()).toContain('Vote not saved'); expect(wrapper.find('.upvote-btn').attributes('aria-pressed')).toBe('false')
   })
 })

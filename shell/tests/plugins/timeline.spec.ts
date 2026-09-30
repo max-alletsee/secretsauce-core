@@ -1,103 +1,39 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
-import TimelinePage from '../../../secretsauce/plugins/core/core-timeline/ui/src/pages/TimelinePage.vue'
-import AddEntryModal from '../../../secretsauce/plugins/core/core-timeline/ui/src/components/AddEntryModal.vue'
+import { describe, it, expect, afterEach } from 'vitest'
+import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import activate from '../../../secretsauce/plugins/core/core-timeline/ui/src/index'
-import { createPinia } from 'pinia'
-
-describe('Timeline Plugin UI', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+import { registeredRoute, savedRecipe } from '../helpers/registeredPlugin'
+const wrappers: VueWrapper[] = []
+afterEach(() => { wrappers.splice(0).forEach(w => w.unmount()); document.body.innerHTML = '' })
+describe('registered Timeline route (API boundary double)', () => {
+  it('renders nine days, including two compact past days and today', async () => {
+    const { wrapper, harness } = await registeredRoute(activate, 'core-timeline', { get: async () => [] } as any, '/timeline')
+    wrappers.push(wrapper)
+    expect(wrapper.findAll('.timeline-day-column')).toHaveLength(9)
+    expect(wrapper.findAll('.timeline-day-column.is-past')).toHaveLength(2)
+    expect(wrapper.findAll('.timeline-day-column.is-today')).toHaveLength(1)
+    expect(harness.routes.getRoutes()[0].nav).toEqual({ label: 'Timeline', icon: 'calendar', order: 5 })
   })
-
-  it('renders a rolling 9-day span with 2 compact past days, today, and 6 future days', async () => {
-    const pinia = createPinia()
-    const mockApi = {
-      get: vi.fn().mockResolvedValue([]),
-      post: vi.fn().mockResolvedValue({ id: 'new-entry' }),
-      delete: vi.fn().mockResolvedValue({}),
-      patch: vi.fn().mockResolvedValue({}),
-    }
-
-    const wrapper = mount(TimelinePage, {
-      global: {
-        plugins: [pinia],
-        provide: {
-          __SS_API__: mockApi,
-        },
-        stubs: {
-          Slot: {
-            template: '<div class="slot-stub" :data-name="name"><slot /></div>',
-            props: ['name', 'context'],
-          },
-        },
+  it('schedules a searched recipe through the actual Add meal dialog', async () => {
+    let scheduled: any
+    const { wrapper } = await registeredRoute(activate, 'core-timeline', {
+      get: async (path: string) => {
+        if (path.startsWith('/api/recipes?')) return { items: [savedRecipe], total: 1, limit: 50, offset: 0 }
+        if (path === '/api/x/core-shortlist') return []
+        if (path.startsWith('/api/schedule')) return scheduled ? [scheduled] : []
+        if (path.startsWith('/api/journal')) return []
+        throw new Error(`Unexpected GET ${path}`)
       },
-    })
-
-    await wrapper.vm.$nextTick()
-    const days = wrapper.findAll('.timeline-day-column')
-    expect(days.length).toBe(9)
-    const compactDays = wrapper.findAll('.timeline-day-column.is-past')
-    expect(compactDays.length).toBe(2)
-    const today = wrapper.find('.timeline-day-column.is-today')
-    expect(today.exists()).toBe(true)
-  })
-
-  it('AddEntryModal schedules a recipe via API', async () => {
-    const mockApi = {
-      get: vi.fn().mockImplementation((url: string) => {
-        if (url.includes('/api/recipes')) {
-          return Promise.resolve({ items: [{ id: 'r1', title: 'Tacos' }] })
-        }
-        return Promise.resolve([])
-      }),
-      post: vi.fn().mockResolvedValue({ id: 'entry-1' }),
-    }
-
-    const wrapper = mount(AddEntryModal, {
-      props: {
-        date: '2026-09-15',
-        mealType: 'Dinner',
+      post: async (path: string, body: any) => {
+        expect(path).toBe('/api/schedule'); expect(body.recipe_id).toBe('cake_en'); expect(body.meal_type.toLowerCase()).toBe('dinner'); expect(body.servings_override).toBe(2)
+        scheduled = { ...body, revision: 1, title: savedRecipe.title, recipe: savedRecipe, origin: 'manual', position: 0, created_at: '2026-09-28T12:00:00Z', updated_at: '2026-09-28T12:00:00Z' }
+        return scheduled
       },
-      global: {
-        provide: {
-          __SS_API__: mockApi,
-        },
-      },
-    })
-
-    const input = wrapper.find('.search-box input')
-    await input.setValue('Tacos')
-    await input.trigger('input')
-    await wrapper.vm.$nextTick()
-    await new Promise((r) => setTimeout(r, 10))
-
-    const scheduleBtn = wrapper.find('.select-btn')
-    expect(scheduleBtn.exists()).toBe(true)
-    await scheduleBtn.trigger('click')
-
-    expect(mockApi.post).toHaveBeenCalledWith('/api/schedule', expect.objectContaining({
-      date: '2026-09-15',
-      meal_type: 'Dinner',
-      recipe_id: 'r1',
-    }))
-    expect(wrapper.emitted('created')).toBeTruthy()
-  })
-
-  it('activator registers timeline route, nav item, and hubs', () => {
-    const mockSS = {
-      route: vi.fn(),
-      nav: vi.fn(),
-      intent: {
-        hub: vi.fn(),
-        provider: vi.fn(),
-      },
-      api: { get: vi.fn().mockResolvedValue([]) },
-    }
-    activate(mockSS)
-    expect(mockSS.route).toHaveBeenCalledWith(expect.objectContaining({ path: '/timeline' }))
-    expect(mockSS.intent.hub).toHaveBeenCalledWith(expect.objectContaining({ id: 'entry:create' }))
-    expect(mockSS.intent.hub).toHaveBeenCalledWith(expect.objectContaining({ id: 'entry:interact' }))
-    expect(mockSS.intent.hub).toHaveBeenCalledWith(expect.objectContaining({ id: 'timeline:assist' }))
+    } as any, '/timeline')
+    wrappers.push(wrapper)
+    await wrapper.find('.is-today .add-btn').trigger('click'); await flushPromises()
+    await wrapper.find('.search-box input').setValue('Chocolate'); await flushPromises()
+    await wrapper.find('.select-btn').trigger('click'); await flushPromises()
+    expect(wrapper.find('.modal-backdrop').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Chocolate cake')
   })
 })

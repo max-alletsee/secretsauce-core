@@ -1,378 +1,114 @@
-<template>
-  <div class="shopping-list-page p-4 max-w-3xl mx-auto space-y-4">
-    <!-- Header -->
-    <div class="flex items-center justify-between border-b pb-3">
-      <div class="flex items-center gap-2">
-        <span class="text-2xl">🛒</span>
-        <h1 class="text-xl font-bold text-stone-900">Shopping List</h1>
-      </div>
-      <!-- Tabs -->
-      <div class="flex gap-1 bg-stone-100 p-1 rounded-lg text-xs font-medium">
-        <button
-          class="px-3 py-1.5 rounded transition tab-list"
-          :class="activeTab === 'list' ? 'bg-white shadow text-emerald-700' : 'text-stone-600 hover:text-stone-900'"
-          @click="activeTab = 'list'"
-        >
-          Shopping List
-        </button>
-        <button
-          class="px-3 py-1.5 rounded transition tab-staples"
-          :class="activeTab === 'staples' ? 'bg-white shadow text-emerald-700' : 'text-stone-600 hover:text-stone-900'"
-          @click="openStaplesTab"
-        >
-          Pantry Staples
-        </button>
-      </div>
-    </div>
-
-    <!-- MAIN SHOPPING LIST TAB -->
-    <div v-if="activeTab === 'list'" class="space-y-4">
-      <!-- Date Range Controls -->
-      <div class="flex flex-wrap items-center justify-between gap-3 bg-stone-50 p-3 rounded-lg border border-stone-200 text-xs">
-        <div class="flex items-center gap-2">
-          <span class="font-medium text-stone-700">Meals from:</span>
-          <input
-            v-model="fromDate"
-            type="date"
-            class="input-from-date border border-stone-300 rounded px-2 py-1 bg-white focus:outline-none"
-            @change="loadShoppingList"
-          />
-          <span class="text-stone-400">to</span>
-          <input
-            v-model="toDate"
-            type="date"
-            class="input-to-date border border-stone-300 rounded px-2 py-1 bg-white focus:outline-none"
-            @change="loadShoppingList"
-          />
-        </div>
-        <button
-          class="btn-refresh text-xs text-stone-600 hover:text-stone-900 border border-stone-300 px-2.5 py-1 rounded bg-white"
-          @click="loadShoppingList"
-        >
-          🔄 Refresh
-        </button>
-      </div>
-
-      <!-- Quick Add Item Bar -->
-      <form class="flex items-center gap-2" @submit.prevent="addManualItem">
-        <input
-          v-model="newItemName"
-          type="text"
-          placeholder="Add extra item (e.g. coffee beans)..."
-          class="input-new-item flex-1 border border-stone-300 rounded px-3 py-1.5 text-xs bg-white focus:outline-none focus:border-emerald-500"
-        />
-        <input
-          v-model.number="newItemQty"
-          type="number"
-          step="any"
-          placeholder="Qty"
-          class="input-new-qty w-16 border border-stone-300 rounded px-2 py-1.5 text-xs bg-white focus:outline-none focus:border-emerald-500"
-        />
-        <input
-          v-model="newItemUnit"
-          type="text"
-          placeholder="Unit"
-          class="input-new-unit w-16 border border-stone-300 rounded px-2 py-1.5 text-xs bg-white focus:outline-none focus:border-emerald-500"
-        />
-        <button
-          type="submit"
-          class="btn-add-item px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-medium transition"
-          :disabled="!newItemName.trim()"
-        >
-          + Add
-        </button>
-      </form>
-
-      <!-- Loading / Empty States -->
-      <div v-if="loading" class="py-8 text-center text-xs text-stone-500">
-        Loading shopping list...
-      </div>
-
-      <div v-else-if="!items.length" class="empty-state py-8 text-center space-y-1 bg-stone-50 rounded-lg border border-dashed border-stone-200">
-        <p class="text-sm font-medium text-stone-700">Shopping list is empty</p>
-        <p class="text-xs text-stone-400">Schedule meals or add pantry staples to generate your list.</p>
-      </div>
-
-      <!-- Categorized Items -->
-      <div v-else class="space-y-4">
-        <div
-          v-for="(catItems, category) in groupedItems"
-          :key="category"
-          class="category-card bg-white border border-stone-200 rounded-lg overflow-hidden shadow-sm"
-        >
-          <div class="bg-stone-50 px-3 py-2 border-b border-stone-200 flex items-center justify-between">
-            <h3 class="text-xs font-bold text-stone-800 uppercase tracking-wider">{{ category }}</h3>
-            <span class="text-[11px] text-stone-500">
-              {{ catItems.filter((i: any) => i.checked).length }}/{{ catItems.length }}
-            </span>
-          </div>
-
-          <ul class="divide-y divide-stone-100 text-xs">
-            <li
-              v-for="item in catItems"
-              :key="item.key"
-              class="shopping-item px-3 py-2 flex items-center justify-between hover:bg-stone-50/50 transition"
-              :class="{ 'bg-stone-50/30 opacity-50': item.checked }"
-            >
-              <label class="flex items-center gap-2.5 cursor-pointer flex-1 select-none">
-                <input
-                  type="checkbox"
-                  :checked="item.checked"
-                  class="item-checkbox rounded border-stone-300 text-emerald-600 focus:ring-0 cursor-pointer"
-                  @change="toggleItem(item)"
-                />
-                <div class="flex flex-col">
-                  <span
-                    class="item-name font-medium"
-                    :class="{ 'line-through text-stone-400': item.checked, 'text-stone-800': !item.checked }"
-                  >
-                    {{ item.name }}
-                  </span>
-                  <span v-if="item.sources?.length" class="text-[10px] text-stone-400">
-                    {{ item.sources.map((s: any) => s.recipe_title || 'Meal').join(', ') }}
-                  </span>
-                </div>
-              </label>
-
-              <div class="flex items-center gap-2 text-stone-600">
-                <span v-if="item.quantity != null" class="item-qty font-semibold">
-                  {{ item.quantity }} {{ item.unit || '' }}
-                </span>
-                <button
-                  v-if="item.source_type === 'manual'"
-                  class="btn-delete-item text-stone-300 hover:text-red-600 font-bold px-1"
-                  title="Remove manual item"
-                  @click="deleteManualItem(item.id)"
-                >
-                  ✕
-                </button>
-              </div>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- PANTRY STAPLES TAB -->
-    <div v-if="activeTab === 'staples'" class="space-y-4">
-      <div class="bg-stone-50 p-3 rounded-lg border border-stone-200 text-xs space-y-3">
-        <h3 class="font-bold text-stone-800">Add Pantry Staple</h3>
-        <form class="grid grid-cols-2 gap-2" @submit.prevent="addStaple">
-          <input
-            v-model="newStapleName"
-            type="text"
-            placeholder="Staple name (e.g. Olive oil)"
-            class="input-staple-name border border-stone-300 rounded px-2 py-1 text-xs bg-white focus:outline-none"
-          />
-          <div class="flex gap-1">
-            <input
-              v-model.number="newStapleQty"
-              type="number"
-              step="any"
-              placeholder="Qty"
-              class="w-16 border border-stone-300 rounded px-2 py-1 text-xs bg-white focus:outline-none"
-            />
-            <input
-              v-model="newStapleUnit"
-              type="text"
-              placeholder="Unit"
-              class="w-16 border border-stone-300 rounded px-2 py-1 text-xs bg-white focus:outline-none"
-            />
-          </div>
-          <label class="col-span-2 flex items-center gap-2 cursor-pointer pt-1">
-            <input v-model="newStapleAlways" type="checkbox" class="rounded text-emerald-600" />
-            <span class="text-stone-700">Always include in every shopping list</span>
-          </label>
-          <div class="col-span-2 flex justify-end">
-            <button
-              type="submit"
-              class="btn-save-staple px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-medium"
-              :disabled="!newStapleName.trim()"
-            >
-              Save Staple
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Staples List -->
-      <div class="bg-white border border-stone-200 rounded-lg overflow-hidden">
-        <div class="px-3 py-2 bg-stone-50 border-b font-bold text-xs text-stone-800">
-          Configured Staples ({{ staples.length }})
-        </div>
-        <ul class="divide-y divide-stone-100 text-xs">
-          <li v-for="st in staples" :key="st.id" class="staple-row p-3 flex items-center justify-between">
-            <div>
-              <span class="font-medium text-stone-900">{{ st.name }}</span>
-              <span v-if="st.default_quantity" class="text-stone-500 ml-1">
-                ({{ st.default_quantity }} {{ st.unit || '' }})
-              </span>
-              <span v-if="st.always_include" class="ml-2 text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">
-                Always included
-              </span>
-            </div>
-            <button
-              class="btn-delete-staple text-stone-300 hover:text-red-600 text-xs px-2"
-              @click="deleteStaple(st.id)"
-            >
-              Delete
-            </button>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
-
-const props = defineProps<{
-  ss?: any
-}>()
-
-const api = props.ss?.api || inject<any>('__SS_API__', null)
-const notify = props.ss?.notify || inject<any>('__SS_NOTIFY__', null)
-
-const activeTab = ref<'list' | 'staples'>('list')
-const loading = ref(false)
-
-// Dates
-function formatDate(d: Date) {
-  return d.toISOString().split('T')[0]
-}
-const now = new Date()
-const nextWeek = new Date()
-nextWeek.setDate(now.getDate() + 7)
-
-const fromDate = ref(formatDate(now))
-const toDate = ref(formatDate(nextWeek))
-
-// Items & Staples
-const items = ref<any[]>([])
-const staples = ref<any[]>([])
-
-// New manual item
-const newItemName = ref('')
-const newItemQty = ref<number | null>(null)
-const newItemUnit = ref('')
-
-// New staple
-const newStapleName = ref('')
-const newStapleQty = ref<number | null>(1)
-const newStapleUnit = ref('')
-const newStapleAlways = ref(true)
-
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useSecretSauce } from '@secretsauce/ui'
+const ss = useSecretSauce()
+const activeTab = ref('list'), loading = ref(false), busy = ref(false), error = ref('')
+function formatDate(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` }
+const end = new Date(); end.setDate(end.getDate() + 7)
+const fromDate = ref(formatDate(new Date())), toDate = ref(formatDate(end))
+const items = ref<any[]>([]), staples = ref<any[]>([])
+const newItemName = ref(''), newItemQty = ref<number | null>(null), newItemUnit = ref('')
+const newStapleName = ref(''), newStapleQty = ref<number | null>(1), newStapleUnit = ref(''), newStapleAlways = ref(true)
 const groupedItems = computed(() => {
   const groups: Record<string, any[]> = {}
-  for (const item of items.value) {
-    const cat = item.category || 'Other'
-    if (!groups[cat]) groups[cat] = []
-    groups[cat].push(item)
-  }
+  for (const item of items.value) (groups[item.category || 'Other'] ||= []).push(item)
   return groups
 })
-
+let request = 0
 async function loadShoppingList() {
-  if (!api) return
-  loading.value = true
+  const sequence = ++request
+  loading.value = true; error.value = ''
   try {
-    const res = await api.get('/api/x/core-shopping-list', {
-      params: { from_date: fromDate.value, to_date: toDate.value },
-    })
-    items.value = res?.items || []
-  } catch (err: any) {
-    if (notify) notify({ level: 'error', message: 'Failed to load shopping list' })
-  } finally {
-    loading.value = false
-  }
+    const result = await ss.api.get<any>('/api/x/core-shopping-list', { from_date: fromDate.value, to_date: toDate.value })
+    if (sequence === request) items.value = result.items
+  } catch (failure: any) { if (sequence === request) error.value = failure?.message || 'Failed to load shopping list' }
+  finally { if (sequence === request) loading.value = false }
 }
-
-async function toggleItem(item: any) {
-  item.checked = !item.checked
-  if (!api) return
-  try {
-    await api.post('/api/x/core-shopping-list/toggle', {
-      key: item.key,
-      checked: item.checked,
-    })
-  } catch (err: any) {
-    item.checked = !item.checked // rollback on error
-  }
-}
-
-async function addManualItem() {
-  if (!api || !newItemName.value.trim()) return
-  try {
-    await api.post('/api/x/core-shopping-list/items', {
-      name: newItemName.value.trim(),
-      quantity: newItemQty.value,
-      unit: newItemUnit.value.trim() || undefined,
-      category: 'Other',
-    })
-    newItemName.value = ''
-    newItemQty.value = null
-    newItemUnit.value = ''
-    await loadShoppingList()
-  } catch (err: any) {
-    if (notify) notify({ level: 'error', message: 'Failed to add manual item' })
-  }
-}
-
-async function deleteManualItem(id: string) {
-  if (!api || !id) return
-  try {
-    await api.delete(`/api/x/core-shopping-list/items/${id}`)
-    await loadShoppingList()
-  } catch (err: any) {
-    if (notify) notify({ level: 'error', message: 'Failed to delete item' })
-  }
-}
-
-async function openStaplesTab() {
-  activeTab.value = 'staples'
-  await loadStaples()
-}
-
 async function loadStaples() {
-  if (!api) return
-  try {
-    const res = await api.get('/api/x/core-shopping-list/staples')
-    staples.value = res || []
-  } catch (err: any) {
-    if (notify) notify({ level: 'error', message: 'Failed to load staples' })
-  }
+  try { staples.value = await ss.api.get<any[]>('/api/x/core-shopping-list/staples') }
+  catch (failure: any) { error.value = failure?.message || 'Failed to load staples' }
 }
-
+watch(activeTab, tab => { if (tab === 'staples') loadStaples() })
+async function write(action: () => Promise<unknown>, refresh: () => Promise<void>) {
+  if (busy.value) return false
+  busy.value = true; error.value = ''
+  try { await action(); await refresh(); return true }
+  catch (failure: any) { error.value = failure?.message || 'Could not update shopping list'; return false }
+  finally { busy.value = false }
+}
+async function toggleItem(item: any) {
+  if (busy.value) return
+  const previous = item.checked
+  item.checked = !previous
+  // PrimeVue's internal checked state needs a changed model before rollback.
+  await nextTick()
+  const saved = await write(() => ss.api.post('/api/x/core-shopping-list/toggle', { key: item.key, checked: !previous }), loadShoppingList)
+  if (!saved) item.checked = previous
+}
+async function addManualItem() {
+  if (!newItemName.value.trim()) return
+  await write(async () => {
+    await ss.api.post('/api/x/core-shopping-list/items', { name: newItemName.value.trim(), quantity: newItemQty.value, unit: newItemUnit.value.trim() || undefined, category: 'Other' })
+    newItemName.value = ''; newItemQty.value = null; newItemUnit.value = ''
+  }, loadShoppingList)
+}
 async function addStaple() {
-  if (!api || !newStapleName.value.trim()) return
-  try {
-    await api.post('/api/x/core-shopping-list/staples', {
-      name: newStapleName.value.trim(),
-      default_quantity: newStapleQty.value || 1,
-      unit: newStapleUnit.value.trim() || undefined,
-      always_include: newStapleAlways.value,
-    })
-    newStapleName.value = ''
-    newStapleQty.value = 1
-    newStapleUnit.value = ''
-    await loadStaples()
-  } catch (err: any) {
-    if (notify) notify({ level: 'error', message: 'Failed to save staple' })
-  }
+  if (!newStapleName.value.trim()) return
+  await write(async () => {
+    await ss.api.post('/api/x/core-shopping-list/staples', { name: newStapleName.value.trim(), default_quantity: newStapleQty.value ?? 1, unit: newStapleUnit.value.trim() || undefined, always_include: newStapleAlways.value })
+    newStapleName.value = ''; newStapleQty.value = 1; newStapleUnit.value = ''
+  }, loadStaples)
 }
-
-async function deleteStaple(id: string) {
-  if (!api || !id) return
-  try {
-    await api.delete(`/api/x/core-shopping-list/staples/${id}`)
-    await loadStaples()
-  } catch (err: any) {
-    if (notify) notify({ level: 'error', message: 'Failed to delete staple' })
-  }
-}
-
-onMounted(() => {
-  loadShoppingList()
-})
+onMounted(loadShoppingList)
 </script>
+<template>
+  <div class="shopping-list-page">
+    <h1>Shopping list</h1>
+    <Message v-if="error" severity="error">{{ error }}</Message>
+    <Tabs v-model:value="activeTab"><TabList><Tab value="list">Shopping list</Tab><Tab value="staples">Pantry staples</Tab></TabList>
+      <TabPanels><TabPanel value="list">
+        <div class="date-controls"><label for="shopping-from">Meals from</label><InputText id="shopping-from" v-model="fromDate" type="date" @change="loadShoppingList" /><label for="shopping-to">To</label><InputText id="shopping-to" v-model="toDate" type="date" @change="loadShoppingList" /><Button label="Refresh" icon="pi pi-refresh" outlined :loading="loading" @click="loadShoppingList" /></div>
+        <form class="add-form" @submit.prevent="addManualItem">
+          <div><label for="extra-name">Extra item name</label><InputText id="extra-name" v-model="newItemName" fluid /></div>
+          <div><label for="extra-quantity">Quantity</label><InputNumber inputId="extra-quantity" v-model="newItemQty" :min="0" fluid /></div>
+          <div><label for="extra-unit">Unit</label><InputText id="extra-unit" v-model="newItemUnit" fluid /></div>
+          <Button type="submit" label="Add item" icon="pi pi-plus" :disabled="!newItemName.trim()" :loading="busy" />
+        </form>
+        <ProgressSpinner v-if="loading" aria-label="Loading shopping list" />
+        <Message v-else-if="!items.length" severity="secondary">Shopping list is empty. Schedule meals or add pantry staples to generate your list.</Message>
+        <section v-for="(categoryItems, category) in groupedItems" :key="category" class="category-card">
+          <h3>{{ category }} <Tag :value="`${categoryItems.filter(item => item.checked).length}/${categoryItems.length}`" severity="secondary" /></h3>
+          <ul><li v-for="item in categoryItems" :key="item.key" class="shopping-item" :class="{ checked: item.checked }">
+            <Checkbox :inputId="`item-${item.key}`" :modelValue="item.checked" binary :disabled="busy" @update:modelValue="toggleItem(item)" />
+            <label :for="`item-${item.key}`"><span>{{ item.name }}</span><small v-if="item.sources?.length">{{ item.sources.map(source => source.recipe_title || 'Meal').join(', ') }}</small></label>
+            <span v-if="item.quantity != null">{{ item.quantity }} {{ item.unit || '' }}</span>
+            <Button v-if="item.source_type === 'manual'" icon="pi pi-times" aria-label="Remove manual item" text severity="danger" :disabled="busy" @click="write(() => ss.api.delete(`/api/x/core-shopping-list/items/${item.id}`), loadShoppingList)" />
+          </li></ul>
+        </section>
+      </TabPanel><TabPanel value="staples">
+        <h3>Add pantry staple</h3><form class="add-form" @submit.prevent="addStaple">
+          <div><label for="staple-name">Staple name</label><InputText id="staple-name" v-model="newStapleName" fluid /></div>
+          <div><label for="staple-quantity">Default quantity</label><InputNumber inputId="staple-quantity" v-model="newStapleQty" :min="0" fluid /></div>
+          <div><label for="staple-unit">Staple unit</label><InputText id="staple-unit" v-model="newStapleUnit" fluid /></div>
+          <div class="checkbox-label"><Checkbox inputId="staple-always" v-model="newStapleAlways" binary /><label for="staple-always">Always include in every shopping list</label></div>
+          <Button type="submit" label="Save staple" :disabled="!newStapleName.trim()" :loading="busy" />
+        </form>
+        <ul class="staple-list"><li v-for="staple in staples" :key="staple.id" class="staple-row"><span>{{ staple.name }} · {{ staple.default_quantity }} {{ staple.unit }}</span><Tag v-if="staple.always_include" value="Always included" severity="info" /><Button label="Delete" text severity="danger" :disabled="busy" @click="write(() => ss.api.delete(`/api/x/core-shopping-list/staples/${staple.id}`), loadStaples)" /></li></ul>
+      </TabPanel></TabPanels>
+    </Tabs>
+  </div>
+</template>
+<style scoped>
+.shopping-list-page { max-width: 60rem; margin: 0 auto; padding: 1rem; display: grid; gap: 1rem; }
+h1 { margin: 0; } h3 { display: flex; align-items: center; gap: .5rem; }
+.date-controls, .checkbox-label, .staple-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.add-form { display: grid; grid-template-columns: minmax(8rem, 2fr) minmax(5rem, 1fr) minmax(5rem, 1fr) auto; gap: .75rem; align-items: end; margin: 1rem 0; }
+label { color: var(--p-text-muted-color); } .add-form label { display: block; margin-bottom: .5rem; }
+.category-card { border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); padding: 1rem; margin-top: 1rem; background: var(--p-content-background); }
+ul { list-style: none; padding: 0; }
+.shopping-item { display: flex; gap: .75rem; align-items: center; padding: .75rem 0; border-top: 1px solid var(--p-content-border-color); }
+.shopping-item label { flex: 1; cursor: pointer; color: var(--p-text-color); }.shopping-item small { display: block; color: var(--p-text-muted-color); }
+.checked label span { text-decoration: line-through; color: var(--p-text-muted-color); }
+.staple-list { display: grid; gap: .75rem; }
+@media (max-width: 767px) { .add-form { grid-template-columns: 1fr 1fr; } .add-form > :first-child { grid-column: 1 / -1; } }
+</style>

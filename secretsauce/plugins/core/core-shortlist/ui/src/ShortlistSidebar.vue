@@ -1,46 +1,23 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
-
-const props = defineProps<{
-  context?: unknown
-}>()
-
-const api = inject<any>('__SS_API__')
-const entries = ref<any[]>([])
-
+import { ref, onMounted } from 'vue'
+import { useSecretSauce } from '@secretsauce/ui'
+const ss = useSecretSauce(), entries = ref<any[]>([]), error = ref('')
 onMounted(async () => {
-  if (api) {
-    try {
-      entries.value = await api.get('/api/x/core-shortlist')
-    } catch {
-      // offline fallback
-    }
-  }
+  try { entries.value = await ss.api.get<any[]>('/api/x/core-shortlist') }
+  catch (failure: any) { error.value = failure?.message || 'Could not load shortlist' }
 })
 </script>
-
 <template>
-  <div class="shortlist-sidebar">
-    <h4>Shortlist ({{ entries.length }})</h4>
-    <ul v-if="entries.length" class="sidebar-list">
-      <li v-for="e in entries" :key="e.id">
-        <a :href="`#/recipes/${e.recipe_id}`">{{ e.recipe_title || 'Recipe' }}</a>
-      </li>
-    </ul>
-    <p v-else class="empty-hint">No shortlisted recipes.</p>
-  </div>
+  <section class="shortlist-sidebar">
+    <h3>Shortlist ({{ entries.length }})</h3>
+    <Message v-if="error" severity="error">{{ error }}</Message>
+    <ul v-if="entries.length"><li v-for="entry in entries" :key="entry.id"><a :href="ss.url(`/recipes/${entry.recipe_id}`)" @click.prevent="ss.navigate?.(`/recipes/${entry.recipe_id}`)">{{ entry.recipe_title || 'Recipe' }}</a></li></ul>
+    <p v-else>No shortlisted recipes.</p>
+  </section>
 </template>
-
 <style scoped>
-.shortlist-sidebar {
-  padding: 12px;
-  border: 1px solid #e7e5e4;
-  border-radius: 8px;
-  background: #fafaf9;
-}
-.shortlist-sidebar h4 { margin: 0 0 8px 0; font-size: 0.95em; }
-.sidebar-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
-.sidebar-list a { color: #0284c7; text-decoration: none; font-size: 0.85em; }
-.sidebar-list a:hover { text-decoration: underline; }
-.empty-hint { color: #a8a29e; font-size: 0.8em; margin: 0; }
+.shortlist-sidebar { padding: 1rem; border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); background: var(--p-content-background); }
+h3 { margin: 0 0 .75rem; font-size: 1rem; }
+ul { list-style: none; padding: 0; display: grid; gap: .5rem; }
+a { color: var(--p-primary-color); } p { color: var(--p-text-muted-color); }
 </style>

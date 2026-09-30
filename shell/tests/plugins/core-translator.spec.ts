@@ -1,75 +1,38 @@
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import TranslateAction from '../../../secretsauce/plugins/core/core-translator/ui/src/TranslateAction.vue'
+import { describe, it, expect, afterEach } from 'vitest'
+import type { VueWrapper } from '@vue/test-utils'
+import { ApiError } from '@secretsauce/ui'
 import activate from '../../../secretsauce/plugins/core/core-translator/ui/src/index'
+import { registeredIntent, openProvider, clickButton, savedRecipe } from '../helpers/registeredPlugin'
 
-describe('core-translator UI', () => {
-  it('opens dialog, triggers translation, and emits translated event', async () => {
-    const mockTranslatedRecipe = {
-      id: 'r-1_es',
-      group_id: 'grp-1',
-      language: 'es',
-      title: 'Tacos Al Pastor',
-    }
-
-    const mockApi = {
-      post: vi.fn().mockResolvedValue(mockTranslatedRecipe),
-    }
-    const mockNotify = vi.fn()
-
-    const wrapper = mount(TranslateAction, {
-      props: {
-        recipe: { id: 'r-1', title: 'Tacos Al Pastor' },
-        ss: { api: mockApi, notify: mockNotify },
-      },
-    })
-
-    // Open modal
-    const openBtn = wrapper.find('button.btn-open-translate')
-    expect(openBtn.exists()).toBe(true)
-    await openBtn.trigger('click')
-
-    expect(wrapper.text()).toContain('Translate Recipe')
-
-    // Select language
-    const select = wrapper.find('select.select-target-lang')
-    await select.setValue('es')
-
-    // Submit translation
-    const submitBtn = wrapper.find('button.btn-do-translate')
-    await submitBtn.trigger('click')
-
-    expect(mockApi.post).toHaveBeenCalledWith('/api/x/core-translator/translate', {
-      recipe_id: 'r-1',
-      target_language: 'es',
-    })
-
-    await wrapper.vm.$nextTick()
-    await new Promise((r) => setTimeout(r, 20))
-
-    expect(wrapper.emitted('translated')).toBeTruthy()
-    expect(wrapper.emitted('translated')![0]).toEqual([mockTranslatedRecipe])
-    expect(mockNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ level: 'success' })
-    )
+const wrappers: VueWrapper[] = []
+afterEach(() => { wrappers.splice(0).forEach(w => w.unmount()); document.body.innerHTML = '' })
+async function open(api: any) {
+  const result = registeredIntent(activate, 'core-translator', api, 'recipe:actions', { recipe: savedRecipe })
+  wrappers.push(result.wrapper)
+  result.harness.router.addRoute({ path: '/recipes/:id', component: { template: '<p>Recipe destination</p>' } })
+  await openProvider(result.wrapper, 'Translate…')
+  return result
+}
+describe('registered translator component (API boundary double)', () => {
+  it('translates the context recipe and resolves the persisted variant', async () => {
+    const translated = { ...savedRecipe, id: 'cake_de', language: 'de', title: 'Schokoladenkuchen', languages: ['en', 'de'] }
+    const { wrapper, harness } = await open({ post: async (path: string, body: any) => {
+      expect(path).toBe('/api/x/core-translator/translate')
+      expect(body).toEqual({ recipe_id: 'cake_en', target_language: 'de' })
+      return translated
+    } })
+    expect(document.querySelector('[role=dialog]')?.textContent).toContain('Chocolate cake')
+    await clickButton('Translate recipe')
+    expect(wrapper.emitted('resolve')).toEqual([[translated]])
+    expect(harness.router.currentRoute.value.path).toBe('/recipes/cake_de')
+    expect(document.querySelector('[role=dialog]')).toBeNull()
   })
-
-  it('activates and registers slots and intent providers', () => {
-    const mockSS = {
-      slot: vi.fn(),
-      intent: {
-        provider: vi.fn(),
-      },
-    }
-
-    activate(mockSS)
-    expect(mockSS.slot).toHaveBeenCalledWith(
-      'recipe.card.actions',
-      TranslateAction,
-      expect.objectContaining({ order: 30 })
-    )
-    expect(mockSS.intent.provider).toHaveBeenCalledWith(
-      expect.objectContaining({ hub: 'recipe:actions', id: 'ai-translate' })
-    )
+  it.each([[503, 'unavailable', 'AI isn’t set up yet'], [500, 'internal_error', 'Provider rejected translation']])('shows standard error %s without resolving', async (status, code, message) => {
+    const { wrapper } = await open({ post: async () => { throw new ApiError(status as number, code as string, 'Provider rejected translation') } })
+    await clickButton('Translate recipe')
+    expect(document.querySelector('[role=dialog]')?.textContent).toContain(message as string)
+    expect(wrapper.emitted('resolve')).toBeUndefined()
+    await clickButton('Cancel')
+    expect(wrapper.emitted('cancel')).toEqual([[]])
   })
 })

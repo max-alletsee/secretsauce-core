@@ -1,434 +1,283 @@
-import { defineComponent as V, inject as I, ref as x, onMounted as B, openBlock as r, createElementBlock as a, createElementVNode as e, toDisplayString as l, createCommentVNode as i, withDirectives as u, vModelSelect as C, vModelText as m, vModelCheckbox as F, Fragment as M, renderList as j } from "vue";
-const O = { class: "ai-settings p-4 space-y-6" }, N = { class: "header flex items-center justify-between" }, T = ["disabled"], D = { class: "settings-card p-4 bg-white border border-stone-200 rounded-lg space-y-4" }, E = { class: "grid grid-cols-1 md:grid-cols-2 gap-4" }, K = { class: "space-y-3 pt-2" }, L = { key: 0 }, $ = { key: 1 }, G = { key: 2 }, R = { class: "settings-card p-4 bg-white border border-stone-200 rounded-lg space-y-4" }, z = { class: "flex items-center gap-3" }, Y = { class: "w-48" }, q = { class: "settings-card p-4 bg-white border border-stone-200 rounded-lg space-y-4" }, H = { class: "grid grid-cols-2 md:grid-cols-4 gap-4" }, J = { class: "stat-box p-3 bg-stone-50 rounded border border-stone-200" }, Q = { class: "text-lg font-bold text-stone-900 month-spend-val" }, W = { class: "stat-box p-3 bg-stone-50 rounded border border-stone-200" }, X = { class: "text-lg font-bold text-stone-900" }, Z = { class: "stat-box p-3 bg-stone-50 rounded border border-stone-200" }, ee = { class: "text-lg font-bold text-stone-900" }, te = { class: "stat-box p-3 bg-stone-50 rounded border border-stone-200" }, oe = { class: "text-lg font-bold text-stone-900" }, se = {
-  key: 0,
-  class: "mt-4"
-}, ne = { class: "space-y-1" }, le = { class: "font-mono text-stone-700" }, ie = { class: "font-medium text-stone-900" }, de = /* @__PURE__ */ V({
+import { defineComponent as O, ref as m, computed as L, onMounted as D, resolveComponent as u, openBlock as v, createElementBlock as c, createBlock as E, withCtx as P, createTextVNode as j, toDisplayString as g, createCommentVNode as A, createElementVNode as t, createVNode as i, Fragment as G, renderList as R } from "vue";
+import { useSecretSauce as h } from "@secretsauce/ui";
+const q = { class: "ai-settings" }, z = { class: "fields" }, H = { class: "api-key" }, J = { class: "budget-toggle" }, K = { class: "actions" }, Q = { class: "usage-header" }, W = { class: "stats" }, X = {
+  key: 1,
+  class: "usage-list"
+}, Y = /* @__PURE__ */ O({
   __name: "AiSettings",
-  props: {
-    ss: {},
-    context: {}
-  },
-  setup(c) {
-    var _, y;
-    const b = c, p = ((_ = b.ss) == null ? void 0 : _.api) || I("__SS_API__", null), g = ((y = b.ss) == null ? void 0 : y.notify) || I("__SS_NOTIFY__", null), o = x({
-      provider: "gemini",
-      model: "gemini-3.8-flash",
-      gemini_api_key: "",
-      openai_api_key: "",
-      openrouter_api_key: "",
-      enforce_budget: !1,
-      monthly_budget: 10
-    }), d = x({
-      total_cost_usd: 0,
-      month_cost_usd: 0,
-      total_input_tokens: 0,
-      total_output_tokens: 0,
-      breakdown_by_plugin: []
-    }), v = x(!1);
-    async function P() {
-      if (p)
-        try {
-          const s = await p.get("/api/x/core-ai-provider/settings");
-          s && (o.value = {
-            provider: s.provider || "gemini",
-            model: s.model || "gemini-3.8-flash",
-            gemini_api_key: s.gemini_api_key || "",
-            openai_api_key: s.openai_api_key || "",
-            openrouter_api_key: s.openrouter_api_key || "",
-            enforce_budget: !!s.enforce_budget,
-            monthly_budget: Number(s.monthly_budget ?? 10)
-          });
-        } catch (s) {
-          console.error("Failed to load AI settings", s);
-        }
+  setup(p) {
+    const a = h(), d = m(!1), s = m(""), l = m({ provider: "gemini", model: "gemini-3.8-flash", gemini_api_key: "", openai_api_key: "", openrouter_api_key: "", enforce_budget: !1, monthly_budget: 10 }), w = [{ id: "gemini", label: "Google Gemini" }, { id: "openai", label: "OpenAI" }, { id: "openrouter", label: "OpenRouter" }], _ = L(() => `${l.value.provider}_api_key`), r = m({ total_cost_usd: 0, month_cost_usd: 0, total_input_tokens: 0, total_output_tokens: 0, breakdown_by_plugin: [] });
+    async function F() {
+      try {
+        Object.assign(l.value, await a.api.get("/api/x/core-ai-provider/settings"));
+      } catch (n) {
+        s.value = (n == null ? void 0 : n.message) || "Failed to load AI settings";
+      }
     }
     async function f() {
-      if (p)
-        try {
-          const s = await p.get("/api/x/core-ai-provider/usage");
-          s && (d.value = s);
-        } catch (s) {
-          console.error("Failed to load AI usage", s);
-        }
+      try {
+        r.value = await a.api.get("/api/x/core-ai-provider/usage");
+      } catch (n) {
+        s.value = (n == null ? void 0 : n.message) || "Failed to load AI usage";
+      }
     }
-    async function U() {
-      if (p) {
-        v.value = !0;
+    async function N() {
+      if (!d.value) {
+        d.value = !0, s.value = "";
         try {
-          const s = await p.put("/api/x/core-ai-provider/settings", o.value);
-          s && (o.value = { ...o.value, ...s }), g && g({ level: "success", message: "AI settings updated successfully." });
-        } catch {
-          g && g({ level: "error", message: "Failed to update AI settings." });
+          Object.assign(l.value, await a.api.put("/api/x/core-ai-provider/settings", l.value)), a.notify({ level: "success", message: "AI settings updated successfully." });
+        } catch (n) {
+          s.value = (n == null ? void 0 : n.message) || "Failed to update AI settings";
         } finally {
-          v.value = !1;
+          d.value = !1;
         }
       }
     }
-    return B(() => {
-      P(), f();
-    }), (s, t) => {
-      var k, h, w, S, A;
-      return r(), a("div", O, [
-        e("div", N, [
-          t[7] || (t[7] = e(
-            "h3",
-            { class: "text-lg font-semibold text-stone-900" },
-            "AI Provider & Budget Settings",
-            -1
-            /* CACHED */
-          )),
-          e("button", {
-            class: "save-btn px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-sm font-medium transition",
-            disabled: v.value,
-            onClick: U
-          }, l(v.value ? "Saving..." : "Save Settings"), 9, T)
-        ]),
-        i(" Provider Configuration "),
-        e("div", D, [
-          t[14] || (t[14] = e(
-            "h4",
-            { class: "font-medium text-stone-800" },
-            "Active Provider",
-            -1
-            /* CACHED */
-          )),
-          e("div", E, [
-            e("div", null, [
-              t[9] || (t[9] = e(
-                "label",
-                { class: "block text-xs font-semibold text-stone-600 uppercase mb-1" },
-                "Provider Engine",
-                -1
-                /* CACHED */
-              )),
-              u(e(
-                "select",
-                {
-                  "onUpdate:modelValue": t[0] || (t[0] = (n) => o.value.provider = n),
-                  class: "provider-select w-full border border-stone-300 rounded px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-emerald-500"
-                },
-                [...t[8] || (t[8] = [
-                  e(
-                    "option",
-                    { value: "gemini" },
-                    "Google Gemini",
-                    -1
-                    /* CACHED */
-                  ),
-                  e(
-                    "option",
-                    { value: "openai" },
-                    "OpenAI",
-                    -1
-                    /* CACHED */
-                  ),
-                  e(
-                    "option",
-                    { value: "openrouter" },
-                    "OpenRouter",
-                    -1
-                    /* CACHED */
-                  )
-                ])],
-                512
-                /* NEED_PATCH */
-              ), [
-                [C, o.value.provider]
-              ])
-            ]),
-            e("div", null, [
-              t[10] || (t[10] = e(
-                "label",
-                { class: "block text-xs font-semibold text-stone-600 uppercase mb-1" },
-                "Model Name",
-                -1
-                /* CACHED */
-              )),
-              u(e(
-                "input",
-                {
-                  "onUpdate:modelValue": t[1] || (t[1] = (n) => o.value.model = n),
-                  type: "text",
-                  placeholder: "e.g. gemini-3.8-flash",
-                  class: "model-input w-full border border-stone-300 rounded px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-emerald-500"
-                },
-                null,
-                512
-                /* NEED_PATCH */
-              ), [
-                [m, o.value.model]
-              ])
-            ])
+    return D(() => {
+      F(), f();
+    }), (n, e) => {
+      var k, V, I, S, x;
+      const T = u("Message"), U = u("Select"), b = u("InputText"), $ = u("ToggleSwitch"), B = u("InputNumber"), y = u("Button"), C = u("Divider"), M = u("Tag");
+      return v(), c("div", q, [
+        s.value ? (v(), E(T, {
+          key: 0,
+          severity: "error"
+        }, {
+          default: P(() => [
+            j(
+              g(s.value),
+              1
+              /* TEXT */
+            )
           ]),
-          i(" API Keys "),
-          e("div", K, [
-            o.value.provider === "gemini" ? (r(), a("div", L, [
-              t[11] || (t[11] = e(
-                "label",
-                { class: "block text-xs font-semibold text-stone-600 uppercase mb-1" },
-                "Gemini API Key",
-                -1
-                /* CACHED */
-              )),
-              u(e(
-                "input",
-                {
-                  "onUpdate:modelValue": t[2] || (t[2] = (n) => o.value.gemini_api_key = n),
-                  type: "password",
-                  placeholder: "AIzaSy...",
-                  class: "gemini-key-input w-full border border-stone-300 rounded px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-emerald-500"
-                },
-                null,
-                512
-                /* NEED_PATCH */
-              ), [
-                [m, o.value.gemini_api_key]
-              ])
-            ])) : i("v-if", !0),
-            o.value.provider === "openai" ? (r(), a("div", $, [
-              t[12] || (t[12] = e(
-                "label",
-                { class: "block text-xs font-semibold text-stone-600 uppercase mb-1" },
-                "OpenAI API Key",
-                -1
-                /* CACHED */
-              )),
-              u(e(
-                "input",
-                {
-                  "onUpdate:modelValue": t[3] || (t[3] = (n) => o.value.openai_api_key = n),
-                  type: "password",
-                  placeholder: "sk-proj-...",
-                  class: "openai-key-input w-full border border-stone-300 rounded px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-emerald-500"
-                },
-                null,
-                512
-                /* NEED_PATCH */
-              ), [
-                [m, o.value.openai_api_key]
-              ])
-            ])) : i("v-if", !0),
-            o.value.provider === "openrouter" ? (r(), a("div", G, [
-              t[13] || (t[13] = e(
-                "label",
-                { class: "block text-xs font-semibold text-stone-600 uppercase mb-1" },
-                "OpenRouter API Key",
-                -1
-                /* CACHED */
-              )),
-              u(e(
-                "input",
-                {
-                  "onUpdate:modelValue": t[4] || (t[4] = (n) => o.value.openrouter_api_key = n),
-                  type: "password",
-                  placeholder: "sk-or-v1-...",
-                  class: "openrouter-key-input w-full border border-stone-300 rounded px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-emerald-500"
-                },
-                null,
-                512
-                /* NEED_PATCH */
-              ), [
-                [m, o.value.openrouter_api_key]
-              ])
-            ])) : i("v-if", !0)
-          ])
-        ]),
-        i(" Budget Controls "),
-        e("div", R, [
-          t[17] || (t[17] = e(
-            "h4",
-            { class: "font-medium text-stone-800" },
-            "Monthly Budget & Safeguards",
-            -1
-            /* CACHED */
-          )),
-          e("div", z, [
-            u(e(
-              "input",
-              {
-                id: "enforce_budget_checkbox",
-                "onUpdate:modelValue": t[5] || (t[5] = (n) => o.value.enforce_budget = n),
-                type: "checkbox",
-                class: "budget-checkbox rounded border-stone-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
-              },
-              null,
-              512
-              /* NEED_PATCH */
-            ), [
-              [F, o.value.enforce_budget]
-            ]),
-            t[15] || (t[15] = e(
+          _: 1
+          /* STABLE */
+        })) : A("v-if", !0),
+        t("div", z, [
+          t("div", null, [
+            e[5] || (e[5] = t(
               "label",
-              {
-                for: "enforce_budget_checkbox",
-                class: "text-sm font-medium text-stone-700"
-              },
-              " Enforce monthly budget limit (reject calls when exceeded) ",
+              { for: "ai-provider" },
+              "Provider engine",
+              -1
+              /* CACHED */
+            )),
+            i(U, {
+              inputId: "ai-provider",
+              "aria-label": "Provider engine",
+              modelValue: l.value.provider,
+              "onUpdate:modelValue": e[0] || (e[0] = (o) => l.value.provider = o),
+              options: w,
+              optionLabel: "label",
+              optionValue: "id",
+              fluid: ""
+            }, null, 8, ["modelValue"])
+          ]),
+          t("div", null, [
+            e[6] || (e[6] = t(
+              "label",
+              { for: "ai-model" },
+              "Model name",
+              -1
+              /* CACHED */
+            )),
+            i(b, {
+              id: "ai-model",
+              modelValue: l.value.model,
+              "onUpdate:modelValue": e[1] || (e[1] = (o) => l.value.model = o),
+              class: "model-input",
+              fluid: ""
+            }, null, 8, ["modelValue"])
+          ]),
+          t("div", H, [
+            e[7] || (e[7] = t(
+              "label",
+              { for: "ai-key" },
+              "API key",
+              -1
+              /* CACHED */
+            )),
+            i(b, {
+              id: "ai-key",
+              modelValue: l.value[_.value],
+              "onUpdate:modelValue": e[2] || (e[2] = (o) => l.value[_.value] = o),
+              type: "password",
+              autocomplete: "new-password",
+              fluid: ""
+            }, null, 8, ["modelValue"]),
+            e[8] || (e[8] = t(
+              "small",
+              null,
+              "Stored keys are masked. Leave the mask unchanged to keep the saved key.",
               -1
               /* CACHED */
             ))
           ]),
-          e("div", Y, [
-            t[16] || (t[16] = e(
+          t("div", J, [
+            i($, {
+              inputId: "enforce-budget",
+              modelValue: l.value.enforce_budget,
+              "onUpdate:modelValue": e[3] || (e[3] = (o) => l.value.enforce_budget = o)
+            }, null, 8, ["modelValue"]),
+            e[9] || (e[9] = t(
               "label",
-              { class: "block text-xs font-semibold text-stone-600 uppercase mb-1" },
-              "Monthly Budget Limit ($)",
+              { for: "enforce-budget" },
+              "Enforce monthly budget limit",
+              -1
+              /* CACHED */
+            ))
+          ]),
+          t("div", null, [
+            e[10] || (e[10] = t(
+              "label",
+              { for: "ai-budget" },
+              "Monthly budget limit ($)",
               -1
               /* CACHED */
             )),
-            u(e(
-              "input",
-              {
-                "onUpdate:modelValue": t[6] || (t[6] = (n) => o.value.monthly_budget = n),
-                type: "number",
-                step: "0.5",
-                min: "0",
-                class: "budget-limit-input w-full border border-stone-300 rounded px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-emerald-500"
-              },
-              null,
-              512
-              /* NEED_PATCH */
-            ), [
-              [
-                m,
-                o.value.monthly_budget,
-                void 0,
-                { number: !0 }
-              ]
-            ])
+            i(B, {
+              inputId: "ai-budget",
+              modelValue: l.value.monthly_budget,
+              "onUpdate:modelValue": e[4] || (e[4] = (o) => l.value.monthly_budget = o),
+              min: 0,
+              step: 0.5,
+              maxFractionDigits: 2,
+              fluid: ""
+            }, null, 8, ["modelValue"])
           ])
         ]),
-        i(" Usage Dashboard "),
-        e("div", q, [
-          e("div", { class: "flex items-center justify-between" }, [
-            t[18] || (t[18] = e(
-              "h4",
-              { class: "font-medium text-stone-800" },
-              "Usage & Cost Dashboard",
+        t("div", K, [
+          i(y, {
+            label: "Save Settings",
+            class: "save-btn",
+            icon: "pi pi-check",
+            loading: d.value,
+            onClick: N
+          }, null, 8, ["loading"])
+        ]),
+        i(C),
+        t("div", Q, [
+          e[11] || (e[11] = t(
+            "h4",
+            null,
+            "Usage & cost",
+            -1
+            /* CACHED */
+          )),
+          i(y, {
+            label: "Refresh",
+            icon: "pi pi-refresh",
+            text: "",
+            onClick: f
+          })
+        ]),
+        t("div", W, [
+          t("div", null, [
+            e[12] || (e[12] = t(
+              "span",
+              null,
+              "Month spend",
               -1
               /* CACHED */
             )),
-            e("button", {
-              class: "refresh-btn text-xs text-emerald-600 hover:text-emerald-700 font-medium",
-              onClick: f
-            }, " Refresh ")
+            t(
+              "strong",
+              null,
+              "$" + g(((k = r.value.month_cost_usd) == null ? void 0 : k.toFixed(4)) || "0.0000"),
+              1
+              /* TEXT */
+            )
           ]),
-          e("div", H, [
-            e("div", J, [
-              t[19] || (t[19] = e(
-                "div",
-                { class: "text-xs text-stone-500 font-semibold uppercase" },
-                "Month Spend",
-                -1
-                /* CACHED */
-              )),
-              e(
-                "div",
-                Q,
-                "$" + l(((k = d.value.month_cost_usd) == null ? void 0 : k.toFixed(4)) || "0.0000"),
-                1
-                /* TEXT */
-              )
-            ]),
-            e("div", W, [
-              t[20] || (t[20] = e(
-                "div",
-                { class: "text-xs text-stone-500 font-semibold uppercase" },
-                "All-Time Spend",
-                -1
-                /* CACHED */
-              )),
-              e(
-                "div",
-                X,
-                "$" + l(((h = d.value.total_cost_usd) == null ? void 0 : h.toFixed(4)) || "0.0000"),
-                1
-                /* TEXT */
-              )
-            ]),
-            e("div", Z, [
-              t[21] || (t[21] = e(
-                "div",
-                { class: "text-xs text-stone-500 font-semibold uppercase" },
-                "Input Tokens",
-                -1
-                /* CACHED */
-              )),
-              e(
-                "div",
-                ee,
-                l(((w = d.value.total_input_tokens) == null ? void 0 : w.toLocaleString()) || "0"),
-                1
-                /* TEXT */
-              )
-            ]),
-            e("div", te, [
-              t[22] || (t[22] = e(
-                "div",
-                { class: "text-xs text-stone-500 font-semibold uppercase" },
-                "Output Tokens",
-                -1
-                /* CACHED */
-              )),
-              e(
-                "div",
-                oe,
-                l(((S = d.value.total_output_tokens) == null ? void 0 : S.toLocaleString()) || "0"),
-                1
-                /* TEXT */
-              )
-            ])
-          ]),
-          (A = d.value.breakdown_by_plugin) != null && A.length ? (r(), a("div", se, [
-            t[23] || (t[23] = e(
-              "h5",
-              { class: "text-xs font-semibold text-stone-600 uppercase mb-2" },
-              "Spend by Plugin",
+          t("div", null, [
+            e[13] || (e[13] = t(
+              "span",
+              null,
+              "All-time spend",
               -1
               /* CACHED */
             )),
-            e("div", ne, [
-              (r(!0), a(
-                M,
+            t(
+              "strong",
+              null,
+              "$" + g(((V = r.value.total_cost_usd) == null ? void 0 : V.toFixed(4)) || "0.0000"),
+              1
+              /* TEXT */
+            )
+          ]),
+          t("div", null, [
+            e[14] || (e[14] = t(
+              "span",
+              null,
+              "Input tokens",
+              -1
+              /* CACHED */
+            )),
+            t(
+              "strong",
+              null,
+              g(((I = r.value.total_input_tokens) == null ? void 0 : I.toLocaleString()) || "0"),
+              1
+              /* TEXT */
+            )
+          ]),
+          t("div", null, [
+            e[15] || (e[15] = t(
+              "span",
+              null,
+              "Output tokens",
+              -1
+              /* CACHED */
+            )),
+            t(
+              "strong",
+              null,
+              g(((S = r.value.total_output_tokens) == null ? void 0 : S.toLocaleString()) || "0"),
+              1
+              /* TEXT */
+            )
+          ])
+        ]),
+        (x = r.value.breakdown_by_plugin) != null && x.length ? (v(), c("ul", X, [
+          (v(!0), c(
+            G,
+            null,
+            R(r.value.breakdown_by_plugin, (o) => (v(), c("li", {
+              key: o.calling_plugin
+            }, [
+              t(
+                "span",
                 null,
-                j(d.value.breakdown_by_plugin, (n) => (r(), a("div", {
-                  key: n.calling_plugin,
-                  class: "flex items-center justify-between text-xs py-1 px-2 rounded bg-stone-50 border border-stone-100"
-                }, [
-                  e(
-                    "span",
-                    le,
-                    l(n.calling_plugin),
-                    1
-                    /* TEXT */
-                  ),
-                  e(
-                    "span",
-                    ie,
-                    "$" + l(n.cost.toFixed(4)) + " (" + l(n.call_count) + " calls)",
-                    1
-                    /* TEXT */
-                  )
-                ]))),
-                128
-                /* KEYED_FRAGMENT */
-              ))
-            ])
-          ])) : i("v-if", !0)
-        ])
+                g(o.calling_plugin),
+                1
+                /* TEXT */
+              ),
+              i(M, {
+                value: `$${o.cost.toFixed(4)} (${o.call_count} calls)`,
+                severity: "secondary"
+              }, null, 8, ["value"])
+            ]))),
+            128
+            /* KEYED_FRAGMENT */
+          ))
+        ])) : A("v-if", !0)
       ]);
     };
   }
-});
-function ae(c) {
-  var b;
-  (b = c.settings) != null && b.section && c.settings.section({
+}), Z = (p, a) => {
+  const d = p.__vccOpts || p;
+  for (const [s, l] of a)
+    d[s] = l;
+  return d;
+}, ee = /* @__PURE__ */ Z(Y, [["__scopeId", "data-v-2ef13f9b"]]);
+function oe(p) {
+  var a;
+  (a = p.settings) != null && a.section && p.settings.section({
     id: "core-ai-provider",
     title: "AI & Budget",
-    component: de,
+    component: ee,
     order: 80
   });
 }
 export {
-  ae as default
+  oe as default
 };

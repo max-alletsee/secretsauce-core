@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test'
-import { login } from './helpers/ui'
+import { test, expect } from './helpers/state'
+import { login, chooseMember } from './helpers/ui'
 
 test('Settings is pinned last and Plugins is not a separate navigation item', async ({ page }) => {
   await login(page)
@@ -39,8 +39,9 @@ test('themes apply live and survive reload', async ({ page }) => {
 })
 
 test('unknown themes and denied device storage do not break boot', async ({ page }) => {
-  const pageErrors: string[] = []
+  const pageErrors: string[] = [], consoleErrors: string[] = []
   page.on('pageerror', error => pageErrors.push(error.message))
+  page.on('console', message => { if (message.type() === 'error' && !message.text().includes('401 (Unauthorized)')) consoleErrors.push(message.text()) })
   await login(page)
   await page.evaluate(() => localStorage.setItem('ss-theme', 'obsolete-theme'))
   await page.goto('/settings')
@@ -52,5 +53,9 @@ test('unknown themes and denied device storage do not break boot', async ({ page
   await page.reload()
   await expect(page.locator('nav:visible').getByRole('link', { name: 'Settings' })).toBeVisible()
   await expect(page.getByLabel('Theme', { exact: true })).toBeVisible()
+  await chooseMember(page, 'Charlie')
+  await page.getByRole('link', { name: 'Recipes', exact: true }).first().click()
+  await expect(page.locator('.recipe-list-page')).toBeVisible()
   expect(pageErrors).toEqual([])
+  expect(consoleErrors).toEqual([])
 })

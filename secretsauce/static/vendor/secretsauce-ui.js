@@ -1,63 +1,57 @@
-var w = Object.defineProperty;
-var D = (n, e, t) => e in n ? w(n, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : n[e] = t;
-var f = (n, e, t) => D(n, typeof e != "symbol" ? e + "" : e, t);
-import { inject as p, defineComponent as x, computed as S, openBlock as c, createElementBlock as _, Fragment as g, renderList as k, createBlock as E, resolveDynamicComponent as C, ref as a, createElementVNode as y, toDisplayString as b, createCommentVNode as v } from "vue";
-const F = 1;
-class I extends Error {
-  constructor(t, s, u, o) {
+var G = Object.defineProperty;
+var H = (t, n, o) => n in t ? G(t, n, { enumerable: !0, configurable: !0, writable: !0, value: o }) : t[n] = o;
+var g = (t, n, o) => H(t, typeof n != "symbol" ? n + "" : n, o);
+import { inject as w, defineComponent as P, computed as k, openBlock as v, createElementBlock as h, Fragment as M, renderList as L, createBlock as C, resolveDynamicComponent as O, ref as d, shallowRef as j, resolveComponent as y, resolveDirective as z, renderSlot as K, withDirectives as D, createVNode as S, withCtx as E, mergeProps as J, normalizeClass as Q, createCommentVNode as b, createElementVNode as W, toDisplayString as N, createTextVNode as X } from "vue";
+const se = 1;
+class B extends Error {
+  constructor(o, l, u, i) {
     super(u);
-    f(this, "status");
-    f(this, "code");
-    f(this, "details");
-    this.name = "ApiError", this.status = t, this.code = s, this.details = o;
+    g(this, "status");
+    g(this, "code");
+    g(this, "details");
+    this.name = "ApiError", this.status = o, this.code = l, this.details = i;
   }
 }
-class G extends I {
-  constructor(t, s) {
-    super(409, "conflict", t, { current: s });
-    f(this, "current");
-    this.name = "ConflictError", this.current = s;
+class le extends B {
+  constructor(o, l) {
+    super(409, "conflict", o, { current: l });
+    g(this, "current");
+    this.name = "ConflictError", this.current = l;
   }
 }
-class L extends I {
-  constructor(e = "Network unavailable") {
-    super(0, "offline", e), this.name = "OfflineError";
+class ae extends B {
+  constructor(n = "Network unavailable") {
+    super(0, "offline", n), this.name = "OfflineError";
   }
 }
-const N = "__SS_UI__";
-function M() {
-  const n = p(N);
-  if (!n) throw new Error("useSecretSauce() requires a registered plugin component");
-  return n;
+const Z = "__SS_UI__";
+function re() {
+  const t = w(Z);
+  if (!t) throw new Error("useSecretSauce() requires a registered plugin component");
+  return t;
 }
-const $ = /* @__PURE__ */ x({
+const ie = /* @__PURE__ */ P({
   __name: "Slot",
   props: {
     name: {},
     context: {}
   },
-  setup(n) {
-    const e = n, t = p("__SS_SLOT_REGISTRY__", {
+  setup(t) {
+    const n = t, o = w("__SS_SLOT_REGISTRY__", {
       getContributions: () => []
-    }), s = S(() => [...t.getContributions(e.name) || []].sort((o, r) => (o.order ?? 50) - (r.order ?? 50)));
-    return (u, o) => (c(!0), _(
-      g,
+    }), l = k(() => [...o.getContributions(n.name) || []].sort((i, s) => (i.order ?? 50) - (s.order ?? 50)));
+    return (u, i) => (v(!0), h(
+      M,
       null,
-      k(s.value, (r) => (c(), E(C(r.component), {
-        key: r.id,
-        context: e.context || {}
+      L(l.value, (s) => (v(), C(O(s.component), {
+        key: s.id,
+        context: n.context || {}
       }, null, 8, ["context"]))),
       128
       /* KEYED_FRAGMENT */
     ));
   }
-}), O = {
-  key: 0,
-  class: "ss-intent-menu"
-}, P = ["onClick"], U = {
-  key: 1,
-  class: "ss-intent-modal-overlay"
-}, B = { class: "ss-intent-modal" }, j = /* @__PURE__ */ x({
+}), ee = /* @__PURE__ */ P({
   __name: "IntentTrigger",
   props: {
     hub: {},
@@ -65,70 +59,157 @@ const $ = /* @__PURE__ */ x({
     label: {}
   },
   emits: ["resolve", "cancel"],
-  setup(n, { emit: e }) {
-    const t = n, s = e, u = p("__SS_INTENT_REGISTRY__", {
-      getProviders: () => []
-    }), o = a(null), r = a(!1), i = S(() => (u.getProviders(t.hub) || []).filter((d) => d.isAvailable ? d.isAvailable(t.context) : !0).sort((d, m) => d.order - m.order));
-    async function T() {
-      i.value.length === 1 ? await h(i.value[0]) : i.value.length > 1 && (r.value = !r.value);
+  setup(t, { emit: n }) {
+    const o = t, l = n, u = w("__SS_INTENT_REGISTRY__", { getProviders: () => [] }), i = d(), s = j(null), c = d(!1), p = d(""), a = k(() => u.getProviders(o.hub).filter((e) => !e.isAvailable || e.isAvailable(o.context)).slice().sort((e, r) => e.order - r.order));
+    function f(e) {
+      var r;
+      return ((r = e.disabledReason) == null ? void 0 : r.call(e, o.context)) || "";
     }
-    async function h(l) {
-      if (r.value = !1, l.kind === "headless" && l.execute) {
-        const d = await l.execute(t.context);
-        s("resolve", d);
-      } else l.kind === "ui" && l.component && (o.value = l);
+    const U = k(() => a.value.map((e) => ({
+      label: e.title,
+      icon: e.icon ? `pi pi-${e.icon}` : void 0,
+      disabled: !!f(e),
+      reason: f(e),
+      command: () => T(e)
+    })));
+    async function I(e) {
+      var r;
+      c.value || (p.value = "", a.value.length === 1 ? await T(a.value[0]) : (r = i.value) == null || r.toggle(e));
     }
-    function A(l) {
-      o.value = null, s("resolve", l);
+    async function T(e) {
+      var r;
+      if (!(c.value || f(e))) {
+        if ((r = i.value) == null || r.hide(), p.value = "", e.kind === "ui") {
+          s.value = e;
+          return;
+        }
+        c.value = !0;
+        try {
+          l("resolve", await e.execute(o.context));
+        } catch (_) {
+          p.value = (_ == null ? void 0 : _.message) || "Action failed";
+        } finally {
+          c.value = !1;
+        }
+      }
     }
-    function R() {
-      o.value = null, s("cancel");
+    function V(e) {
+      s.value = null, l("resolve", e);
     }
-    return (l, d) => i.value.length > 0 ? (c(), _(
-      g,
-      { key: 0 },
-      [
-        y(
-          "button",
-          {
-            type: "button",
-            class: "ss-intent-trigger",
-            onClick: T
-          },
-          b(t.label || i.value[0].title),
-          1
-          /* TEXT */
-        ),
-        r.value && i.value.length > 1 ? (c(), _("div", O, [
-          (c(!0), _(
-            g,
-            null,
-            k(i.value, (m) => (c(), _("button", {
-              key: m.id,
-              type: "button",
-              onClick: (V) => h(m)
-            }, b(m.title), 9, P))),
-            128
-            /* KEYED_FRAGMENT */
-          ))
-        ])) : v("v-if", !0),
-        o.value ? (c(), _("div", U, [
-          y("div", B, [
-            (c(), E(C(o.value.component), {
-              context: t.context,
-              onResolve: A,
-              onCancel: R
-            }, null, 40, ["context"]))
-          ])
-        ])) : v("v-if", !0)
-      ],
-      64
-      /* STABLE_FRAGMENT */
-    )) : v("v-if", !0);
+    function x() {
+      s.value && (s.value = null, l("cancel"));
+    }
+    return (e, r) => {
+      var R;
+      const _ = y("Button"), $ = y("Menu"), Y = y("Message"), q = y("Dialog"), A = z("tooltip");
+      return a.value.length ? (v(), h(
+        M,
+        { key: 0 },
+        [
+          K(e.$slots, "default", { open: I }, () => [
+            D((v(), h("span", null, [
+              S(_, {
+                class: "ss-intent-trigger",
+                label: t.label || a.value[0].title,
+                loading: c.value,
+                disabled: c.value || a.value.length === 1 && !!f(a.value[0]),
+                icon: a.value.length > 1 ? "pi pi-chevron-down" : a.value[0].icon ? `pi pi-${a.value[0].icon}` : void 0,
+                iconPos: a.value.length > 1 ? "right" : "left",
+                "aria-haspopup": a.value.length > 1 ? "menu" : void 0,
+                onClick: I
+              }, null, 8, ["label", "loading", "disabled", "icon", "iconPos", "aria-haspopup"])
+            ])), [
+              [A, a.value.length === 1 ? f(a.value[0]) : ""]
+            ])
+          ], !0),
+          S($, {
+            ref_key: "menu",
+            ref: i,
+            model: U.value,
+            popup: ""
+          }, {
+            item: E(({ item: m, props: F }) => [
+              D((v(), h(
+                "a",
+                J(F.action, { class: "ss-intent-item" }),
+                [
+                  m.icon ? (v(), h(
+                    "span",
+                    {
+                      key: 0,
+                      class: Q(m.icon),
+                      "aria-hidden": "true"
+                    },
+                    null,
+                    2
+                    /* CLASS */
+                  )) : b("v-if", !0),
+                  W(
+                    "span",
+                    null,
+                    N(m.label),
+                    1
+                    /* TEXT */
+                  )
+                ],
+                16
+                /* FULL_PROPS */
+              )), [
+                [A, m.reason]
+              ])
+            ]),
+            _: 1
+            /* STABLE */
+          }, 8, ["model"]),
+          p.value ? (v(), C(Y, {
+            key: 0,
+            severity: "error"
+          }, {
+            default: E(() => [
+              X(
+                N(p.value),
+                1
+                /* TEXT */
+              )
+            ]),
+            _: 1
+            /* STABLE */
+          })) : b("v-if", !0),
+          S(q, {
+            visible: !!s.value,
+            header: (R = s.value) == null ? void 0 : R.title,
+            modal: "",
+            style: { width: "min(52rem, 95vw)" },
+            "onUpdate:visible": r[0] || (r[0] = (m) => {
+              m || x();
+            }),
+            onHide: x
+          }, {
+            default: E(() => [
+              s.value ? (v(), C(O(s.value.component), {
+                key: 0,
+                context: t.context,
+                onResolve: V,
+                onCancel: x
+              }, null, 40, ["context"])) : b("v-if", !0)
+            ]),
+            _: 1
+            /* STABLE */
+          }, 8, ["visible", "header"])
+        ],
+        64
+        /* STABLE_FRAGMENT */
+      )) : b("v-if", !0);
+    };
   }
-});
-function H(n = "test-plugin") {
-  const e = a({
+}), te = (t, n) => {
+  const o = t.__vccOpts || t;
+  for (const [l, u] of n)
+    o[l] = u;
+  return o;
+}, ce = /* @__PURE__ */ te(ee, [["__scopeId", "data-v-349fb160"]]);
+function ue(t = "test-plugin") {
+  const n = d({
     id: "m1",
     revision: 1,
     name: "Alice",
@@ -139,12 +220,12 @@ function H(n = "test-plugin") {
     disliked_ingredients: [],
     favorite_cuisines: [],
     preferred_language: "en"
-  }), t = a([e.value]), s = a({
+  }), o = d([n.value]), l = d({
     household_name: "Test House",
     meal_types: [{ id: "dinner", label: "Dinner" }],
     languages: { primary: "en" },
     units: "metric"
-  }), u = a(!0), o = {
+  }), u = d(!0), i = {
     get: async () => ({}),
     post: async () => ({}),
     patch: async () => ({}),
@@ -152,9 +233,9 @@ function H(n = "test-plugin") {
     delete: async () => {
     },
     upload: async () => ({})
-  }, r = {
-    pending: a(0),
-    failed: a([]),
+  }, s = {
+    pending: d(0),
+    failed: d([]),
     enqueue: async () => "outbox-id-1",
     discard: async () => {
     },
@@ -162,7 +243,7 @@ function H(n = "test-plugin") {
     }
   };
   return {
-    pluginId: n,
+    pluginId: t,
     route: () => {
     },
     slot: () => {
@@ -174,13 +255,13 @@ function H(n = "test-plugin") {
     } },
     on: () => {
     },
-    api: o,
-    url: (i) => i,
-    store: { currentMember: e, members: t, household: s, online: u },
-    outbox: r,
+    api: i,
+    url: (c) => c,
+    store: { currentMember: n, members: o, household: l, online: u },
+    outbox: s,
     i18n: { add: () => {
     } },
-    t: (i) => i,
+    t: (c) => c,
     theme: { register: () => {
     } },
     notify: () => {
@@ -189,13 +270,13 @@ function H(n = "test-plugin") {
   };
 }
 export {
-  F as API_VERSION,
-  I as ApiError,
-  G as ConflictError,
-  j as IntentTrigger,
-  L as OfflineError,
-  N as SECRET_SAUCE_UI_KEY,
-  $ as Slot,
-  H as createFakeSecretSauceUI,
-  M as useSecretSauce
+  se as API_VERSION,
+  B as ApiError,
+  le as ConflictError,
+  ce as IntentTrigger,
+  ae as OfflineError,
+  Z as SECRET_SAUCE_UI_KEY,
+  ie as Slot,
+  ue as createFakeSecretSauceUI,
+  re as useSecretSauce
 };
