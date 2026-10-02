@@ -211,6 +211,7 @@ test('removing a planned meal confirms, persists and does not reload the documen
   await card.click()
   await page.getByRole('menuitem', { name: 'Remove from plan', exact: true }).click({ timeout: 5000 })
   await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(page.getByRole('alertdialog')).not.toBeVisible()
   await expect(card).toBeVisible()
   await card.click()
   await page.getByRole('menuitem', { name: 'Remove from plan', exact: true }).click()

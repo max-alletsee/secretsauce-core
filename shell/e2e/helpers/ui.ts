@@ -1,8 +1,8 @@
 import { expect, type Page } from '@playwright/test'
 
 export async function chooseMember(page: Page, name: string) {
-  await page.getByRole('combobox', { name: 'Current member', exact: true }).click()
-  await page.getByRole('option', { name, exact: true }).click()
+  await page.getByRole('button', { name: 'Current member', exact: true }).click()
+  await page.getByRole('menuitem', { name, exact: true }).click()
 }
 
 export async function login(page: Page) {

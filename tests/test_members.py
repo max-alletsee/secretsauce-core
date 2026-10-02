@@ -4,12 +4,21 @@ from secretsauce.errors import ConflictError, NotFoundError
 from secretsauce.nouns.members import MembersRepo
 
 
+@pytest.fixture
+async def db(tmp_path):
+    database = Database(tmp_path / "test.db")
+    await database.connect()
+    try:
+        await database.run_migrations()
+        yield database
+    finally:
+        await database.close()
+
+
 @pytest.mark.asyncio
-async def test_member_crud_and_revision_conflict(tmp_path):
-    db = Database(tmp_path / "test.db")
-    await db.connect()
-    await db.run_migrations()
+async def test_member_crud_and_revision_conflict(db):
     repo = MembersRepo(db)
+    await repo.create_member({"name": "Survivor"})
 
     m = await repo.create_member(
         {"name": "Alice", "serving_ratio": 1.5, "preferred_language": "en"}
@@ -49,14 +58,9 @@ async def test_member_crud_and_revision_conflict(tmp_path):
     with pytest.raises(NotFoundError):
         await repo.get_member(m["id"])
 
-    await db.close()
-
 
 @pytest.mark.asyncio
-async def test_member_delete_cleans_participants(tmp_path):
-    db = Database(tmp_path / "test.db")
-    await db.connect()
-    await db.run_migrations()
+async def test_member_delete_cleans_participants(db):
     repo = MembersRepo(db)
 
     m1 = await repo.create_member({"name": "Member 1"})
@@ -86,5 +90,3 @@ async def test_member_delete_cleans_participants(tmp_path):
     participants = json.loads(row["participant_member_ids"])
     assert m1["id"] not in participants
     assert m2["id"] in participants
-
-    await db.close()

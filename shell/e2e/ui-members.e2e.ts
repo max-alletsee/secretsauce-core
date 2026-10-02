@@ -1,0 +1,36 @@
+import { test, expect } from './helpers/state'
+import { login } from './helpers/ui'
+
+test('first_member_preferences_persist_after_edit_and_reload', async ({ page }) => {
+  await login(page)
+  await page.goto('/settings?section=members')
+  const panel = page.locator('#settings-members')
+  const card = panel.locator('[data-member-id]').filter({ hasText: 'Alex' })
+  await card.getByRole('button', { name: 'Edit Alex', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByLabel('Avatar color')).toHaveCount(0)
+  await dialog.getByLabel('Portion size', { exact: true }).fill('1.75')
+  await dialog.getByLabel('Allergies', { exact: true }).fill('peanut')
+  await dialog.getByLabel('Allergies', { exact: true }).press('Enter')
+  await dialog.getByRole('button', { name: 'Save Member', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+  await expect(card).toContainText('1.75×')
+  await expect(card).toContainText('peanut')
+  const member = (await (await page.request.get('/api/members')).json()).find((row: any) => row.name === 'Alex')
+  expect(member.serving_ratio).toBe(1.75); expect(member.allergies).toEqual(['peanut'])
+  await page.reload()
+  await card.getByRole('button', { name: 'Edit Alex', exact: true }).click()
+  await expect(dialog.getByLabel('Portion size', { exact: true })).toHaveValue('1.75')
+  await expect(dialog).toContainText('peanut')
+})
+
+test('cancelled_member_deletion_preserves_the_card', async ({ page }) => {
+  await login(page)
+  await page.goto('/settings?section=members')
+  const members = (await (await page.request.get('/api/members')).json())
+  const card = page.locator(`[data-member-id="${members[0].id}"]`)
+  await card.getByRole('button', { name: `Delete ${members[0].name}`, exact: true }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(card).toBeVisible()
+  expect((await page.request.get(`/api/members/${members[0].id}`)).status()).toBe(200)
+})

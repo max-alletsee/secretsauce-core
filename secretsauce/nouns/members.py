@@ -197,6 +197,12 @@ class MembersRepo:
             if revision is not None and current["revision"] != revision:
                 raise ConflictError("Revision mismatch", current=current)
 
+            count = await self.db.read_val(
+                "SELECT COUNT(*) FROM household_members;", conn=writer_conn
+            )
+            if count <= 1:
+                raise ConflictError("The household must retain at least one member", current=current)
+
             # Section 4.4: Remove assets and attributes
             await writer_conn.execute(
                 "DELETE FROM assets WHERE entity_type = 'member' AND entity_id = ?;",

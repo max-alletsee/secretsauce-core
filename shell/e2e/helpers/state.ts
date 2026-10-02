@@ -39,7 +39,15 @@ export const test = base.extend<{ isolatedState: void }>({
       const afterRecipes = await json(request, '/api/recipes?limit=200')
       for (const group of new Set<string>(afterRecipes.items.map((row: any) => row.group_id))) if (!beforeGroups.has(group)) expect((await request.delete(`/api/recipes/${group}`)).status()).toBe(204)
       const memberIds = new Set(members.map((row: any) => row.id))
-      for (const row of await json(request, '/api/members')) if (!memberIds.has(row.id)) expect((await request.delete(`/api/members/${row.id}?revision=${row.revision}`)).status()).toBe(204)
+      const afterMembers = await json(request, '/api/members')
+      for (const row of afterMembers) if (!memberIds.has(row.id)) expect((await request.delete(`/api/members/${row.id}?revision=${row.revision}`)).status()).toBe(204)
+      for (const before of members) {
+        const current = afterMembers.find((row: any) => row.id === before.id)
+        if (current && current.revision !== before.revision) {
+          const { name, avatar_color, serving_ratio, dietary_restrictions, allergies, disliked_ingredients, favorite_cuisines, preferred_language } = before
+          expect((await request.patch(`/api/members/${before.id}`, { data: { revision: current.revision, name, avatar_color, serving_ratio, dietary_restrictions, allergies, disliked_ingredients, favorite_cuisines, preferred_language } })).ok()).toBe(true)
+        }
+      }
       const manualIds = new Set(shopping.items.filter((row: any) => row.source_type === 'manual').map((row: any) => row.id))
       for (const row of (await json(request, '/api/x/core-shopping-list')).items) {
         if (row.source_type === 'manual' && !manualIds.has(row.id)) await request.delete(`/api/x/core-shopping-list/items/${row.id}`)

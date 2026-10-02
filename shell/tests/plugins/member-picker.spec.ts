@@ -9,10 +9,9 @@ describe('registered member controls (API boundary doubles)', () => {
     const { wrapper, harness } = registeredSlot(activate, 'core-members', {} as any, 'shell.header.right')
     wrappers.push(wrapper); harness.memberStore.setMembers([testMember, { ...testMember, id: 'member-2', name: 'Bob' }]); harness.memberStore.setCurrentMember(testMember.id); await flushPromises()
     expect(wrapper.find('.member-avatar').text()).toBe('A')
-    await wrapper.find('[role=combobox]').trigger('click'); await flushPromises()
-    const option = Array.from(document.querySelectorAll<HTMLElement>('[role=option]')).find(option => option.textContent?.trim() === 'Bob')!
-    // Real pointer activation includes mousedown; PrimeVue selects on that event.
-    option.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); option.click(); await flushPromises()
+    await wrapper.find('button[aria-label="Current member"]').trigger('click'); await flushPromises()
+    const option = Array.from(document.querySelectorAll<HTMLElement>('[role=menuitem]')).find(option => option.textContent?.trim() === 'Bob')!
+    option.querySelector<HTMLElement>('a')!.click(); await flushPromises()
     expect(harness.store.currentMember.value?.id).toBe('member-2'); expect(localStorage.getItem('ss-current-member')).toBe('member-2')
   })
   it('adds a route-valid member through the actual Settings consumer', async () => {
@@ -22,7 +21,9 @@ describe('registered member controls (API boundary doubles)', () => {
     expect(wrapper.text()).toContain('Ann'); expect(wrapper.text()).toContain('vegan')
     await clickButton('Add Member')
     const name = document.querySelector<HTMLInputElement>('#member-name')!; name.value = 'Charlie'; name.dispatchEvent(new Event('input'))
-    const language = document.querySelector<HTMLInputElement>('#member-language')!; language.value = 'fr'; language.dispatchEvent(new Event('input'))
+    document.querySelector<HTMLElement>('#member-language')!.click(); await flushPromises()
+    const language = Array.from(document.querySelectorAll<HTMLElement>('[role=option]')).find(option => option.textContent?.trim() === 'fr')!
+    language.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); language.click(); await flushPromises()
     await clickButton('Save Member'); expect(wrapper.text()).toContain('Charlie'); expect(harness.store.members.value).toContainEqual(created)
   })
   it('retains the add form and explains write errors', async () => {

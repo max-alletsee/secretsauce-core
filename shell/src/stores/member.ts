@@ -43,6 +43,11 @@ export const useMemberStore = defineStore('member', () => {
     }
   }
 
+  function updateMember(member: Member) {
+    members.value = members.value.map(row => row.id === member.id ? member : row)
+    if (currentMember.value?.id === member.id) currentMember.value = member
+  }
+
   function removeMember(id: string) {
     members.value = members.value.filter((m) => m.id !== id)
     if (currentMember.value?.id === id) {
@@ -50,5 +55,5 @@ export const useMemberStore = defineStore('member', () => {
     }
   }
 
-  return { members, currentMember, setMembers, setCurrentMember, addMember, removeMember, fetchMembers }
+  return { members, currentMember, setMembers, setCurrentMember, addMember, updateMember, removeMember, fetchMembers }
 })

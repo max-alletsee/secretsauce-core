@@ -129,6 +129,7 @@ async def test_writes_inside_plugin_context_default_to_plugin_origin(repos):
 
 
 async def test_schedule_journal_member_asset_events(repos):
+    await repos.members.create_member({"name": "Survivor"})
     member = await repos.members.create_member({"name": "Ann"})
     await repos.members.update_member(member["id"], 1, {"name": "Anna"})
 
@@ -154,6 +155,7 @@ async def test_schedule_journal_member_asset_events(repos):
         for r in await repos.db.read_all("SELECT name FROM events ORDER BY seq;")
     ]
     assert names == [
+        "member:created",  # survivor
         "member:created",
         "member:updated",
         "schedule:created",
