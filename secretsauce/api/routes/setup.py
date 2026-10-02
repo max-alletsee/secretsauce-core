@@ -10,6 +10,7 @@ from secretsauce.auth import (
     issue_session_cookie,
 )
 from secretsauce.errors import ConflictError
+from secretsauce.api.models import MealTypesPayload
 from secretsauce.nouns.household import DEFAULT_MEAL_TYPES
 
 router = APIRouter(prefix="/api/setup", tags=["setup"])
@@ -21,13 +22,12 @@ class FirstMemberPayload(BaseModel):
     preferred_language: str | None = "en"
 
 
-class SetupPayload(BaseModel):
+class SetupPayload(MealTypesPayload):
     household_name: str = Field(min_length=1, max_length=200)
     passphrase: str = Field(min_length=MIN_PASSPHRASE_LENGTH)
     first_member: FirstMemberPayload
     languages: dict[str, Any] | None = None
     units: str | None = "metric"
-    meal_types: list[dict[str, Any]] | None = None
 
 
 @router.get("")
@@ -54,7 +54,7 @@ async def perform_setup(payload: SetupPayload, request: Request, response: Respo
                 "household_name": payload.household_name,
                 "languages": payload.languages or {"primary": "en"},
                 "units": payload.units or "metric",
-                "meal_types": payload.meal_types or DEFAULT_MEAL_TYPES,
+                "meal_types": [slot.model_dump() for slot in payload.meal_types] if payload.meal_types is not None else DEFAULT_MEAL_TYPES,
             }
         )
         version = await kernel.household.set_passphrase(pass_hash)

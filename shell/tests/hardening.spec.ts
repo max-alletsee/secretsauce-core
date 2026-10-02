@@ -6,7 +6,8 @@ import { createApiClient } from '../src/api'
 import { createOutbox, retryDelayMs } from '../src/outbox'
 import { createPluginLoader } from '../src/registries/plugins'
 import { createAuthState, logout } from '../src/session'
-import PluginManagerPage from '../src/pages/PluginManagerPage.vue'
+import PluginManagerSection from '../src/settings/PluginManagerSection.vue'
+import { mountWithUi } from './helpers/mountWithUi'
 import { ApiError, ConflictError, OfflineError, type ApiClient } from '@secretsauce/ui'
 
 class FakeEventSource {
@@ -159,14 +160,17 @@ describe('Plugin Manager', () => {
       { id: 'broken', name: 'Broken', state: 'errored', enabled: true, error: 'Traceback: boom', commands: [] },
     ])
     const post = vi.fn().mockResolvedValue({ job_id: 'job_1' })
-    const wrapper = mount(PluginManagerPage, {
+    const wrapper = mountWithUi(PluginManagerSection, {
       global: { provide: { __SS_API__: { get, post } }, stubs: { Slot: true } },
     })
     await flushPromises()
     expect(wrapper.text()).toContain('Ratings')
     expect(wrapper.text()).toContain('boom')
     await wrapper.find('[data-command="rebuild"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('job_1')
     expect(post).toHaveBeenCalledWith('/api/plugins/core-ratings/commands/rebuild')
+    wrapper.unmount()
   })
 })
 

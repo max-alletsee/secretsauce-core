@@ -109,7 +109,7 @@ export interface Member {
 export interface Household {
   household_name: string
   meal_types: { id: string; label: string }[]
-  languages: { primary: string }
+  languages: { primary: string; translations?: string[] }
   units: 'metric' | 'us_customary'
 }
 

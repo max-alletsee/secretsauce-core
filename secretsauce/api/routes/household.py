@@ -12,13 +12,13 @@ from secretsauce.auth import (
     verify_passphrase_async,
 )
 from secretsauce.errors import SetupRequiredError, UnauthorizedError
+from secretsauce.api.models import MealTypesPayload
 
 router = APIRouter(prefix="/api/household", tags=["household"])
 
 
-class HouseholdPatchPayload(BaseModel):
+class HouseholdPatchPayload(MealTypesPayload):
     household_name: str | None = Field(default=None, min_length=1, max_length=200)
-    meal_types: list[dict[str, Any]] | None = None
     languages: dict[str, Any] | None = None
     units: str | None = Field(default=None, pattern="^(metric|us_customary)$")
 

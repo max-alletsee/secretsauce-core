@@ -84,15 +84,20 @@ export function createPluginLoader(ctx: PluginLoaderContext) {
     runActivate(plugin, await fetchModule(plugin))
   }
 
-  async function loadActivePlugins(api: { get<T>(url: string): Promise<T> }) {
+  async function loadActivePlugins(api: { get<T>(url: string): Promise<T> }, reconcile = false) {
     let activeList: ActivePluginItem[]
     try {
       activeList = await api.get<ActivePluginItem[]>('/api/plugins/active')
     } catch (err) {
+      if (reconcile) throw err
       console.error('Failed to load active plugins:', err)
       return
     }
     if (!Array.isArray(activeList)) return
+    if (reconcile) {
+      const activeIds = new Set(activeList.map(plugin => plugin.id))
+      for (const id of [...loadedPlugins]) if (!activeIds.has(id)) deactivatePlugin(id)
+    }
 
     // Download every bundle at once, then activate in the kernel's order so
     // registration order (routes, slots) stays deterministic.
@@ -113,5 +118,9 @@ export function createPluginLoader(ctx: PluginLoaderContext) {
     loadedPlugins.delete(pluginId)
   }
 
-  return { loadedPlugins, activatePlugin, loadActivePlugins, deactivatePlugin }
+  async function syncActivePlugins(api: { get<T>(url: string): Promise<T> }) {
+    await loadActivePlugins(api, true)
+  }
+
+  return { loadedPlugins, activatePlugin, loadActivePlugins, syncActivePlugins, deactivatePlugin }
 }

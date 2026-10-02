@@ -23,14 +23,16 @@ test('themes apply live and survive reload', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' })
   await login(page)
   const colours: string[] = []
-  for (const id of ['aura-tomato', 'nora-tomato', 'material-indigo', 'lara-amber']) {
-    await page.goto('/settings')
-    await page.getByLabel('Theme', { exact: true }).selectOption(id)
+  for (const [id, label] of [['aura-tomato', 'Aura · Tomato'], ['nora-tomato', 'Nora · Tomato'], ['material-indigo', 'Material · Indigo'], ['lara-amber', 'Lara · Amber']]) {
+    await page.goto('/settings?section=device')
+    await page.getByLabel('Theme', { exact: true }).click()
+    await page.getByRole('option', { name: label, exact: true }).click()
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('ss-theme'))).toBe(id)
     const colour = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--p-primary-color').trim())
     expect(colour).toBeTruthy()
     colours.push(colour)
     await page.reload()
-    await expect(page.getByLabel('Theme', { exact: true })).toHaveValue(id)
+    await expect(page.getByLabel('Theme', { exact: true })).toContainText(label)
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--p-primary-color').trim())).toBe(colour)
   }
   expect(colours[0]).toBe('#f43f5e') // Aura uses rose-500.
@@ -44,8 +46,8 @@ test('unknown themes and denied device storage do not break boot', async ({ page
   page.on('console', message => { if (message.type() === 'error' && !message.text().includes('401 (Unauthorized)')) consoleErrors.push(message.text()) })
   await login(page)
   await page.evaluate(() => localStorage.setItem('ss-theme', 'obsolete-theme'))
-  await page.goto('/settings')
-  await expect(page.getByLabel('Theme', { exact: true })).toHaveValue('aura-tomato')
+  await page.goto('/settings?section=device')
+  await expect(page.getByLabel('Theme', { exact: true })).toContainText('Aura · Tomato')
   await page.addInitScript(() => {
     Storage.prototype.getItem = () => { throw new DOMException('Denied', 'SecurityError') }
     Storage.prototype.setItem = () => { throw new DOMException('Denied', 'SecurityError') }

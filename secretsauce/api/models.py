@@ -35,6 +35,29 @@ class _Revisioned(_Body):
     revision: int = Field(ge=1)
 
 
+# -- household -----------------------------------------------------------------
+
+
+class MealType(_Body):
+    id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,63}$")
+    label: str = Field(min_length=1, max_length=64)
+
+
+class MealTypesPayload(_Body):
+    # The unvalidated default represents omission; an explicitly sent null is invalid.
+    meal_types: list[MealType] | None = Field(default=None, min_length=1)
+
+    @field_validator("meal_types")
+    @classmethod
+    def check_meal_types(cls, value: list[MealType] | None) -> list[MealType]:
+        if value is None:
+            raise ValueError("meal_types cannot be null")
+        ids = [slot.id for slot in value]
+        if len(set(ids)) != len(ids):
+            raise ValueError("meal_types ids must be unique")
+        return value
+
+
 # -- members -------------------------------------------------------------------
 
 

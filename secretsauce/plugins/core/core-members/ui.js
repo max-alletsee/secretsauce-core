@@ -1,9 +1,9 @@
-import { defineComponent as B, computed as O, resolveComponent as s, openBlock as i, createElementBlock as w, unref as A, createBlock as M, createCommentVNode as I, createVNode as o, ref as c, createElementVNode as r, withCtx as y, createTextVNode as L, toDisplayString as k, Fragment as x, renderList as S, withModifiers as z, withDirectives as G, vModelText as J } from "vue";
+import { defineComponent as B, computed as z, resolveComponent as s, openBlock as i, createElementBlock as w, unref as A, createBlock as M, createCommentVNode as I, createVNode as o, ref as c, createElementVNode as r, withCtx as y, createTextVNode as L, toDisplayString as k, Fragment as x, renderList as S, withModifiers as G, withDirectives as H, vModelText as J } from "vue";
 import { useSecretSauce as R } from "@secretsauce/ui";
 const K = { class: "ss-member-picker" }, Q = /* @__PURE__ */ B({
   __name: "MemberPicker",
   setup(v) {
-    const l = R(), n = O(() => [{ id: "", name: "All members" }, ...l.store.members.value]);
+    const l = R(), n = z(() => [{ id: "", name: "All members" }, ...l.store.members.value]);
     function u(m) {
       l.store.currentMember.value = l.store.members.value.find((f) => f.id === m) || null;
       try {
@@ -33,16 +33,16 @@ const K = { class: "ss-member-picker" }, Q = /* @__PURE__ */ B({
       ]);
     };
   }
-}), h = (v, l) => {
+}), P = (v, l) => {
   const n = v.__vccOpts || v;
   for (const [u, m] of l)
     n[u] = m;
   return n;
-}, W = /* @__PURE__ */ h(Q, [["__scopeId", "data-v-d16fc73d"]]), X = { class: "ss-member-settings" }, Y = { class: "header-row" }, Z = { class: "members-grid" }, ee = { class: "member-card-header" }, le = { class: "tags" }, te = { class: "actions" }, re = /* @__PURE__ */ B({
+}, W = /* @__PURE__ */ P(Q, [["__scopeId", "data-v-d16fc73d"]]), X = { class: "ss-member-settings" }, Y = { class: "header-row" }, Z = { class: "members-grid" }, ee = { class: "member-card-header" }, le = { class: "tags" }, te = { class: "actions" }, re = /* @__PURE__ */ B({
   __name: "MemberSettings",
   setup(v) {
     const l = R(), n = c(!1), u = c(""), m = c("en"), f = c(1), V = c("#0284c7"), g = c([]), b = c([]), C = c(!1), p = c("");
-    async function P() {
+    async function h() {
       if (!(!u.value.trim() || C.value)) {
         C.value = !0, p.value = "";
         try {
@@ -65,7 +65,7 @@ const K = { class: "ss-member-picker" }, Q = /* @__PURE__ */ B({
         }
     }
     return (a, e) => {
-      const d = s("Button"), U = s("Message"), F = s("Avatar"), N = s("Tag"), j = s("Card"), $ = s("InputText"), q = s("InputNumber"), D = s("AutoComplete"), H = s("Dialog");
+      const d = s("Button"), U = s("Message"), F = s("Avatar"), N = s("Tag"), j = s("Card"), $ = s("InputText"), q = s("InputNumber"), D = s("AutoComplete"), O = s("Dialog");
       return i(), w("div", X, [
         r("div", Y, [
           e[9] || (e[9] = r(
@@ -177,7 +177,7 @@ const K = { class: "ss-member-picker" }, Q = /* @__PURE__ */ B({
             /* KEYED_FRAGMENT */
           ))
         ]),
-        o(H, {
+        o(O, {
           visible: n.value,
           "onUpdate:visible": e[8] || (e[8] = (t) => n.value = t),
           header: "Add household member",
@@ -189,7 +189,7 @@ const K = { class: "ss-member-picker" }, Q = /* @__PURE__ */ B({
               "form",
               {
                 class: "member-form",
-                onSubmit: z(P, ["prevent"])
+                onSubmit: G(h, ["prevent"])
               },
               [
                 p.value ? (i(), M(U, {
@@ -257,7 +257,7 @@ const K = { class: "ss-member-picker" }, Q = /* @__PURE__ */ B({
                   -1
                   /* CACHED */
                 )),
-                G(r(
+                H(r(
                   "input",
                   {
                     id: "member-color",
@@ -325,12 +325,13 @@ const K = { class: "ss-member-picker" }, Q = /* @__PURE__ */ B({
       ]);
     };
   }
-}), T = /* @__PURE__ */ h(re, [["__scopeId", "data-v-9a3d05a5"]]);
+}), T = /* @__PURE__ */ P(re, [["__scopeId", "data-v-9a3d05a5"]]);
 function ne(v) {
   var l;
   v.slot("shell.header.right", W, { order: 10 }), (l = v.settings) != null && l.section ? v.settings.section({
     id: "members",
-    title: "Household Members",
+    title: "Members",
+    order: 10,
     component: T
   }) : v.slot("settings.content", T, { order: 10 });
 }

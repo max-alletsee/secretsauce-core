@@ -60,6 +60,7 @@ test('unconfigured AI explains how to configure it', async ({ page }) => {
     await expect(page.getByRole('dialog')).toContainText("AI isn’t set up yet")
     await page.getByRole('button', { name: 'Open AI settings', exact: true }).click()
     await expect(page).toHaveURL(/\/settings\?section=core-ai-provider$/)
+    await expect(page.locator('#settings-core-ai-provider').getByLabel('Model name', { exact: true })).toBeVisible()
   } finally {
     await page.request.put('/api/x/core-ai-provider/settings', { data: { provider: 'openai', openai_api_key: 'e2e-test-key' } })
   }

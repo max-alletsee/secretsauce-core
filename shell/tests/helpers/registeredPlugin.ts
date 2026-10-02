@@ -5,6 +5,7 @@ import { pluginHarness } from './pluginHarness'
 import { mountWithUi } from './mountWithUi'
 import activateRecipes from '../../../secretsauce/plugins/core/core-recipes/ui/src/index'
 import SettingsPage from '../../src/pages/SettingsPage.vue'
+import { registerShellSettings } from '../../src/settings'
 
 /** Mount the real registry consumer, never the plugin's unwrapped implementation. */
 export function registeredIntent(activate: (ss: any) => void, pluginId: string, api: any, hub: string, context: any = {}) {
@@ -23,7 +24,12 @@ export function registeredSlot(activate: (ss: any) => void, pluginId: string, ap
 export async function registeredRoute(activate: (ss: any) => void, pluginId: string, api: any, path: string) {
   const harness = pluginHarness(api)
   activate(harness.ss(pluginId))
-  if (path.startsWith('/settings')) harness.router.addRoute({ path: '/settings', component: SettingsPage })
+  if (path.startsWith('/settings')) {
+    const section = harness.settings.getSections().find(section => section.pluginId === pluginId)
+    registerShellSettings(harness.settings)
+    harness.router.addRoute({ path: '/settings', component: SettingsPage })
+    if (!path.includes('?') && section) path += `?section=${section.id}`
+  }
   await harness.router.push(path)
   await harness.router.isReady()
   const { RouterView } = await import('vue-router')

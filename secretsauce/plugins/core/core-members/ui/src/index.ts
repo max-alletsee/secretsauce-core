@@ -6,7 +6,8 @@ export default function activate(ss: any) {
   if (ss.settings?.section) {
     ss.settings.section({
       id: 'members',
-      title: 'Household Members',
+      title: 'Members',
+      order: 10,
       component: MemberSettings,
     })
   } else {

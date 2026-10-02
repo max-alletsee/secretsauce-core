@@ -15,6 +15,7 @@ import { createRouteRegistry } from './registries/routes'
 import { createSlotRegistry } from './registries/slots'
 import { createIntentRegistry } from './registries/intents'
 import { createSettingsRegistry } from './registries/settings'
+import { registerShellSettings } from './settings'
 import { createI18nRegistry } from './registries/i18n'
 import { createPluginLoader } from './registries/plugins'
 import { createThemeRegistry } from './theme'
@@ -83,6 +84,7 @@ const routes = createRouteRegistry()
 const slots = createSlotRegistry()
 const intents = createIntentRegistry()
 const settings = createSettingsRegistry()
+registerShellSettings(settings)
 const i18n = createI18nRegistry()
 const themes = createThemeRegistry()
 

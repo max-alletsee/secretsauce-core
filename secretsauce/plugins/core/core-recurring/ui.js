@@ -105,6 +105,7 @@ function W(s) {
   s.settings.section({
     id: "core-recurring",
     title: "Recurring Meals",
+    order: 20,
     component: L
   });
 }

@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
+import { mountWithUi } from '../../tests/helpers/mountWithUi'
+import { pluginHarness } from '../../tests/helpers/pluginHarness'
+import { registerShellSettings } from '../settings'
 import SetupPage from './SetupPage.vue'
 import LoginPage from './LoginPage.vue'
-import SharePage from './SharePage.vue'
 import SettingsPage from './SettingsPage.vue'
-import { createPinia } from 'pinia'
 
 describe('Shell Core Pages', () => {
   it('submits setup flow form', async () => {
@@ -46,23 +47,25 @@ describe('Shell Core Pages', () => {
   })
 
   it('updates default start page in settings', async () => {
-    const pinia = createPinia()
-    const wrapper = mount(SettingsPage, {
-      global: {
-        plugins: [pinia],
-        provide: {
-          __SS_API__: { get: vi.fn(), post: vi.fn() },
-          __SS_SETTINGS_REGISTRY__: { getSections: () => [] },
-          __SS_THEME_REGISTRY__: { getThemes: () => [], currentTheme: { value: 'light' }, setTheme: vi.fn() },
-        },
-      },
-    })
-    const select = wrapper.find('#default-start-page')
-    expect(select.exists()).toBe(true)
-    await select.setValue('/timeline')
+    localStorage.clear()
+    const harness = pluginHarness({ get: async () => [] } as any)
+    registerShellSettings(harness.settings)
+    harness.router.addRoute({ path: '/settings', component: SettingsPage })
+    await harness.router.push('/settings?section=device')
+    const wrapper = mountWithUi(SettingsPage, { attachTo: document.body, global: { plugins: [harness.pinia, harness.router], provide: harness.provide } })
+    await flushPromises()
+    async function choose(label: string) {
+      await wrapper.find('#default-start-page').trigger('click')
+      await flushPromises()
+      const option = Array.from(document.querySelectorAll<HTMLElement>('[role=option]')).find(item => item.textContent?.trim() === label)!
+      option.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+      option.click()
+      await flushPromises()
+    }
+    await choose('Timeline')
     expect(localStorage.getItem('secretsauce:default_start_page')).toBe('/timeline')
-
-    await select.setValue('auto')
+    await choose('Automatic (Timeline when active, else Recipes)')
     expect(localStorage.getItem('secretsauce:default_start_page')).toBeNull()
+    wrapper.unmount()
   })
 })
