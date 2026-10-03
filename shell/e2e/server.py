@@ -6,7 +6,6 @@ import asyncio
 import json
 import re
 from contextlib import asynccontextmanager
-from types import MethodType
 from pathlib import Path
 
 # Add project root to sys.path
@@ -55,9 +54,16 @@ def build_e2e_app():
     @asynccontextmanager
     async def lifespan(app):
         async with production_lifespan(app):
-            service = app.state.kernel.services.get("core-ai-provider")
-            service._complete_openai_compatible = MethodType(deterministic_completion, service)
-            yield
+            service_type = type(app.state.kernel.services.get("core-ai-provider"))
+            original = service_type._complete_openai_compatible
+            # The loader retains this module but creates a new service instance
+            # on reactivation. Patch only the outbound helper on its class so
+            # plugin toggles cannot restore paid network calls during a test.
+            service_type._complete_openai_compatible = deterministic_completion
+            try:
+                yield
+            finally:
+                service_type._complete_openai_compatible = original
 
     app.router.lifespan_context = lifespan
     return app

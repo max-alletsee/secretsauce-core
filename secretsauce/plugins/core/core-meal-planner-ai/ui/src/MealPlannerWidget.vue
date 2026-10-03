@@ -1,12 +1,46 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useSecretSauce } from '@secretsauce/ui'
 const emit = defineEmits<{ scheduled: [entry: any] }>()
 const ss = useSecretSauce()
 const days = ref(5), mealType = ref(''), promptText = ref(''), showForm = ref(true)
 const loading = ref(false), pending = ref<string | null>(null), errorMessage = ref('')
 const suggestions = ref<any[]>([]), scheduleDates = ref<Record<string, string>>({})
-const mealTypes = computed(() => ss.store.household.value?.meal_types || [])
+const resolvedSlots = ref<Record<string, any[]>>({})
+const scheduleMealTypes = ref<Record<string, string>>({})
+function availableForDate(date: string) { return (resolvedSlots.value[date] || ss.store.household.value?.meal_types || []).filter(slot => !slot.skipped) }
+const mealTypes = computed(() => availableForDate(today()))
+let slotRevision = 0, stopped = false
+async function loadSlots() {
+  const n = ++slotRevision
+  const end = new Date(`${today()}T12:00:00`); end.setDate(end.getDate() + 31)
+  try {
+    const response = await ss.api.get<{ days: Record<string, any[]> }>('/api/x/core-timeline/slots', { from: today(), to: end.toLocaleDateString('en-CA') })
+    if (n === slotRevision && !stopped) resolvedSlots.value = { ...resolvedSlots.value, ...response.days }
+  } catch { if (n === slotRevision && !stopped) resolvedSlots.value = {} }
+}
+const pendingDates = new Map<string, Promise<void>>()
+async function ensureSlots(date: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || resolvedSlots.value[date]) return
+  if (pendingDates.has(date)) return pendingDates.get(date)
+  const request = (async () => {
+    try {
+      const response = await ss.api.get<{ days: Record<string, any[]> }>('/api/x/core-timeline/slots', { from: date, to: date })
+      if (!stopped) resolvedSlots.value = { ...resolvedSlots.value, ...response.days }
+    } catch { /* Household defaults remain available when Timeline is disabled. */ }
+    finally { pendingDates.delete(date) }
+  })()
+  pendingDates.set(date, request)
+  return request
+}
+watch(scheduleDates, dates => { for (const date of new Set(Object.values(dates))) ensureSlots(date) }, { deep: true })
+watch(() => ss.store.household.value.meal_types, loadSlots, { immediate: true })
+const stopSlots = ss.on('core-timeline:slots-changed', () => {
+  resolvedSlots.value = {}
+  loadSlots()
+  for (const date of new Set(Object.values(scheduleDates.value))) ensureSlots(date)
+})
+onBeforeUnmount(() => { stopped = true; ++slotRevision; if (typeof stopSlots === 'function') stopSlots() })
 watch(mealTypes, choices => { if (!choices.some(slot => slot.id === mealType.value)) mealType.value = choices.find(slot => slot.id === 'dinner')?.id || choices[0]?.id || '' }, { immediate: true })
 const activeSuggestions = computed(() => suggestions.value.filter(s => s.status === 'suggested'))
 function today() { const date = new Date(); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` }
@@ -17,7 +51,7 @@ async function generateCandidates() {
     const result = await ss.api.post<any>('/api/x/core-meal-planner-ai/generate', { days: days.value, prompt: promptText.value.trim() || undefined, meal_types: [mealType.value] })
     suggestions.value = result.suggestions
     showForm.value = false
-    for (const suggestion of result.suggestions) scheduleDates.value[suggestion.id] = suggestion.suggested_date || today()
+    for (const suggestion of result.suggestions) { scheduleDates.value[suggestion.id] = suggestion.suggested_date || today(); scheduleMealTypes.value[suggestion.id] = mealType.value }
   } catch (error: any) { errorMessage.value = error?.message || 'Failed to generate meal suggestions' }
   finally { loading.value = false }
 }
@@ -26,8 +60,12 @@ async function acceptSuggestion(suggestion: any) {
   pending.value = suggestion.id; errorMessage.value = ''
   try {
     const date = scheduleDates.value[suggestion.id] || today()
-    // The household selection is authoritative; old/LLM-proposed slot ids may not exist.
-    const result = await ss.api.post<any>(`/api/x/core-meal-planner-ai/suggestions/${suggestion.id}/accept`, { date, meal_type: mealType.value })
+    await ensureSlots(date)
+    const choices = availableForDate(date)
+    const chosen = scheduleMealTypes.value[suggestion.id] || mealType.value
+    const slot = choices.find(slot => slot.id === chosen) || choices[0]
+    if (!slot) throw new Error('No available meal slots on this day')
+    const result = await ss.api.post<any>(`/api/x/core-meal-planner-ai/suggestions/${suggestion.id}/accept`, { date, meal_type: slot.id })
     Object.assign(suggestion, result)
     ss.notify({ level: 'success', message: `Scheduled ${suggestion.recipe_title} for ${date}` })
     emit('scheduled', result)
@@ -64,6 +102,7 @@ async function dismissSuggestion(suggestion: any) {
           <div v-else class="suggestion-actions">
             <Tag v-if="suggestion.confidence" :value="`${Math.round(suggestion.confidence * 100)}% match`" severity="secondary" />
             <label :for="`schedule-${suggestion.id}`">Schedule date</label><InputText :id="`schedule-${suggestion.id}`" v-model="scheduleDates[suggestion.id]" type="date" fluid />
+            <Select :inputId="`schedule-slot-${suggestion.id}`" aria-label="Schedule meal slot" v-model="scheduleMealTypes[suggestion.id]" :options="availableForDate(scheduleDates[suggestion.id] || today())" optionLabel="label" optionValue="id" fluid />
             <div class="actions"><Button label="Dismiss" size="small" severity="secondary" :disabled="!!pending" @click="dismissSuggestion(suggestion)" /><Button label="Add to schedule" size="small" :loading="pending === suggestion.id" :disabled="!!pending || !mealType" @click="acceptSuggestion(suggestion)" /></div>
           </div>
         </template>

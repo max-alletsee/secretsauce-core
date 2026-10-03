@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+import inspect
 import logging
 from pathlib import Path
 import re
@@ -130,7 +131,9 @@ class Database:
 
         for callback in callbacks:
             try:
-                callback()
+                result = callback()
+                if inspect.isawaitable(result):
+                    await result
             except Exception:
                 logger.exception("after_commit callback failed")
 

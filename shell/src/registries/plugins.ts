@@ -29,6 +29,7 @@ type PluginModule = { default?: unknown; activate?: unknown }
 
 export function createPluginLoader(ctx: PluginLoaderContext) {
   const loadedPlugins = new Set<string>()
+  const subscriptions = new Map<string, Set<() => void>>()
   const base = (ctx.basePath || '/').endsWith('/') ? ctx.basePath || '/' : `${ctx.basePath}/`
   const importModule =
     ctx.importModule || ((url: string) => import(/* @vite-ignore */ url) as Promise<PluginModule>)
@@ -61,10 +62,22 @@ export function createPluginLoader(ctx: PluginLoaderContext) {
   function runActivate(plugin: ActivePluginItem, mod: PluginModule | null) {
     const activate = mod && (mod.default || mod.activate)
     if (typeof activate !== 'function') return
+    const ui = ctx.makeSecretSauceUI(plugin.id)
+    const subscribe = ui.on
+    const stops = new Set<() => void>()
+    subscriptions.set(plugin.id, stops)
+    ui.on = (name, handler) => {
+      if (subscriptions.get(plugin.id) !== stops) return () => {}
+      const unsubscribe = subscribe(name, handler)
+      const stop = () => { if (stops.delete(stop) && typeof unsubscribe === 'function') unsubscribe() }
+      stops.add(stop)
+      return stop
+    }
     try {
-      activate(ctx.makeSecretSauceUI(plugin.id))
+      activate(ui)
       loadedPlugins.add(plugin.id)
     } catch (err) {
+      deactivatePlugin(plugin.id)
       console.error(`Failed to activate plugin ${plugin.id}:`, err)
     }
   }
@@ -107,6 +120,8 @@ export function createPluginLoader(ctx: PluginLoaderContext) {
   }
 
   function deactivatePlugin(pluginId: string) {
+    for (const stop of subscriptions.get(pluginId) || []) stop()
+    subscriptions.delete(pluginId)
     ctx.routes.unregister(pluginId)
     ctx.slots.unregister(pluginId)
     ctx.intents.unregister(pluginId)

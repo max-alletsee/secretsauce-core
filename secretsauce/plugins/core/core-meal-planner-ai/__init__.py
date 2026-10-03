@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import json
 from typing import Any
 import uuid
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from secretsauce.errors import ConflictError, NotFoundError, SecretSauceError
 from secretsauce.plugins.context import PluginContext, current_ctx
 
@@ -14,7 +14,7 @@ PLUGIN = {
     "version": "1.0.0",
     "description": "Smart meal planning and candidate suggestion pool generation using AI and household preferences",
     "schema": 1,
-    "requires": ["core-ai-provider"],
+    "requires": ["core-ai-provider", "core-timeline?"],
     "ui": "ui.js",
 }
 
@@ -45,6 +45,17 @@ class GeneratePlanRequest(BaseModel):
     start_date: str | None = None
     prompt: str | None = None
     meal_types: list[str] = Field(default_factory=lambda: ["dinner"])
+
+    @model_validator(mode='after')
+    def validate_window(self):
+        try:
+            start = date.fromisoformat(self.start_date) if self.start_date is not None else date.today()
+            if self.start_date is not None and start.isoformat() != self.start_date:
+                raise ValueError()
+            start + timedelta(days=self.days - 1)
+        except (ValueError, OverflowError):
+            raise ValueError('Expected an ISO calendar date and valid planning horizon') from None
+        return self
 
 
 class AcceptSuggestionRequest(BaseModel):
@@ -82,12 +93,23 @@ async def generate_plan_endpoint(req: GeneratePlanRequest, ctx: PluginContext = 
         for m in await ctx.members.list_members()
     ]
 
+    start = date.fromisoformat(req.start_date) if req.start_date else date.today()
+    end = start + timedelta(days=req.days - 1)
+    timeline = ctx.services.get('core-timeline')
+    if timeline:
+        resolved = await timeline.slots_for(start.isoformat(), end.isoformat())
+        available_slots = {day: [slot['id'] for slot in slots if not slot['skipped']] for day, slots in resolved.items()}
+    else:
+        defaults = [slot['id'] for slot in (await ctx.household.get_config())['meal_types']]
+        available_slots = {(start + timedelta(days=offset)).isoformat(): defaults for offset in range(req.days)}
+
     ai_prompt = (
         "You are an expert household meal planning assistant.\n"
         "Generate a candidate suggestion pool of meals. IMPORTANT: do not strictly lock meals to fixed dates; "
         "provide an unassigned candidate suggestion pool (suggested_date should be null/omitted) "
         "so the household can pick and schedule what fits best.\n\n"
         f"Planning parameters: {req.days} days, meal types: {req.meal_types}.\n"
+        f"Available slots by date: {json.dumps(available_slots)}\n"
         f"User guidance: {req.prompt or 'None'}\n"
         f"Household members: {json.dumps(members_info)}\n"
         f"Available recipes in library: {json.dumps(recipes_summary)}\n\n"

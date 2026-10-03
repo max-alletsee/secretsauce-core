@@ -21,6 +21,7 @@ export const test = base.extend<{ isolatedState: void }>({
       json(request, `/api/schedule${range}`), json(request, `/api/journal${range}`), json(request, '/api/x/core-shortlist'),
       json(request, '/api/x/core-shopping-list'), json(request, '/api/members'),
     ])
+    const slotsBefore = await json(request, `/api/x/core-timeline/slots${range}`)
     expect(recipes.total).toBeLessThanOrEqual(200)
     try { await use() }
     finally {
@@ -29,6 +30,18 @@ export const test = base.extend<{ isolatedState: void }>({
         const ids = new Set(before.map((row: any) => row.id))
         for (const row of await json(request, `/api/${noun}${range}`)) {
           if (!ids.has(row.id)) expect((await request.delete(`/api/${noun}/${row.id}?revision=${row.revision}`)).status()).toBe(204)
+        }
+      }
+      const slotsAfter = await json(request, `/api/x/core-timeline/slots${range}`)
+      for (const [date, after] of Object.entries<any[]>(slotsAfter.days)) {
+        const before: any[] = slotsBefore.days[date] || []
+        const overrides = (slots: any[]) => slots.filter(slot => slot.kind === 'extra' || slot.skipped)
+        if (JSON.stringify(overrides(after)) === JSON.stringify(overrides(before))) continue
+        for (const slot of overrides(after)) expect((await request.delete(`/api/x/core-timeline/days/${date}/slots/${slot.id}?with_entries=true`)).ok()).toBe(true)
+        for (const slot of overrides(before)) {
+          const nextDefault = before.slice(before.indexOf(slot) + 1).find(row => row.kind === 'default')
+          const body = slot.kind === 'extra' ? { kind: 'extra', label: slot.label, before: nextDefault?.id || null } : { kind: 'skip' }
+          expect((await request.put(`/api/x/core-timeline/days/${date}/slots/${slot.id}`, { data: body })).ok()).toBe(true)
         }
       }
       const shortlistIds = new Set(shortlist.map((row: any) => row.recipe_id))

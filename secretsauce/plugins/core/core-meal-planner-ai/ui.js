@@ -1,242 +1,294 @@
-import { defineComponent as L, ref as i, computed as U, watch as P, resolveComponent as p, openBlock as t, createElementBlock as f, createElementVNode as n, createTextVNode as I, createVNode as u, createBlock as y, createCommentVNode as _, withCtx as T, toDisplayString as $, Fragment as W, renderList as Y } from "vue";
-import { useSecretSauce as q } from "@secretsauce/ui";
-const H = { class: "meal-planner-widget" }, J = {
+import { defineComponent as X, ref as s, computed as R, watch as E, onBeforeUnmount as Z, resolveComponent as y, openBlock as n, createElementBlock as b, createElementVNode as u, createTextVNode as z, createVNode as r, createBlock as k, createCommentVNode as S, withCtx as G, toDisplayString as U, Fragment as ee, renderList as le } from "vue";
+import { useSecretSauce as te } from "@secretsauce/ui";
+const ae = { class: "meal-planner-widget" }, ne = {
   key: 0,
   class: "planner-form"
-}, K = { class: "actions" }, Q = {
+}, oe = { class: "actions" }, se = {
   key: 2,
   class: "suggestions-pool"
-}, R = { class: "actions" }, X = { key: 0 }, Z = {
+}, ie = { class: "actions" }, ue = { key: 0 }, de = {
   key: 3,
   class: "suggestion-actions"
-}, ee = ["for"], le = { class: "actions" }, ae = /* @__PURE__ */ L({
+}, re = ["for"], ce = { class: "actions" }, pe = /* @__PURE__ */ X({
   __name: "MealPlannerWidget",
   emits: ["scheduled"],
-  setup(g, { emit: x }) {
-    const V = x, r = q(), k = i(5), s = i(""), w = i(""), v = i(!0), C = i(!1), o = i(null), d = i(""), m = i([]), S = i({}), F = U(() => {
-      var l;
-      return ((l = r.store.household.value) == null ? void 0 : l.meal_types) || [];
+  setup(V, { emit: N }) {
+    const x = N, o = te(), w = s(5), i = s(""), B = s(""), _ = s(!0), D = s(!1), d = s(null), c = s(""), h = s([]), f = s({}), p = s({}), M = s({});
+    function O(l) {
+      var e;
+      return (p.value[l] || ((e = o.store.household.value) == null ? void 0 : e.meal_types) || []).filter((a) => !a.skipped);
+    }
+    const P = R(() => O(g()));
+    let I = 0, T = !1;
+    async function W() {
+      const l = ++I, e = /* @__PURE__ */ new Date(`${g()}T12:00:00`);
+      e.setDate(e.getDate() + 31);
+      try {
+        const a = await o.api.get("/api/x/core-timeline/slots", { from: g(), to: e.toLocaleDateString("en-CA") });
+        l === I && !T && (p.value = { ...p.value, ...a.days });
+      } catch {
+        l === I && !T && (p.value = {});
+      }
+    }
+    const F = /* @__PURE__ */ new Map();
+    async function j(l) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(l) || p.value[l]) return;
+      if (F.has(l)) return F.get(l);
+      const e = (async () => {
+        try {
+          const a = await o.api.get("/api/x/core-timeline/slots", { from: l, to: l });
+          T || (p.value = { ...p.value, ...a.days });
+        } catch {
+        } finally {
+          F.delete(l);
+        }
+      })();
+      return F.set(l, e), e;
+    }
+    E(f, (l) => {
+      for (const e of new Set(Object.values(l))) j(e);
+    }, { deep: !0 }), E(() => o.store.household.value.meal_types, W, { immediate: !0 });
+    const q = o.on("core-timeline:slots-changed", () => {
+      p.value = {}, W();
+      for (const l of new Set(Object.values(f.value))) j(l);
     });
-    P(F, (l) => {
-      var e, c;
-      l.some((b) => b.id === s.value) || (s.value = ((e = l.find((b) => b.id === "dinner")) == null ? void 0 : e.id) || ((c = l[0]) == null ? void 0 : c.id) || "");
+    Z(() => {
+      T = !0, ++I, typeof q == "function" && q();
+    }), E(P, (l) => {
+      var e, a;
+      l.some((v) => v.id === i.value) || (i.value = ((e = l.find((v) => v.id === "dinner")) == null ? void 0 : e.id) || ((a = l[0]) == null ? void 0 : a.id) || "");
     }, { immediate: !0 });
-    const O = U(() => m.value.filter((l) => l.status === "suggested"));
-    function N() {
+    const Y = R(() => h.value.filter((l) => l.status === "suggested"));
+    function g() {
       const l = /* @__PURE__ */ new Date();
       return `${l.getFullYear()}-${String(l.getMonth() + 1).padStart(2, "0")}-${String(l.getDate()).padStart(2, "0")}`;
     }
-    async function j() {
-      if (!(C.value || !s.value)) {
-        C.value = !0, d.value = "";
+    async function H() {
+      if (!(D.value || !i.value)) {
+        D.value = !0, c.value = "";
         try {
-          const l = await r.api.post("/api/x/core-meal-planner-ai/generate", { days: k.value, prompt: w.value.trim() || void 0, meal_types: [s.value] });
-          m.value = l.suggestions, v.value = !1;
-          for (const e of l.suggestions) S.value[e.id] = e.suggested_date || N();
+          const l = await o.api.post("/api/x/core-meal-planner-ai/generate", { days: w.value, prompt: B.value.trim() || void 0, meal_types: [i.value] });
+          h.value = l.suggestions, _.value = !1;
+          for (const e of l.suggestions)
+            f.value[e.id] = e.suggested_date || g(), M.value[e.id] = i.value;
         } catch (l) {
-          d.value = (l == null ? void 0 : l.message) || "Failed to generate meal suggestions";
+          c.value = (l == null ? void 0 : l.message) || "Failed to generate meal suggestions";
         } finally {
-          C.value = !1;
+          D.value = !1;
         }
       }
     }
-    async function z(l) {
-      if (!o.value) {
-        o.value = l.id, d.value = "";
+    async function J(l) {
+      if (!d.value) {
+        d.value = l.id, c.value = "";
         try {
-          const e = S.value[l.id] || N(), c = await r.api.post(`/api/x/core-meal-planner-ai/suggestions/${l.id}/accept`, { date: e, meal_type: s.value });
-          Object.assign(l, c), r.notify({ level: "success", message: `Scheduled ${l.recipe_title} for ${e}` }), V("scheduled", c);
+          const e = f.value[l.id] || g();
+          await j(e);
+          const a = O(e), v = M.value[l.id] || i.value, C = a.find((L) => L.id === v) || a[0];
+          if (!C) throw new Error("No available meal slots on this day");
+          const m = await o.api.post(`/api/x/core-meal-planner-ai/suggestions/${l.id}/accept`, { date: e, meal_type: C.id });
+          Object.assign(l, m), o.notify({ level: "success", message: `Scheduled ${l.recipe_title} for ${e}` }), x("scheduled", m);
         } catch (e) {
-          d.value = (e == null ? void 0 : e.message) || "Failed to schedule meal";
+          c.value = (e == null ? void 0 : e.message) || "Failed to schedule meal";
         } finally {
-          o.value = null;
+          d.value = null;
         }
       }
     }
-    async function A(l) {
-      if (!o.value) {
-        o.value = l.id, d.value = "";
+    async function K(l) {
+      if (!d.value) {
+        d.value = l.id, c.value = "";
         try {
-          Object.assign(l, await r.api.post(`/api/x/core-meal-planner-ai/suggestions/${l.id}/dismiss`));
+          Object.assign(l, await o.api.post(`/api/x/core-meal-planner-ai/suggestions/${l.id}/dismiss`));
         } catch (e) {
-          d.value = (e == null ? void 0 : e.message) || "Failed to dismiss suggestion";
+          c.value = (e == null ? void 0 : e.message) || "Failed to dismiss suggestion";
         } finally {
-          o.value = null;
+          d.value = null;
         }
       }
     }
     return (l, e) => {
-      const c = p("InputNumber"), b = p("Select"), B = p("InputText"), h = p("Button"), E = p("Message"), M = p("Tag"), G = p("Card");
-      return t(), f("section", H, [
-        e[8] || (e[8] = n(
+      const a = y("InputNumber"), v = y("Select"), C = y("InputText"), m = y("Button"), L = y("Message"), A = y("Tag"), Q = y("Card");
+      return n(), b("section", ae, [
+        e[8] || (e[8] = u(
           "h3",
           null,
           [
-            n("i", {
+            u("i", {
               class: "pi pi-sparkles",
               "aria-hidden": "true"
             }),
-            I(" AI meal suggestions")
+            z(" AI meal suggestions")
           ],
           -1
           /* CACHED */
         )),
-        v.value || !m.value.length ? (t(), f("div", J, [
-          e[5] || (e[5] = n(
+        _.value || !h.value.length ? (n(), b("div", ne, [
+          e[5] || (e[5] = u(
             "label",
             { for: "planner-days" },
             "Days to plan",
             -1
             /* CACHED */
           )),
-          u(c, {
+          r(a, {
             inputId: "planner-days",
-            modelValue: k.value,
-            "onUpdate:modelValue": e[0] || (e[0] = (a) => k.value = a),
+            modelValue: w.value,
+            "onUpdate:modelValue": e[0] || (e[0] = (t) => w.value = t),
             min: 1,
             max: 14,
             fluid: ""
           }, null, 8, ["modelValue"]),
-          e[6] || (e[6] = n(
+          e[6] || (e[6] = u(
             "label",
             { for: "planner-slot" },
             "Meal slot",
             -1
             /* CACHED */
           )),
-          u(b, {
+          r(v, {
             inputId: "planner-slot",
             "aria-label": "Meal slot",
-            modelValue: s.value,
-            "onUpdate:modelValue": e[1] || (e[1] = (a) => s.value = a),
-            options: F.value,
+            modelValue: i.value,
+            "onUpdate:modelValue": e[1] || (e[1] = (t) => i.value = t),
+            options: P.value,
             optionLabel: "label",
             optionValue: "id",
             fluid: ""
           }, null, 8, ["modelValue", "options"]),
-          e[7] || (e[7] = n(
+          e[7] || (e[7] = u(
             "label",
             { for: "planner-prompt" },
             "Dietary focus / notes",
             -1
             /* CACHED */
           )),
-          u(B, {
+          r(C, {
             id: "planner-prompt",
-            modelValue: w.value,
-            "onUpdate:modelValue": e[2] || (e[2] = (a) => w.value = a),
+            modelValue: B.value,
+            "onUpdate:modelValue": e[2] || (e[2] = (t) => B.value = t),
             placeholder: "Fast weeknight meals…",
             fluid: ""
           }, null, 8, ["modelValue"]),
-          n("div", K, [
-            m.value.length ? (t(), y(h, {
+          u("div", oe, [
+            h.value.length ? (n(), k(m, {
               key: 0,
               label: "Cancel",
               severity: "secondary",
-              onClick: e[3] || (e[3] = (a) => v.value = !1)
-            })) : _("v-if", !0),
-            u(h, {
+              onClick: e[3] || (e[3] = (t) => _.value = !1)
+            })) : S("v-if", !0),
+            r(m, {
               label: "Generate suggestions",
               icon: "pi pi-sparkles",
-              loading: C.value,
-              disabled: !s.value,
-              onClick: j
+              loading: D.value,
+              disabled: !i.value,
+              onClick: H
             }, null, 8, ["loading", "disabled"])
           ])
-        ])) : _("v-if", !0),
-        d.value ? (t(), y(E, {
+        ])) : S("v-if", !0),
+        c.value ? (n(), k(L, {
           key: 1,
           severity: "error"
         }, {
-          default: T(() => [
-            I(
-              $(d.value),
+          default: G(() => [
+            z(
+              U(c.value),
               1
               /* TEXT */
             )
           ]),
           _: 1
           /* STABLE */
-        })) : _("v-if", !0),
-        m.value.length ? (t(), f("div", Q, [
-          n("div", R, [
-            n(
+        })) : S("v-if", !0),
+        h.value.length ? (n(), b("div", se, [
+          u("div", ie, [
+            u(
               "span",
               null,
-              $(O.value.length) + " suggestions",
+              U(Y.value.length) + " suggestions",
               1
               /* TEXT */
             ),
-            u(h, {
-              label: v.value ? "Close form" : "Generate more",
+            r(m, {
+              label: _.value ? "Close form" : "Generate more",
               text: "",
-              onClick: e[4] || (e[4] = (a) => v.value = !v.value)
+              onClick: e[4] || (e[4] = (t) => _.value = !_.value)
             }, null, 8, ["label"])
           ]),
-          (t(!0), f(
-            W,
+          (n(!0), b(
+            ee,
             null,
-            Y(m.value, (a) => (t(), y(
-              G,
+            le(h.value, (t) => (n(), k(
+              Q,
               {
-                key: a.id,
+                key: t.id,
                 class: "sug-card"
               },
               {
-                title: T(() => [
-                  I(
-                    $(a.recipe_title),
+                title: G(() => [
+                  z(
+                    U(t.recipe_title),
                     1
                     /* TEXT */
                   )
                 ]),
-                content: T(() => [
-                  a.reasoning ? (t(), f(
+                content: G(() => [
+                  t.reasoning ? (n(), b(
                     "p",
-                    X,
-                    $(a.reasoning),
+                    ue,
+                    U(t.reasoning),
                     1
                     /* TEXT */
-                  )) : _("v-if", !0),
-                  a.status === "accepted" ? (t(), y(M, {
+                  )) : S("v-if", !0),
+                  t.status === "accepted" ? (n(), k(A, {
                     key: 1,
                     value: "Scheduled",
                     severity: "success",
                     icon: "pi pi-check"
-                  })) : a.status === "dismissed" ? (t(), y(M, {
+                  })) : t.status === "dismissed" ? (n(), k(A, {
                     key: 2,
                     value: "Dismissed",
                     severity: "secondary"
-                  })) : (t(), f("div", Z, [
-                    a.confidence ? (t(), y(M, {
+                  })) : (n(), b("div", de, [
+                    t.confidence ? (n(), k(A, {
                       key: 0,
-                      value: `${Math.round(a.confidence * 100)}% match`,
+                      value: `${Math.round(t.confidence * 100)}% match`,
                       severity: "secondary"
-                    }, null, 8, ["value"])) : _("v-if", !0),
-                    n("label", {
-                      for: `schedule-${a.id}`
-                    }, "Schedule date", 8, ee),
-                    u(B, {
-                      id: `schedule-${a.id}`,
-                      modelValue: S.value[a.id],
-                      "onUpdate:modelValue": (D) => S.value[a.id] = D,
+                    }, null, 8, ["value"])) : S("v-if", !0),
+                    u("label", {
+                      for: `schedule-${t.id}`
+                    }, "Schedule date", 8, re),
+                    r(C, {
+                      id: `schedule-${t.id}`,
+                      modelValue: f.value[t.id],
+                      "onUpdate:modelValue": ($) => f.value[t.id] = $,
                       type: "date",
                       fluid: ""
                     }, null, 8, ["id", "modelValue", "onUpdate:modelValue"]),
-                    n("div", le, [
-                      u(h, {
+                    r(v, {
+                      inputId: `schedule-slot-${t.id}`,
+                      "aria-label": "Schedule meal slot",
+                      modelValue: M.value[t.id],
+                      "onUpdate:modelValue": ($) => M.value[t.id] = $,
+                      options: O(f.value[t.id] || g()),
+                      optionLabel: "label",
+                      optionValue: "id",
+                      fluid: ""
+                    }, null, 8, ["inputId", "modelValue", "onUpdate:modelValue", "options"]),
+                    u("div", ce, [
+                      r(m, {
                         label: "Dismiss",
                         size: "small",
                         severity: "secondary",
-                        disabled: !!o.value,
-                        onClick: (D) => A(a)
+                        disabled: !!d.value,
+                        onClick: ($) => K(t)
                       }, null, 8, ["disabled", "onClick"]),
-                      u(h, {
+                      r(m, {
                         label: "Add to schedule",
                         size: "small",
-                        loading: o.value === a.id,
-                        disabled: !!o.value || !s.value,
-                        onClick: (D) => z(a)
+                        loading: d.value === t.id,
+                        disabled: !!d.value || !i.value,
+                        onClick: ($) => J(t)
                       }, null, 8, ["loading", "disabled", "onClick"])
                     ])
                   ]))
@@ -250,20 +302,20 @@ const H = { class: "meal-planner-widget" }, J = {
             128
             /* KEYED_FRAGMENT */
           ))
-        ])) : _("v-if", !0)
+        ])) : S("v-if", !0)
       ]);
     };
   }
-}), te = (g, x) => {
-  const V = g.__vccOpts || g;
-  for (const [r, k] of x)
-    V[r] = k;
-  return V;
-}, ne = /* @__PURE__ */ te(ae, [["__scopeId", "data-v-0ce7eea9"]]);
-function ie(g) {
-  g.slot("timeline.sidebar", ne, { order: 10 });
+}), ve = (V, N) => {
+  const x = V.__vccOpts || V;
+  for (const [o, w] of N)
+    x[o] = w;
+  return x;
+}, me = /* @__PURE__ */ ve(pe, [["__scopeId", "data-v-7e5d31a2"]]);
+function _e(V) {
+  V.slot("timeline.sidebar", me, { order: 10 });
 }
 export {
-  ne as MealPlannerWidget,
-  ie as default
+  me as MealPlannerWidget,
+  _e as default
 };

@@ -1,24 +1,15 @@
 import { test, expect } from './helpers/state'
+import { login } from './helpers/ui'
 
-test.describe('Live event stream', () => {
-  test('a write made elsewhere reaches the open shell over SSE', async ({ page }) => {
-    await page.goto('/')
-    await page.fill('input[type="password"]', 'secretpassphrase')
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/.*\/timeline/, { timeout: 10_000 })
-
-    // Connected: the stream's hello frame arrived, so no offline bar.
-    await expect(page.getByText('Offline, showing saved data')).toHaveCount(0)
-
-    // The timeline plugin re-fetches the schedule on schedule:* events.
-    const refetch = page.waitForRequest((r) => r.url().includes('/api/schedule?from='), {
-      timeout: 10_000,
-    })
-    const inTwelveDays = new Date(Date.now() + 12 * 86_400_000).toISOString().slice(0, 10)
-    const created = await page.request.post('/api/schedule', {
-      data: { date: inTwelveDays, meal_type: 'breakfast', title: 'Written by another device' },
-    })
-    expect(created.status()).toBe(201)
-    await refetch
-  })
+test('a write made elsewhere visibly reaches the open shell over SSE', async ({ page, request }) => {
+  await login(page)
+  await expect(page.getByText('Offline, showing saved data')).toHaveCount(0)
+  const date = new Date().toLocaleDateString('en-CA')
+  const response = await request.post('/api/schedule', {data:{date,meal_type:'dinner',entry_type:'note',title:'Written by another device'}})
+  expect(response.status()).toBe(201)
+  const entry = await response.json()
+  const card = page.locator('.day-card.is-today .schedule-card').filter({hasText:'Written by another device'})
+  await expect(card).toBeVisible()
+  expect((await request.delete(`/api/schedule/${entry.id}?revision=${entry.revision}`)).status()).toBe(204)
+  await expect(card).toHaveCount(0)
 })

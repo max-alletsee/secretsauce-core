@@ -11,8 +11,10 @@ async def db(tmp_path):
     database = Database(tmp_path / "test.db")
     await database.connect()
     await database.run_migrations()
-    yield database
-    await database.close()
+    try:
+        yield database
+    finally:
+        await database.close()
 
 
 async def test_cancelled_transaction_rolls_back_and_releases_writer(db):
@@ -100,6 +102,64 @@ async def test_after_commit_callbacks_run_only_on_commit(db):
             db.after_commit(lambda: fired.append("rolled-back"))
             raise RuntimeError("boom")
     assert fired == ["committed"]
+
+
+async def test_after_commit_awaits_async_callbacks_outside_the_writer(db):
+    await db.write("CREATE TABLE async_commit (value INTEGER);")
+    observed = []
+
+    async def announce():
+        observed.append(await db.read_val("SELECT value FROM async_commit;"))
+        # A callback is outside the completed writer and can open a new transaction.
+        await db.write("INSERT INTO async_commit VALUES (2);")
+
+    async with db.transaction() as tx:
+        await tx.execute("INSERT INTO async_commit VALUES (1);")
+        db.after_commit(announce)
+        assert observed == []
+    assert observed == [1]
+    assert await db.read_all("SELECT value FROM async_commit ORDER BY value;") == [{"value": 1}, {"value": 2}]
+
+
+async def test_cancelled_async_commit_hook_leaves_committed_data_and_writer_available(db):
+    await db.write('CREATE TABLE hook_cancel (value INTEGER)')
+    started = asyncio.Event()
+    async def hook():
+        started.set()
+        await asyncio.Event().wait()
+    async def write():
+        async with db.transaction() as tx:
+            await tx.execute('INSERT INTO hook_cancel VALUES (1)')
+            db.after_commit(hook)
+    task = asyncio.create_task(write())
+    try:
+        await asyncio.wait_for(started.wait(), 3)
+        # A waiting hook must not own the writer or block another request.
+        await asyncio.wait_for(db.write('INSERT INTO hook_cancel VALUES (2)'), 3)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert await db.read_all('SELECT value FROM hook_cancel ORDER BY value') == [{'value':1},{'value':2}]
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
+async def test_async_commit_hooks_drop_rolled_back_savepoints_and_continue_after_failure(db, caplog):
+    observed = []
+    async def announce(value):
+        observed.append(value)
+        if value == 'failure': raise RuntimeError('hook failure')
+    async with db.transaction():
+        db.after_commit(lambda: announce('outer'))
+        with pytest.raises(RuntimeError):
+            async with db.transaction():
+                db.after_commit(lambda: announce('rolled-back'))
+                raise RuntimeError('savepoint failure')
+        db.after_commit(lambda: announce('failure'))
+        db.after_commit(lambda: announce('after'))
+    assert observed == ['outer','failure','after']
+    assert 'after_commit callback failed' in caplog.text
 
 
 async def test_nested_transaction_in_same_task_joins_instead_of_deadlocking(db):

@@ -16,6 +16,7 @@ describe('Timeline + journal + ratings components (API boundary doubles)', () =>
     const journal = { id: 'journal-1', revision: 1, date, meal_type: 'dinner', schedule_entry_id: schedule.id, recipe_id: savedRecipe.id, recipe: savedRecipe, title: savedRecipe.title, status: 'cooked', servings_cooked: 3, cooked_by_member_id: testMember.id, notes: null, origin: 'manual', created_at: '2026-09-28T12:00:00Z', updated_at: '2026-09-28T12:00:00Z' }
     let voted = false
     const harness = pluginHarness({ get: async (path: string) => {
+      if (path === '/api/x/core-timeline/slots') return { days: { [date]: [{ id: 'dinner', label: 'Dinner', kind: 'default', skipped: false }] } }
       if (path.startsWith('/api/schedule')) return [schedule]
       if (path.startsWith('/api/journal')) return [journal]
       if (path === '/api/x/core-ratings') return { scores: voted ? [{ member_id: testMember.id, score: 1 }] : [], net_score: voted ? 1 : 0 }

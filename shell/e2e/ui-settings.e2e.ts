@@ -57,6 +57,9 @@ test('household slots can be added, renamed and reordered without changing ident
   await page.reload()
   await expect(panel.getByLabel('Label for dinner', { exact: true })).toHaveValue('Evening meal')
   await expect(panel.locator('[data-slot-id]').first()).toHaveAttribute('data-slot-id', 'lunch')
+  await page.getByRole('link', {name:'Timeline',exact:true}).first().click()
+  await expect(page.locator('.timeline-feed > .day-card [data-slot-id=lunch]')).toHaveCount(7)
+  await expect(page.locator('.timeline-feed > .day-card [data-slot-id=dinner]')).toHaveCount(7)
 })
 
 test('AI-settings link opens one panel and stale device panel ids cannot break Settings', async ({ page }) => {
