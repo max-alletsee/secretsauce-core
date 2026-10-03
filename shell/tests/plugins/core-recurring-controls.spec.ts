@@ -6,16 +6,17 @@ import { registeredRoute, clickButton } from '../helpers/registeredPlugin'
 const wrappers: VueWrapper[] = []
 afterEach(() => { wrappers.splice(0).forEach(wrapper => wrapper.unmount()); document.body.innerHTML = '' })
 
-describe('registered recurring controls (API boundary double; rule creation remains Phase 6)', () => {
-  it('renders route-shaped rules and retains working delete/materialize actions', async () => {
-    const rules = [{ id: 'rule-1', weekday: 0, meal_type: 'dinner', recipe_id: 'recipe-1', recipe_title: 'Monday pasta', servings_override: null, enabled: true }]
-    const api = { get: vi.fn(async () => [...rules]), delete: vi.fn(async () => { rules.splice(0) }), post: vi.fn(async () => ({ created: 2, skipped: 0 })), put: vi.fn(), patch: vi.fn() }
+describe('registered recurring controls (API boundary double)', () => {
+  it('renders route-shaped rules and deletes through the actual section', async () => {
+    const rules = [{ id: 'rule-1', weekday: 0, meal_type: 'dinner', recipe_id: 'recipe-1', recipe_title: 'Monday pasta', created_at: '2026-09-28T12:00:00Z' }]
+    const api = { get: vi.fn(async () => [...rules]), delete: vi.fn(async () => { rules.splice(0); return {ok:true} }), post: vi.fn(), put: vi.fn(), patch: vi.fn() }
     const { wrapper, harness } = await registeredRoute(activate, 'core-recurring', api, '/settings')
+    harness.householdStore.household.meal_types=[{id:'dinner',label:'Dinner'}]
+    await flushPromises()
     wrappers.push(wrapper)
-    expect(wrapper.text()).toContain('Monday · dinner · Monday pasta')
-    await clickButton('Materialize Now'); await flushPromises()
-    expect(api.post).toHaveBeenCalledWith('/api/x/core-recurring/materialize', {})
-    expect(harness.notifications).toContainEqual({ level: 'success', message: 'Schedule updated.' })
+    expect(wrapper.text()).toContain('Every Monday · Dinner · Monday pasta')
+    expect(wrapper.text()).toContain('A recurring meal is planned automatically')
+    expect(wrapper.text()).not.toContain('Materialize')
     await clickButton('Delete'); await flushPromises()
     expect(api.delete).toHaveBeenCalledWith('/api/x/core-recurring/rules/rule-1')
     expect(wrapper.text()).toContain('No recurring rules configured.')

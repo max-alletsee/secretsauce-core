@@ -25,7 +25,7 @@ const actions=computed(()=>[{label:'Add another meal',icon:'pi pi-plus',command:
     <Message v-if="error" severity="error">{{error}}</Message>
     <div v-if="slot.skipped" class="skipped-row"><span>Skipped this day</span><Button label="Undo" text :loading="busy" @click="write('undo')" /></div>
     <template v-else>
-      <IntentTrigger v-for="entry in slot.entries" :key="entry.id" hub="entry:interact" :context="{entry}" @resolve="emit('changed')"><template #default="{open}"><ScheduleCard :entry="entry" @interact="open" /></template></IntentTrigger>
+      <IntentTrigger v-for="entry in slot.entries" :key="entry.id" hub="entry:interact" :context="{entry,mealType:slot.id}" @resolve="emit('changed')"><template #default="{open}"><ScheduleCard :entry="entry" @interact="open" /></template></IntentTrigger>
       <Button v-if="!slot.entries.length" label="Add meal" icon="pi pi-plus" text @click="add" />
     </template>
   </div>

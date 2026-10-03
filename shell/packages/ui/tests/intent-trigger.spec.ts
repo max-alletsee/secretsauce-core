@@ -68,6 +68,17 @@ describe('IntentTrigger through production registration and controls', () => {
     } else expect(wrapper.emitted('cancel')).toEqual([[]])
     expect(document.querySelector('[role=dialog]')).toBeNull()
   })
+  it('uses context-dependent titles without mutating a shared provider', async () => {
+    const provider = { title:'Repeat weekly', titleFor:(context:any)=>`Repeat every ${context.weekday}` }
+    const single = render([provider], {props:{context:{weekday:'Monday'}}})
+    expect(single.find('button').text()).toBe('Repeat every Monday')
+    await single.setProps({context:{weekday:'Sunday'}})
+    expect(single.find('button').text()).toBe('Repeat every Sunday')
+    const multiple = render([{title:'View'}, provider], {props:{context:{weekday:'Monday'}}})
+    await multiple.find('button').trigger('click'); await flushPromises()
+    expect(document.querySelector('[role=menu]')?.textContent).toContain('Repeat every Monday')
+    expect(provider.title).toBe('Repeat weekly')
+  })
   it('surfaces failed headless work without emitting a successful resolution', async () => {
     const wrapper = render([{ execute: async () => { throw new Error('Write failed') } }])
     await wrapper.find('button').trigger('click'); await flushPromises()

@@ -14,8 +14,9 @@ const availableProviders = computed(() => registry.getProviders(props.hub)
 function reason(provider: IntentProvider) {
   return provider.disabledReason?.(props.context) || ''
 }
+function title(provider: IntentProvider) { return provider.titleFor?.(props.context) || provider.title }
 const menuModel = computed(() => availableProviders.value.map(provider => ({
-  label: provider.title, icon: provider.icon ? `pi pi-${provider.icon}` : undefined,
+  label: title(provider), icon: provider.icon ? `pi pi-${provider.icon}` : undefined,
   disabled: !!reason(provider), reason: reason(provider), command: () => runProvider(provider),
 })))
 async function open(event: Event) {
@@ -42,7 +43,7 @@ function cancel() { if (activeDialog.value) { activeDialog.value = null; emit('c
   <template v-if="availableProviders.length">
     <slot :open="open">
       <span v-tooltip="availableProviders.length === 1 ? reason(availableProviders[0]) : ''">
-        <Button class="ss-intent-trigger" :label="label || availableProviders[0].title" :loading="busy"
+        <Button class="ss-intent-trigger" :label="label || title(availableProviders[0])" :loading="busy"
           :disabled="busy || (availableProviders.length === 1 && !!reason(availableProviders[0]))"
           :icon="availableProviders.length > 1 ? 'pi pi-chevron-down' : availableProviders[0].icon ? `pi pi-${availableProviders[0].icon}` : undefined"
           :iconPos="availableProviders.length > 1 ? 'right' : 'left'" :aria-haspopup="availableProviders.length > 1 ? 'menu' : undefined" @click="open" />
@@ -56,7 +57,7 @@ function cancel() { if (activeDialog.value) { activeDialog.value = null; emit('c
       </template>
     </Menu>
     <Message v-if="error" severity="error">{{ error }}</Message>
-    <Dialog :visible="!!activeDialog" :header="activeDialog?.title" modal :style="{ width: 'min(52rem, 95vw)' }"
+    <Dialog :visible="!!activeDialog" :header="activeDialog ? title(activeDialog) : ''" modal :style="{ width: 'min(52rem, 95vw)' }"
       @update:visible="visible => { if (!visible) cancel() }" @hide="cancel">
       <component v-if="activeDialog" :is="activeDialog.component" :context="context" @resolve="resolve" @cancel="cancel" />
     </Dialog>

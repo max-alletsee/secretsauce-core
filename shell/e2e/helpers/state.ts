@@ -22,9 +22,15 @@ export const test = base.extend<{ isolatedState: void }>({
       json(request, '/api/x/core-shopping-list'), json(request, '/api/members'),
     ])
     const slotsBefore = await json(request, `/api/x/core-timeline/slots${range}`)
+    const rulesBefore = await json(request, '/api/x/core-recurring/rules')
     expect(recipes.total).toBeLessThanOrEqual(200)
     try { await use() }
     finally {
+      // Stop newly created recurring plans before removing their scheduled meals.
+      const ruleIds = new Set(rulesBefore.map((row:any)=>row.id))
+      for (const rule of await json(request, '/api/x/core-recurring/rules')) {
+        if (!ruleIds.has(rule.id)) expect((await request.delete(`/api/x/core-recurring/rules/${rule.id}`)).ok()).toBe(true)
+      }
       // Remove dependent writes before their recipe/member rows, using current revisions.
       for (const [noun, before] of [['journal', journal], ['schedule', schedule]] as const) {
         const ids = new Set(before.map((row: any) => row.id))

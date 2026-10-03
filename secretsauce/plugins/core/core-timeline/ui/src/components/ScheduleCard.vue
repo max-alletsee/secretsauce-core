@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { Slot } from '@secretsauce/ui'
+function weekday(date: string) { return new Date(`${date}T12:00:00`).toLocaleDateString('en', {weekday:'long'}) }
 defineProps<{ entry: any }>()
 const emit = defineEmits<{ interact: [event: Event] }>()
 </script>
 
 <template>
   <Button class="schedule-card" variant="text" @click="emit('interact', $event)">
-    <div class="card-header"><span class="card-title">{{ entry.recipe?.title || entry.title || 'Planned Meal' }}</span><Slot name="timeline.entry.badge" :context="{ entry }" /></div>
+    <div class="card-header"><span class="card-title">{{ entry.recipe?.title || entry.title || 'Planned Meal' }}</span><i v-if="entry.origin === 'plugin:core-recurring'" class="pi pi-replay" v-tooltip="`Repeats every ${weekday(entry.date)}`" :aria-label="`Repeats every ${weekday(entry.date)}`" /><Slot name="timeline.entry.badge" :context="{ entry }" /></div>
     <div v-if="entry.servings_override" class="card-servings">{{ entry.servings_override }} servings</div>
     <div v-if="entry.note" class="card-note">{{ entry.note }}</div>
   </Button>

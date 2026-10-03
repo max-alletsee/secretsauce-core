@@ -122,6 +122,7 @@ export interface IntentProvider<C = unknown, R = unknown> {
   hub: string
   id: string
   title: string
+  titleFor?: (context: C) => string
   icon?: string
   order: number
   isAvailable?: (context: C) => boolean

@@ -54,15 +54,10 @@ async def test_recurring_plugin_backend_and_materializer(tmp_path: Path):
         assert len(rules) == 1
         assert rules[0]["id"] == rule_id
 
-        # 4. Materialize rules using the registered command and the API endpoint
-        mat_res = await k.client.post("/api/x/core-recurring/materialize", json={})
-        assert mat_res.status_code == 200
-        assert mat_res.json()["ok"] is True
-
-        ctx = k.ctx_for("core-recurring")
-        materialize_fn = k.services.get_command("core-recurring", "materialize")
-        assert materialize_fn is not None
-        await materialize_fn(ctx)
+        # 4. Creation itself materializes; no manual command/endpoint remains.
+        assert rule_data['created'] == 2
+        assert (await k.client.post('/api/x/core-recurring/materialize')).status_code == 405
+        assert k.services.get_command('core-recurring', 'materialize') is None
 
         # 5. Verify schedule entries created for upcoming Wednesdays in the next 14 days
         today = date.today()

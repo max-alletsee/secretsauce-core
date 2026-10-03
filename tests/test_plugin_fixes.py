@@ -42,13 +42,10 @@ async def test_recurring_rules_are_validated_and_materializing_is_idempotent(tmp
         assert missing.status_code == 404
 
         recipe = (await k.client.post("/api/recipes", json={"title": "Pie", "language": "en"})).json()
-        await k.client.post(
-            "/api/x/core-recurring/rules",
-            json={"weekday": date.today().weekday(), "meal_type": "dinner", "recipe_id": recipe["id"]},
-        )
-        first = (await k.client.post("/api/x/core-recurring/materialize")).json()
-        second = (await k.client.post("/api/x/core-recurring/materialize")).json()
-        assert first["created"] == 2 and second["created"] == 0
+        payload = {"weekday": date.today().weekday(), "meal_type": "dinner", "recipe_id": recipe["id"]}
+        first = (await k.client.post('/api/x/core-recurring/rules', json=payload)).json()
+        second = (await k.client.post('/api/x/core-recurring/rules', json=payload)).json()
+        assert first['created'] == 2 and second['created'] == 0
         entries = await k.schedule.list_entries(
             from_date=date.today().isoformat(), to_date=(date.today() + timedelta(days=13)).isoformat()
         )
