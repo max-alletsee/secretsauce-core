@@ -287,6 +287,12 @@ pnpm --prefix shell build:plugins
 
 Because these dependencies are externalized, plugins do not bundle their own copies of Vue, Pinia, Vue Router, or the units engine. Shared dependencies resolve at runtime through the shell's vendor import map. Plugin stylesheets are automatically injected by the shell when the plugin is active.
 
+The frontend API remains version **1**. `shell/src/ui/install.ts` installs the host's PrimeVue controls/services and `v-tooltip` once. Reserved global tags are `Button`, `SplitButton`, `Menu`, `Dialog`, `ConfirmDialog`, `Drawer`, `Accordion`, `AccordionPanel`, `AccordionHeader`, `AccordionContent`, `Tabs`, `TabList`, `Tab`, `TabPanels`, `TabPanel`, `InputText`, `Textarea`, `InputNumber`, `Select`, `SelectButton`, `AutoComplete`, `ToggleSwitch`, `Checkbox`, `IconField`, `InputIcon`, `Tag`, `Avatar`, `Message`, `ProgressSpinner`, `Card`, `Divider`. Use these tags directly, do not import private PrimeVue component copies or register conflicting globals. Use semantic `--p-*` tokens, not fixed theme colors. Themes are device-local: `aura-tomato`, `nora-tomato`, `material-indigo`, `lara-amber` (`ss-theme`), all in light mode.
+
+Registered routes, slot contributions, Settings sections and UI intent components are wrapped by `shell/src/pluginContext.ts`. The wrapper provides the owning plugin's `ss` as a legacy prop and through `useSecretSauce()` from `@secretsauce/ui`. `SECRET_SAUCE_UI_KEY` is the string `__SS_UI__`; all existing string registry keys are retained across externalized bundles. Avoid cross-bundle Symbols and manual injection into a component that production never mounts.
+
+Use `await ss.confirm({ header: 'Remove item', message: 'Remove this item?', acceptLabel: 'Remove', rejectLabel: 'Cancel', severity: 'danger' })`; false means rejected or dismissed. `ss.notify` handles toast feedback. Settings section headings belong to the host Accordion: do not repeat the section heading inside your component. Sections are reactive and removed on plugin disable; `?section=<id>` opens an existing section, and `ss-settings-open` stores open panel ids. Activation-owned stream subscriptions are cleaned up even if activation throws; component-scoped `ss.on` callbacks should additionally unsubscribe on unmount.
+
 ### 6.2 Common Shell and Plugin Slots
 
 The shell and core domain plugins expose slot locations where plugins can contribute custom components:
@@ -294,13 +300,12 @@ The shell and core domain plugins expose slot locations where plugins can contri
 | Slot Name | Provider | Context | Description |
 |---|---|---|---|
 | `shell.header.right` | Shell (`AppHeader.vue`) | `{}` | Header controls (e.g. `core-members` mounts `MemberPicker.vue`). |
-| `settings.tab.members` | Shell (`SettingsPage.vue`) | `{}` | Member profiles & credentials. |
-| `recipe.card.actions` | Core Recipes (`RecipeCard.vue`) | `{ recipe, isShortlisted }` | Action buttons on recipe cards (e.g. `shortlist` star button). |
-| `recipe.list.filters` | Core Recipes (`RecipeListPage.vue`) | `{ filterShortlist, toggleShortlist }` | Filter chips in the recipe list. |
+| `recipe.card.actions` | Core Recipes (`RecipeCard.vue`) | `{ recipe }` | Action buttons; shortlist state is `recipe.is_shortlisted`. |
+| `recipe.list.filters` | Core Recipes (`RecipeListPage.vue`) | `{ active, toggle }` | Shortlist filter state and toggle callback. |
 | `timeline.day.actions` | Core Timeline (`TimelinePage.vue`) | `{ date }` | Header action buttons for days (e.g. quick entry shortcuts). |
 | `timeline.entry.badge` | Core Timeline (`ScheduleCard.vue`) | `{ entry }` | Status badge contributions on schedule cards (e.g. `cook-tracker` checkmark). |
 | `timeline.entry.actions`| Core Timeline (`ScheduleCard.vue`) | `{ entry }` | Contextual action buttons on scheduled meals. |
-| `timeline.sidebar` | Core Timeline | `{ date }` | Quick-access drawers and widgets (e.g. `shortlist` drawer). |
+| `timeline.sidebar` | Core Timeline | `{ from, to }` | Planning widgets; collapsed accordion panels on phones. |
 | `journal.entry.footer` | Cook Tracker (`JournalPage.vue`) | `{ entry }` | Metadata and rating controls on cooking journal entries (e.g. `ratings` thumbs up/down). |
 
 ### 6.3 Standard Intent Hubs
@@ -310,7 +315,21 @@ Core domain plugins establish standard intent hubs to coordinate cross-plugin wo
 | Hub ID | Context Contract | Description |
 |---|---|---|
 | `entry:create` | `{ date: string, mealType?: string }` | Opens modal or workflow to plan/add a scheduled meal (recipe search, shortlist, AI suggestions). |
-| `entry:interact`| `{ entry: ScheduleEntry }` | Dispatches contextual operations on scheduled meals (e.g. `mark-cooked`, recipe view). |
+| `entry:interact`| `{ entry: ScheduleEntry, mealType: string }` | Meal operations with the resolved canonical slot id. |
+| `recipe:create` | `{}` | Manual recipe creation and AI import. |
+| `recipe:actions` | `{ recipe }` | Edit, translate and other recipe actions. |
+| `timeline:assist` | Provider-dependent | Planning assistance. |
+| `share:receive` | Shared content | Incoming web share workflows. |
+
+The provider type requires `hub`, `id`, a static `title`, numeric `order`, and `kind: 'ui' | 'headless'`. UI providers require `component`; headless providers require `execute(context)`. Optional `isAvailable` hides an action; `disabledReason` keeps it visible but disabled with a tooltip. Optional `titleFor(context)` supplies contextual wording without removing the static fallback title. With no available providers a trigger is absent, one runs directly, several open an anchored Menu. UI components receive `context` and emit `resolve(result)` or `cancel`; errors remain visible and dialogs retain unsaved input.
+
+A scoped trigger supports custom icon controls:
+```vue
+<IntentTrigger hub="entry:interact" :context="{ entry, mealType }" v-slot="{ open }">
+  <Button icon="pi pi-ellipsis-h" aria-label="Meal actions" text @click="open" />
+</IntentTrigger>
+```
+The recurring provider uses `titleFor` for “Repeat every <weekday>”; its browser weekday is mapped to the API's Monday-zero convention. It is unavailable for notes and entries originating from `plugin:core-recurring`.
 
 ### 6.4 The `activate(ss)` Function
 The entry point of `ui.js` must default export an activation function receiving `SecretSauceUI`:
@@ -332,7 +351,8 @@ export default function activate(ss: SecretSauceUI) {
   // 2. Insert components into existing shell or plugin slots
   ss.slot('recipe.card.actions', NutritionWidget, { order: 10 })
 
-  // 3. Register intent providers (e.g. handle shared content or calculations)
+  // 3. Declare a custom hub before registering its provider.
+  ss.intent.hub({ id: 'recipe:analyze', title: 'Analyze recipe' })
   ss.intent.provider({
     hub: 'recipe:analyze',
     id: 'calculate-macros',
@@ -378,7 +398,9 @@ export default function activate(ss: SecretSauceUI) {
 
 ## 7. Testing Frontend Plugin Components
 
-The `@secretsauce/ui` package provides a test harness (`createFakeSecretSauceUI`) for unit testing plugin components in Vitest / Jest:
+The `@secretsauce/ui` package provides `createFakeSecretSauceUI` for unit-level tests. When a component uses host controls, mount with the real installer (`shell/tests/helpers/mountWithUi.ts`). For core plugin integration at the component level, `registeredRoute`, `registeredSlot` and `registeredIntent` in `shell/tests/helpers/registeredPlugin.ts` mount the actual registry consumer, so production context wrapping and component resolution are exercised. Mock responses must match real route serialization; mocked API tests are not end-to-end tests.
+
+The minimal fake-context example below is only a unit test; it does not prove registration, browser globals or background delivery:
 
 ```ts
 import { describe, it, expect } from 'vitest'
@@ -403,4 +425,6 @@ describe('MyComponent', () => {
   })
 })
 ```
+
+For behavior that crosses browser/kernel boundaries, add Playwright coverage against compiled bundles; `shell/e2e/helpers/ui.ts` shares login (never import another `.e2e.ts`). Backend runtime tests must use `build_app()` plus the real lifespan and HTTP, polling for eventual state, not manually draining events/running jobs. Only event-system tests may synthesize kernel noun events. The old stub-only mounts and manual materialization tests hid missing `ss` injection, unresolved globals, duplicated subscriptions and disconnected background services. See `tests/test_ui_timeline_runtime.py`, `tests/test_ui_recurring_runtime.py`, the registered-plugin suites and `shell/e2e/ui-theme-smoke.e2e.ts` for replacement coverage.
 

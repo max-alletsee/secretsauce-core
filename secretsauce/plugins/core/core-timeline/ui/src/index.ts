@@ -1,5 +1,6 @@
 import type { SecretSauceUI } from '@secretsauce/ui'
 import TimelinePage from './pages/TimelinePage.vue'
+import { shiftDate } from './days'
 
 export default function activate(ss: SecretSauceUI) {
   ss.route({ path: '/timeline', component: TimelinePage, nav: { label: 'Timeline', icon: 'calendar', order: 5 } })
@@ -20,9 +21,10 @@ export default function activate(ss: SecretSauceUI) {
   })
   const warmCache = async () => {
     try {
-      const today = new Date(), start = new Date(today), end = new Date(today)
-      start.setDate(start.getDate() - 2); end.setDate(end.getDate() + 14)
-      const entries = await ss.api.get<any[]>(`/api/schedule?from=${start.toISOString().slice(0, 10)}&to=${end.toISOString().slice(0, 10)}`)
+      // Schedule days are browser-local calendar dates, not UTC timestamps.
+      const now = new Date()
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      const entries = await ss.api.get<any[]>(`/api/schedule?from=${shiftDate(today, -2)}&to=${shiftDate(today, 14)}`)
       for (const entry of entries) if (entry.recipe_id) ss.api.get(`/api/recipes/${entry.recipe_id}`).catch(() => {})
     } catch { /* cache warming must not prevent offline use */ }
   }

@@ -1,9 +1,14 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Architecture hardening implemented on branch `fix/architecture-hardening` (214 Pytest, 85 Vitest, 3 Playwright E2E passing)  
-**Active Plan:** Pre-Stage 8 completion (`docs/superpowers/plans/2026-09-20-pre-stage-8-completion.md`)  
-**Architecture Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md`  
-**Last Updated:** 2026-09-24  
+**Current Status:** Seven UI overhaul phases delivered on `feat/ui-overhaul`; verification: 291 Pytest, 140 Vitest, 47 Playwright tests and fresh builds passing. Separate final whole-branch review pending; branch remains unmerged and unpushed.
+
+**Active Plan:** `docs/superpowers/plans/2026-09-28-ui-overhaul.md`
+
+**UI Spec:** `docs/superpowers/specs/2026-09-28-ui-overhaul-design.md`
+
+**Kernel Spec:** `docs/superpowers/specs/2026-09-05-secretsauce-core-plugin-architecture-design.md`
+
+**Resume Record:** `.superpowers/sdd/2026-09-28-ui-overhaul/progress.md` (local ledger; commit history is authoritative).
 
 ---
 
@@ -22,6 +27,23 @@ When starting a new Pi session to continue development:
    - Update `- [ ]` to `- [x]` in both the plan file and this `TODO.md`.
 4. **Surprises & Blockers:**
    - If an unexpected error, constraint violation, or design ambiguity arises, **stop immediately**. Do not work around it silently. Surface it to the human partner and update the plan.
+
+---
+
+## UI Overhaul (September 2026 plan)
+
+- [x] **1: Host design-system foundation** — `675092c`: reserved global PrimeVue tags, four light themes, string injection, real plugin context, confirmation and installed-control tests.
+- [x] **2: Plugin intents and controls** — `a71a3e2`: valid UI/headless registrations, anchored/scoped intent triggers, recipe import preview, translator/planner/shopping/member/ratings/shortlist/cooked wiring through production consumers.
+- [x] **3: Unified Settings and household metadata** — `4a79c88`: reactive multi-panel sections, household default-slot validation/editor, member forms and deterministic avatars, final-member deletion protection.
+- [x] **4: Navigation** — `63fa9e3`: Timeline first, desktop sidebar/phone Drawer, Settings footer gear and household identity.
+- [x] **5: Live vertical Timeline/day slots** — `9e12329`: schema-1 overrides, authenticated HTTP/SSE service, default/extra/skipped slots, bounded feed requests, add recipe/shortlist/note dialogs, cooked/legacy compatibility, planner slot resolution, transaction/subscription regressions.
+- [x] **6: Automatic recurring scheduling** — `d383eb5`: schema-2 retained occurrence tracking, immediate atomic creation, hourly background/restart coverage, deletion preservation, Settings add-rule dialog and contextual repeat-weekly action. Manual materialization controls/route/command removed.
+- [x] **7: Document and verify every screen/theme** — four presets at 390px/1280px, isolated fresh setup smoke, 124 labeled screenshots inspected through 33 contact sheets, runtime/console/overflow gates and contract docs. RED→GREEN repairs: phone sidebar CSS specificity, setup labeling/themed fields, theme-dependent Accordion intrinsic-width overflow and local-midnight cache-warming dates.
+- [ ] **Final whole-branch review** — separate self-review (no subagent tool); any Important/Critical finding requires RED→GREEN and full gates before integration choice.
+
+**Non-goals remain:** dark mode, migration of new strings into i18n, phone bottom tabs, drag-and-drop slot reordering, and kernel schedule/journal redesign. Existing legacy meal-type strings and avatar-color API data are supported; they are not a mandate to rewrite stored nouns. Container packaging, DNS-rebinding hardening and the type-shim follow-up below are unrelated backlog, not completed by the overhaul.
+
+**Coverage changes:** stub-only component mounts did not resolve host globals or production plugin context; manually drained events/materializer calls did not prove lifespan wiring. Registered-plugin/component harnesses and `tests/test_ui_{household,timeline,recurring}_runtime.py` replace those blind spots. Compiled-bundle Playwright tests cover real browser globals, SSE, outbox writes, lifecycle reactivation, form retention and theme/phone layouts. E2E AI stubs replace only outbound completion (on the retained service class, including reactivation), never auth, budgets, usage accounting or planner persistence.
 
 ---
 

@@ -38,46 +38,27 @@ async function submitSetup() {
       <div v-if="errorMsg" class="error-banner">{{ errorMsg }}</div>
 
       <div class="field">
-        <label>Household Name</label>
-        <input
-          name="household_name"
-          v-model="householdName"
-          required
-          placeholder="e.g. Familie Müller"
-        />
+        <label for="setup-household">Household Name</label>
+        <InputText id="setup-household" name="household_name" v-model="householdName" required placeholder="e.g. Familie Müller" fluid />
       </div>
 
       <div class="field">
-        <label>Household Passphrase</label>
-        <input
-          name="passphrase"
-          v-model="passphrase"
-          type="password"
-          minlength="8"
-          required
-        />
+        <label for="setup-passphrase">Household Passphrase</label>
+        <InputText id="setup-passphrase" name="passphrase" v-model="passphrase" type="password" minlength="8" required fluid />
         <small>At least 8 characters.</small>
       </div>
 
       <div class="field">
-        <label>Your Name</label>
-        <input
-          name="first_member_name"
-          v-model="memberName"
-          required
-        />
+        <label for="setup-member">Your Name</label>
+        <InputText id="setup-member" name="first_member_name" v-model="memberName" required fluid />
       </div>
 
       <div class="field">
-        <label>Language</label>
-        <select v-model="language">
-          <option value="en">English</option>
-          <option value="de">Deutsch</option>
-          <option value="fr">Français</option>
-        </select>
+        <label for="setup-language">Language</label>
+        <Select inputId="setup-language" aria-label="Language" v-model="language" :options="[{id:'en',label:'English'},{id:'de',label:'Deutsch'},{id:'fr',label:'Français'}]" optionLabel="label" optionValue="id" fluid />
       </div>
 
-      <Button type="submit" label="Complete Setup" />
+      <Button type="submit" label="Complete Setup" class="complete-setup" />
     </form>
   </div>
 </template>
@@ -96,21 +77,7 @@ async function submitSetup() {
   flex-direction: column;
   gap: 4px;
 }
-.field input,
-.field select {
-  padding: 8px;
-  border: 1px solid var(--p-content-border-color);
-  border-radius: 4px;
-}
-button {
-  padding: 10px 20px;
-  background: var(--p-primary-color);
-  color: var(--p-primary-contrast-color);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  width: 100%;
-}
+.complete-setup { width: 100%; }
 .error-banner {
   color: var(--p-red-600);
   margin-bottom: 12px;

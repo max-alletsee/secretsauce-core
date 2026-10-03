@@ -45,7 +45,7 @@ SecretSauce adopts a **modular PWA shell** architecture. The core application sh
 ## 2. Technology Stack
 
 - **Framework**: Vue 3.5 (Composition API, `<script setup>`, TypeScript).
-- **Component System**: PrimeVue 4 (Aura preset), `@primeuix/styled`, PrimeIcons.
+- **Component System**: PrimeVue 4 with Aura, Nora, Material and Lara presets, `@primeuix/styled`, PrimeIcons.
 - **State Management**: Pinia 3.
 - **Routing**: Vue Router 4 (HTML5 history mode with `base_path` support).
 - **Offline Storage**: IndexedDB via `idb` v8.
@@ -191,7 +191,7 @@ export interface SecretSauceUI {
   settings: {
     section(def: { id: string; title: string; component: Component; order?: number }): void
   }
-  on(name: string, handler: (e: StreamEvent | StreamPush) => void): void
+  on(name: string, handler: (e: StreamEvent | StreamPush) => void): void | (() => void)
   api: ApiClient
   url(path: string): string
   navigate?(path: string): void
@@ -206,8 +206,14 @@ export interface SecretSauceUI {
   t(key: string, params?: Record<string, string | number>): string
   theme: { register(def: { id: string; label: string; preset: object }): void }
   notify(n: { level: 'info' | 'success' | 'warning' | 'error'; message: string }): void
+  confirm(options: ConfirmOptions): Promise<boolean>
 }
 ```
+
+### Host controls, context and confirmation
+`API_VERSION` remains **1**. `shell/src/ui/install.ts` installs PrimeVue, ToastService, ConfirmationService and `v-tooltip`. It reserves these global component names: `Button`, `SplitButton`, `Menu`, `Dialog`, `ConfirmDialog`, `Drawer`, `Accordion`, `AccordionPanel`, `AccordionHeader`, `AccordionContent`, `Tabs`, `TabList`, `Tab`, `TabPanels`, `TabPanel`, `InputText`, `Textarea`, `InputNumber`, `Select`, `SelectButton`, `AutoComplete`, `ToggleSwitch`, `Checkbox`, `IconField`, `InputIcon`, `Tag`, `Avatar`, `Message`, `ProgressSpinner`, `Card`, `Divider`. Plugins use the global tags, not private copies or competing global registrations. CSS uses PrimeVue semantic tokens rather than fixed theme colors.
+
+`shell/src/pluginContext.ts` wraps route, slot, Settings and UI-intent components, providing the owning plugin's `ss` both as a legacy prop and through `useSecretSauce()`. `SECRET_SAUCE_UI_KEY` is the string `__SS_UI__`; registry injection keys also remain strings (`__SS_SLOT_REGISTRY__`, `__SS_INTENT_REGISTRY__`, etc.). Do not replace them with cross-bundle Symbols. `ss.confirm({ message, header?, acceptLabel?, rejectLabel?, severity? })` resolves true only on acceptance; rejection or dismissal resolves false. One host `ConfirmDialog` handles destructive confirmations.
 
 ### Component Isolation & Slots
 - Plugins insert UI into predefined shell locations via `<Slot name="location.id" :context="context" />`.
@@ -219,22 +225,30 @@ Common slots established across the application:
 | Slot Name | Provider | Context | Description |
 |---|---|---|---|
 | `shell.header.right` | Shell (`AppHeader.vue`) | `{}` | Header actions & member picker. |
-| `settings.tab.members` | Shell (`SettingsPage.vue`) | `{}` | Member profiles & household settings. |
-| `recipe.card.actions` | Core Recipes (`RecipeCard.vue`) | `{ recipe, isShortlisted }` | Action buttons on recipe cards. |
-| `recipe.list.filters` | Core Recipes (`RecipeListPage.vue`) | `{ filterShortlist, toggleShortlist }` | Filter chips in recipe list. |
+| `recipe.card.actions` | Core Recipes (`RecipeCard.vue`) | `{ recipe }` | Recipe includes `is_shortlisted` for shortlist controls. |
+| `recipe.list.filters` | Core Recipes (`RecipeListPage.vue`) | `{ active, toggle }` | Shortlist filter state and toggle callback. |
 | `timeline.day.actions` | Core Timeline (`TimelinePage.vue`) | `{ date }` | Quick shortcuts on day headers. |
 | `timeline.entry.badge` | Core Timeline (`ScheduleCard.vue`) | `{ entry }` | Status badges on schedule cards (e.g. `CookedBadge`). |
 | `timeline.entry.actions`| Core Timeline (`ScheduleCard.vue`) | `{ entry }` | Contextual action buttons on scheduled meals. |
+| `timeline.sidebar` | Core Timeline | `{ from, to }` | Shortlist and AI widgets; phone accordion, desktop sidebar. |
 | `journal.entry.footer` | Cook Tracker (`JournalPage.vue`) | `{ entry }` | Feedback and voting on cooked entries (e.g. `VoteRating`). |
 
 ### Cross-Plugin Intent Dispatch
 - Hubs declare points of user choice (e.g. `share:receive`, `entry:create`, `entry:interact`).
 - Providers register actions against hubs.
-- `<IntentTrigger>` provides an accessible modal picker when multiple providers exist or executes immediately when only one provider is registered.
+- `<IntentTrigger>` filters `isAvailable(context)`, sorts by `order`, hides when no providers remain, runs one provider directly, or opens an anchored PrimeVue Menu for multiple providers. `disabledReason(context)` disables an action with a tooltip. A `headless` provider requires `execute`; a `ui` provider requires `component` and resolves/cancels through component events. Invalid definitions are rejected by the registry.
+- Providers keep a required static `title` and may supply `titleFor(context)` (for example, “Repeat every Tuesday”). The contextual title is used for buttons, menus and dialog headers. Scoped triggers expose `{ open }` so icon buttons can use the same filtering, menu and dialog behavior.
 
 Standard intent hubs:
 - `entry:create`: Dispatches meal planning dialog with recipe search, shortlist, and suggestions.
-- `entry:interact`: Contextual operations on scheduled meals (e.g. `mark-cooked`, recipe detail navigation).
+- `entry:interact`: `{ entry, mealType }` for scheduled meal operations; `mealType` is the resolved canonical slot id. Providers include recipe navigation, cooked status, repeat weekly and confirmed removal.
+- `recipe:create` / `recipe:actions`: recipe creation/import and recipe actions.
+- `timeline:assist`: planning assistance; `share:receive`: incoming shared content.
+
+### Reactive Settings and live subscriptions
+Settings is a reactive, multiple-open Accordion. Built-in sections are Household, Plugins and This device (appearance/start page/account); plugin sections are registered with `ss.settings.section` and disappear on deactivation. Open ids persist in `ss-settings-open`; `?section=<id>` opens and scrolls to an existing section. The shell owns section headings; contributed Settings components must not repeat the section title as a heading. Members and recurring rules use forms/dialogs within their sections. Appearance stores theme and default start page separately from household metadata.
+
+Activation-owned `ss.on` subscriptions are removed on deactivation and failed activation. Components must also call their returned unsubscribe functions on unmount. Timeline refreshes after schedule/journal events and `core-timeline:slots-changed`, debounces bursts, ignores stale responses and disposes listeners on navigation. Its vertical feed starts at today−2 through today+6, collapses past days, and extends explicitly with earlier/more buttons. All feed APIs are loaded in 63-inclusive-day chunks, so extending beyond a single API range still works. Unknown legacy meal-type strings remain visible in synthetic slots; they have individual meal actions, not an invalid bulk slot-removal action.
 
 ---
 
@@ -295,13 +309,17 @@ Prefixes `BASE_PATH`, sends `X-Actor-Member`, and aborts requests after 30 s (up
 
 ### Shell Layout & Auth Pages (`shell/src/App.vue`)
 - Core navigation routes (`/settings`, `/plugins`) are registered in `routeRegistry` by default.
-- On authentication pages (`/login`, `/setup`), the sidebar `AppNav` is hidden (`v-if="!isAuthPage"`), presenting a clean, centered interface.
+- On authentication pages (`/login`, `/setup`), navigation is hidden, presenting a centered interface.
+- At widths below 768px the desktop sidebar is hidden and the header hamburger opens a PrimeVue Drawer; successful route navigation closes it. Settings is pinned at the navigation footer with a gear icon, Plugins is a Settings section (`/plugins` redirects to `/settings?section=plugins`), and the header shows the household name. Timeline is first when enabled; there is no replacement top-tab navigation.
+- Device theme ids are `aura-tomato` (default), `nora-tomato`, `material-indigo`, `lara-amber`. Tomato uses the rose primitive palette; all presets use zinc surfaces and light mode (`darkModeSelector: false`). The selection persists as `ss-theme`; unknown ids fall back to Aura. Changing a theme updates host and plugin controls without reloading.
 
 ---
 
 ## 11. Testing & Verification
 
-The shell test suite uses Vitest with `@vue/test-utils` and HappyDOM for unit and component testing, and Playwright for real-browser end-to-end testing:
+The shell test suite uses Vitest with `@vue/test-utils` and HappyDOM for unit and component testing, and Playwright for real-browser end-to-end testing. Older stub-only mounts and manually drained event tests missed global component resolution, missing plugin injection, disconnected production background services and phone CSS specificity. Replacement registered-plugin/component harnesses exercise the host installer; `tests/test_ui_{household,timeline,recurring}_runtime.py` use real application lifespans/HTTP/background delivery. Browser suites `ui-foundation`, `ui-settings`, `ui-intents`, `ui-plugins`, `ui-timeline`, `ui-recurring` and `ui-theme-smoke` exercise compiled bundles, SSE and browser globals. The theme matrix captures labeled screenshots under `shell/test-results/` across four presets at 390px and 1280px, checks outer and inner horizontal overflow, and refuses page errors or authenticated console errors. Only the initial unauthenticated session-probe 401 is exempt. Setup smoke uses a separate disposable server, never the seeded household.
+
+Verification commands:
 
 ```bash
 # Run all frontend shell tests

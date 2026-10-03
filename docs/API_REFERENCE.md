@@ -136,6 +136,7 @@ Returns the household configuration.
 ### `PATCH /api/household`
 Updates any subset of `household_name`, `meal_types`, `languages`, `units` (`metric` or `us_customary`).
 - **Status:** `200 OK` with the full configuration.
+- **Meal-slot validation (also for setup):** if supplied, `meal_types` must be a non-null, nonempty array with unique ids. Ids match `^[a-z0-9][a-z0-9-]{0,63}$`; labels are 1–64 characters. Invalid values return `422 validation` with field details. Omitting `meal_types` preserves the current/default configuration. Order is display order; renaming a label does not change its stable id. Schedule/journal `meal_type` remains a free string for legacy entries.
 
 ### `PUT /api/household/passphrase`
 Rotates the household passphrase, increments `passphrase_version`, invalidates all existing sessions, and sets a fresh cookie.
@@ -179,7 +180,9 @@ Updates a member. Requires current `revision` for optimistic concurrency.
 
 ### `DELETE /api/members/{id}`
 Deletes member and cascades unlinking from schedules and journals.
-- **Status:** `204 No Content`
+- **Status:** `204 No Content`; `404 not_found` for a missing member, `409 conflict` when deleting the final household member (`details.current` is that member). The count and deletion are checked in one transaction, including concurrent requests.
+
+The browser derives avatar colors from member ids and does not offer a color picker. Existing `avatar_color` data/API writes remain supported.
 
 ---
 
@@ -413,6 +416,40 @@ Removes a member's vote. **Response:** `{"status": "ok"}`
 
 ---
 
+### Timeline Day Slots Plugin (`/api/x/core-timeline`)
+
+These routes exist while the plugin is active and require a session cookie; a bearer token alone returns 401. All failures use the standard error envelope. Dates must be strict `YYYY-MM-DD` calendar dates; slot ids use the same pattern as household `meal_types`.
+
+#### `GET /api/x/core-timeline/slots?from=2026-10-01&to=2026-10-03`
+Returns every day in the inclusive window, including days with no overrides. Ranges must be ordered and at most **92 inclusive days**; malformed dates, missing endpoints or oversized/reversed windows return `422 validation`.
+```json
+{"days": {"2026-10-01": [
+  {"id": "breakfast", "label": "Breakfast", "kind": "default", "skipped": false},
+  {"id": "snack", "label": "Afternoon snack", "kind": "extra", "skipped": false},
+  {"id": "dinner", "label": "Dinner", "kind": "default", "skipped": true}
+]}}
+```
+Defaults are live household configuration. Extras appear before their requested default id, or append if that target no longer exists. Extras whose id becomes a default are suppressed by the default. Schedule and journal entries remain separate noun APIs; the UI matches canonical ids before legacy labels, case-insensitively.
+
+#### `PUT /api/x/core-timeline/days/{date}/slots/{meal_type}`
+Upserts an override:
+- Extra slot: `{"kind":"extra", "label":"Afternoon snack", "before":"dinner"}`. Label required (1–64 characters); `before` optional/null and otherwise a valid slot id. An extra may not use a current default id (409).
+- Skip an empty default: `{"kind":"skip"}`. Missing default gives 404; an occupied default gives 409 with `details.current.entry_count`.
+- **Response:** `200 {"date":"2026-10-01", "slots":[Slot, ...]}`.
+
+#### `DELETE /api/x/core-timeline/days/{date}/slots/{meal_type}?with_entries=true`
+Deletes an existing override, not a household default. Deleting a skip restores its default. Missing override gives 404. An occupied extra gives 409 with `details.current.entry_count` unless `with_entries=true`, which deletes matching schedule entries and the override atomically. If an obsolete extra id has become a household default, only the override is deleted and meals are preserved, even with `with_entries=true`.
+- **Response:** `200 {"date":"2026-10-01", "slots":[Slot, ...]}`.
+
+Every successful PUT/DELETE publishes a transient SSE push **after commit**, never on rollback:
+```text
+event: push
+data: {"kind":"push", "name":"core-timeline:slots-changed", "data":{"date":"2026-10-01"}, "plugin_id":"core-timeline"}
+```
+Deletion of schedule entries also emits normal transactional `schedule:deleted` events. The shell refreshes schedule/journal/slot state without reloading the page; this transient slot push is not replayed after disconnect. Long Timeline windows use 63-inclusive-day chunks to obey the tighter schedule endpoint limit.
+
+---
+
 ### Recurring Meals Plugin (`/api/x/core-recurring`)
 
 #### `GET /api/x/core-recurring/rules`
@@ -433,7 +470,7 @@ Lists all configured recurring meal rules joined with their target recipe titles
   ```
 
 #### `POST /api/x/core-recurring/rules`
-Creates a new recurring meal rule for a given weekday (0 = Monday, 6 = Sunday). `422` for a weekday outside 0–6 or an empty meal type, `404` for an unknown recipe.
+Creates a rule and **immediately** materializes the 14-day horizon (today included) atomically. Weekday is 0 = Monday through 6 = Sunday, not the browser's Sunday-zero numbering. `422` for a weekday outside 0–6 or a meal type outside 1–64 characters; `404` for an unknown recipe. Rules and planned entries are all rolled back if materialization fails/cancels. Timeline is an optional dependency; household slots still work when it is disabled.
 - **Body:**
   ```json
   {
@@ -443,16 +480,16 @@ Creates a new recurring meal rule for a given weekday (0 = Monday, 6 = Sunday). 
   }
   ```
 - **Status:** `200 OK`
+- **Response:** the created rule's `id`, `weekday`, `meal_type`, `recipe_id`, `created_at`, `recipe_title`, plus `created` (number of newly planned entries in that materialization run).
+
+The hourly background round fills matching unskipped, unoccupied slots and uses canonical ids before legacy labels. Tracking by `(rule_id, date)` survives schedule-entry deletion, preventing removed occurrences from being recreated on later rounds or restart. Existing schema-1 recurring entries are backfilled into tracking.
 
 #### `DELETE /api/x/core-recurring/rules/{id}`
-Deletes a recurring meal rule by ID.
+Atomically deletes a rule and its **future, unedited tracked entries** (date after today and revision 1). Today/past, edited and manual entries are preserved. A missing rule returns `404 not_found`.
 - **Status:** `200 OK`
 - **Response:** `{"ok": true}`
 
-#### `POST /api/x/core-recurring/materialize`
-Schedules each rule's recipe on matching days in the next 14 days unless that day's meal slot is already planned; running it again creates nothing new. The plugin also does this hourly in the background.
-- **Status:** `200 OK`
-- **Response:** `{"ok": true, "created": 2}`
+There is **no `/materialize` route or `materialize` command**, and no manual Materialize Now control. Use rule creation and the automatic background service. Like Timeline routes, these require a session cookie and use standard errors.
 
 ---
 

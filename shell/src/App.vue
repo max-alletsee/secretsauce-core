@@ -68,5 +68,5 @@ body {
   min-width: 0;
   overflow-y: auto;
 }
-@media (max-width: 767px) { .desktop-navigation { display: none; } }
+@media (max-width: 767px) { .ss-main-container > .ss-app-nav.desktop-navigation { display: none; } }
 </style>

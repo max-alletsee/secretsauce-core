@@ -35,5 +35,7 @@ watch(open, value => { try { localStorage.setItem('ss-settings-open', JSON.strin
 </template>
 <style scoped>
 .ss-settings-page { padding: 1.5rem; max-width: 56rem; width: 100%; box-sizing: border-box; }
+/* Accordion animation uses a grid; let its item shrink below intrinsic form width. */
+.ss-settings-page :deep(.p-accordioncontent-wrapper) { min-width: 0; }
 @media (max-width: 767px) { .ss-settings-page { padding: .75rem; } }
 </style>

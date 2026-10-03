@@ -225,6 +225,18 @@ test('returning to Timeline and disabling reenabling it keeps one live feed subs
   } finally { await request.post('/api/plugins/core-timeline/enable') }
 })
 
+test.describe('browser-local cache window', () => {
+  test.use({timezoneId:'Europe/Berlin'})
+  test('cache warming covers the local horizon just after midnight, not the UTC day', async ({page}) => {
+    await page.clock.install({time:new Date('2026-10-04T00:30:00+02:00')})
+    const queries:URL[]=[]
+    page.on('request',req=>{const url=new URL(req.url());if(url.pathname==='/api/schedule')queries.push(url)})
+    await login(page)
+    await expect(page.locator('.day-card.is-today')).toHaveAttribute('data-timeline-date','2026-10-04')
+    await expect.poll(()=>queries.some(url=>url.searchParams.get('from')==='2026-10-02'&&url.searchParams.get('to')==='2026-10-18')).toBe(true)
+  })
+})
+
 test('phone sidebar precedes the feed and widgets start collapsed', async ({ page }) => {
   await page.setViewportSize({width:390,height:844}); await login(page); await page.goto('/timeline')
   const sidebar = page.locator('.timeline-sidebar-wrapper')
