@@ -1,6 +1,6 @@
 # SecretSauce Development Ledger
 
-**Current Status:** Seven UI overhaul phases delivered on `feat/ui-overhaul`; verification: 291 Pytest, 140 Vitest, 47 Playwright tests and fresh builds passing. Separate final whole-branch review pending; branch remains unmerged and unpushed.
+**Current Status:** Seven UI overhaul phases and the separate self-review fix pass are complete on `feat/ui-overhaul`. Fresh verification: **292 Pytest, 140 Vitest, 50 Playwright**, plugin/shell/vendor/service-worker builds and whitespace checks passing. No remaining Important/Critical self-review findings; independent review is still recommended. Branch remains unmerged and unpushed.
 
 **Active Plan:** `docs/superpowers/plans/2026-09-28-ui-overhaul.md`
 
@@ -32,14 +32,14 @@ When starting a new Pi session to continue development:
 
 ## UI Overhaul (September 2026 plan)
 
-- [x] **1: Host design-system foundation** — `675092c`: reserved global PrimeVue tags, four light themes, string injection, real plugin context, confirmation and installed-control tests.
+- [x] **1: Host design-system foundation** — `675092c`: reserved global PrimeVue tags, four light themes, string injection, real plugin context, confirmation, Timeline-first desktop sidebar/phone Drawer navigation and installed-control tests.
 - [x] **2: Plugin intents and controls** — `a71a3e2`: valid UI/headless registrations, anchored/scoped intent triggers, recipe import preview, translator/planner/shopping/member/ratings/shortlist/cooked wiring through production consumers.
-- [x] **3: Unified Settings and household metadata** — `4a79c88`: reactive multi-panel sections, household default-slot validation/editor, member forms and deterministic avatars, final-member deletion protection.
-- [x] **4: Navigation** — `63fa9e3`: Timeline first, desktop sidebar/phone Drawer, Settings footer gear and household identity.
+- [x] **3: Unified Settings and household metadata** — `4a79c88`: reactive multi-panel sections, household default-slot validation/editor, plugin state controls and device preferences.
+- [x] **4: Member editing/protection** — `63fa9e3`: editable portion size, dietary preferences and allergens, stale-revision reload, deterministic avatars and transactional final-member deletion protection. Navigation was delivered in phase 1 (`675092c`), not this member commit.
 - [x] **5: Live vertical Timeline/day slots** — `9e12329`: schema-1 overrides, authenticated HTTP/SSE service, default/extra/skipped slots, bounded feed requests, add recipe/shortlist/note dialogs, cooked/legacy compatibility, planner slot resolution, transaction/subscription regressions.
 - [x] **6: Automatic recurring scheduling** — `d383eb5`: schema-2 retained occurrence tracking, immediate atomic creation, hourly background/restart coverage, deletion preservation, Settings add-rule dialog and contextual repeat-weekly action. Manual materialization controls/route/command removed.
 - [x] **7: Document and verify every screen/theme** — four presets at 390px/1280px, isolated fresh setup smoke, 124 labeled screenshots inspected through 33 contact sheets, runtime/console/overflow gates and contract docs. RED→GREEN repairs: phone sidebar CSS specificity, setup labeling/themed fields, theme-dependent Accordion intrinsic-width overflow and local-midnight cache-warming dates.
-- [ ] **Final whole-branch review** — separate self-review (no subagent tool); any Important/Critical finding requires RED→GREEN and full gates before integration choice.
+- [x] **Final whole-branch review** — separate self-review (no subagent tool), report at `.superpowers/sdd/2026-09-28-ui-overhaul/final-review.md`. Shared recurring-rule deletion and group-owned recipe-cover upload/display repaired with RED→GREEN and fresh full gates. Planner request docs and phase/commit mapping corrected. Cosmetic token/bundle advisories deferred; integration awaits user choice.
 
 **Non-goals remain:** dark mode, migration of new strings into i18n, phone bottom tabs, drag-and-drop slot reordering, and kernel schedule/journal redesign. Existing legacy meal-type strings and avatar-color API data are supported; they are not a mandate to rewrite stored nouns. Container packaging, DNS-rebinding hardening and the type-shim follow-up below are unrelated backlog, not completed by the overhaul.
 

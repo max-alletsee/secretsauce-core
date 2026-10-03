@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { Slot, IntentTrigger, useSecretSauce } from '@secretsauce/ui'
 import RecipeCard from '../components/RecipeCard.vue'
+import { fetchCoverId } from '../cover'
 const emit = defineEmits<{ openRecipe: [string] }>()
 const ss = useSecretSauce()
 const recipes = ref<any[]>([]), search = ref(''), activeTag = ref<string | null>(null), sortBy = ref('title'), error = ref('')
@@ -15,7 +16,16 @@ async function toggleShortlistFilter() { shortlistOnly.value = !shortlistOnly.va
 async function loadRecipes() {
   const sequence = ++request
   error.value = ''
-  try { const result = await ss.api.get<any>('/api/recipes', { q: search.value.trim() }); if (sequence === request) recipes.value = result.items }
+  try {
+    const result = await ss.api.get<any>('/api/recipes', { q: search.value.trim() })
+    if (sequence !== request) return
+    recipes.value = result.items
+    const covered = await Promise.all(result.items.map(async (recipe: any) => {
+      const id = await fetchCoverId(ss.api, recipe.group_id)
+      return { ...recipe, cover_asset_id: id, cover_url: id ? ss.url(`/api/assets/${id}/file`) : null }
+    }))
+    if (sequence === request) recipes.value = covered
+  }
   catch (failure: any) { if (sequence === request) error.value = failure?.message || 'Could not load recipes' }
 }
 function openRecipe(id: string) { emit('openRecipe', id); ss.navigate?.(`/recipes/${id}`) }

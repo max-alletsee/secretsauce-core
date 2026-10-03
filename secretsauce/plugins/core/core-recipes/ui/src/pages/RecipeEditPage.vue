@@ -3,10 +3,12 @@ import { ref, computed, watch } from 'vue'
 import { useSecretSauce } from '@secretsauce/ui'
 import IngredientRowList from '../components/IngredientRowList.vue'
 import StepList from '../components/StepList.vue'
+import { fetchCoverId } from '../cover'
 const props = defineProps<{ recipeId?: string; id?: string }>()
 const emit = defineEmits<{ saved: [any] }>()
 const ss = useSecretSauce(), targetId = computed(() => props.id || props.recipeId || '')
 const title = ref(''), description = ref(''), language = ref(ss.store.household.value?.languages.primary || 'en'), servings = ref(2)
+const groupId = ref('')
 const prepTime = ref<number | null>(null), cookTime = ref<number | null>(null), tags = ref<string[]>([]), coverAssetId = ref<string | null>(null)
 const ingredients = ref<any[]>([]), steps = ref<any[]>([]), revision = ref(1), busy = ref(false), error = ref('')
 watch(targetId, async id => {
@@ -15,21 +17,27 @@ watch(targetId, async id => {
     const existing = await ss.api.get<any>(`/api/recipes/${id}`)
     title.value = existing.title; description.value = existing.description || ''; language.value = existing.language; servings.value = existing.servings
     prepTime.value = existing.prep_time_minutes; cookTime.value = existing.cook_time_minutes; tags.value = [...existing.tags]
-    coverAssetId.value = existing.cover_asset_id || null; ingredients.value = existing.ingredients; steps.value = existing.steps; revision.value = existing.revision
+    ingredients.value = existing.ingredients; steps.value = existing.steps; revision.value = existing.revision
+    coverAssetId.value = await fetchCoverId(ss.api, existing.group_id)
+    groupId.value = existing.group_id
   } catch (failure: any) { error.value = failure?.message || 'Could not load recipe' }
 }, { immediate: true })
 async function onImageUpload(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file || busy.value) return
+  if (!file || busy.value || !groupId.value) return
   busy.value = true; error.value = ''
-  try { const form = new FormData(); form.append('file', file); form.append('entity_type', 'recipe'); form.append('slot', 'cover'); coverAssetId.value = (await ss.api.upload<any>('/api/assets', form)).id }
+  try {
+    const form = new FormData(); form.append('file', file); form.append('entity_type', 'recipe'); form.append('entity_id', groupId.value); form.append('slot', 'cover')
+    coverAssetId.value = (await ss.api.upload<any>('/api/assets', form)).id
+    ss.notify({ level: 'success', message: 'Cover image saved' })
+  }
   catch (failure: any) { error.value = failure?.message || 'Could not upload image' }
   finally { busy.value = false }
 }
 async function save() {
   if (!title.value.trim() || busy.value) return
   busy.value = true; error.value = ''
-  const payload = { title: title.value.trim(), description: description.value.trim(), language: language.value, servings: servings.value, prep_time_minutes: prepTime.value, cook_time_minutes: cookTime.value, tags: tags.value, cover_asset_id: coverAssetId.value, ingredients: ingredients.value, steps: steps.value }
+  const payload = { title: title.value.trim(), description: description.value.trim(), language: language.value, servings: servings.value, prep_time_minutes: prepTime.value, cook_time_minutes: cookTime.value, tags: tags.value, ingredients: ingredients.value, steps: steps.value }
   try {
     const result = targetId.value ? await ss.api.patch<any>(`/api/recipes/${targetId.value}`, { ...payload, revision: revision.value }) : await ss.api.post<any>('/api/recipes', payload)
     emit('saved', result); ss.notify({ level: 'success', message: 'Recipe saved' }); ss.navigate?.(`/recipes/${result.id}`)
@@ -50,7 +58,7 @@ async function save() {
       <div class="form-group"><label for="recipe-cook">Cook time (min)</label><InputNumber inputId="recipe-cook" v-model="cookTime" :min="0" fluid /></div>
     </div>
     <div class="form-group"><label for="recipe-tags">Tags</label><AutoComplete inputId="recipe-tags" v-model="tags" multiple :typeahead="false" fluid /></div>
-    <div class="form-group"><label for="recipe-cover">Cover image</label><input id="recipe-cover" type="file" accept="image/*" :disabled="busy" @change="onImageUpload"><img v-if="coverAssetId" :src="ss.url(`/api/assets/${coverAssetId}/file`)" alt="Recipe cover" class="cover-preview"></div>
+    <div class="form-group"><label for="recipe-cover">Cover image</label><input id="recipe-cover" type="file" accept="image/*" :disabled="busy || !groupId" @change="onImageUpload"><small v-if="!targetId">Save your recipe first to add a cover image.</small><small v-else>Cover uploads are saved immediately, separately from recipe edits.</small><img v-if="coverAssetId" :src="ss.url(`/api/assets/${coverAssetId}/file`)" alt="Recipe cover" class="cover-preview"></div>
     <section><h3>Ingredients</h3><IngredientRowList v-model="ingredients" /></section>
     <section><h3>Instructions</h3><StepList v-model="steps" /></section>
     <div class="actions-row"><Button type="submit" label="Save Recipe" class="btn-primary" icon="pi pi-check" :loading="busy" :disabled="!title.trim()" /></div>

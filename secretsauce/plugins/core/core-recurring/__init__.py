@@ -69,7 +69,12 @@ async def delete_rule(rule_id: str, ctx: PluginContext = Depends(current_ctx)) -
         entries = await ctx.db.read_all(
             '''SELECT DISTINCT e.id, e.revision FROM plugin_core_recurring_materialized m
                JOIN schedule_entries e ON e.id=m.entry_id
-               WHERE m.rule_id=? AND e.date>? AND e.revision=1''',
+               WHERE m.rule_id=? AND e.date>? AND e.revision=1
+                 AND NOT EXISTS (
+                     SELECT 1 FROM plugin_core_recurring_materialized shared
+                     JOIN plugin_core_recurring_rules owner ON owner.id=shared.rule_id
+                     WHERE shared.entry_id=e.id AND shared.rule_id<>m.rule_id
+                 )''',
             (rule_id, date.today().isoformat()), conn=tx,
         )
         for entry in entries:

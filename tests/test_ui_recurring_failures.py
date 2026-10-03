@@ -78,6 +78,29 @@ async def test_concurrent_requests_and_background_rounds_track_one_entry_per_rul
             assert [row['entry_id'] for row in history if row['rule_id']==rule['id']] == [row['id'] for row in entries]
 
 
+async def test_shared_meals_survive_until_their_final_rule_is_removed_even_after_restart(tmp_path, recurring_clock):
+    async with runtime(tmp_path) as (app, client):
+        item = await recipe(client)
+        first, second = await asyncio.gather(create_rule(client,item['id']),create_rule(client,item['id']))
+        initial = await meals(client)
+        assert len(initial) == 2
+        assert (await client.delete(BASE+'/rules/'+first['id'])).status_code == 200
+        baseline = recurring_clock['rounds']
+        await rounds_after(recurring_clock, baseline)
+        assert [row['id'] for row in await meals(client)] == [row['id'] for row in initial]
+        history = await app.state.kernel.db.read_all('SELECT * FROM plugin_core_recurring_materialized ORDER BY date')
+        assert [row['rule_id'] for row in history] == [second['id'],second['id']]
+    async with runtime(tmp_path, configured=False) as (_, client):
+        assert (await client.post('/api/auth/login', json={'passphrase':'secretpassphrase'})).status_code == 200
+        baseline = recurring_clock['rounds']
+        await rounds_after(recurring_clock, baseline)
+        assert [row['id'] for row in await meals(client)] == [row['id'] for row in initial]
+        assert (await client.delete(BASE+'/rules/'+second['id'])).status_code == 200
+        baseline = recurring_clock['rounds']
+        await rounds_after(recurring_clock, baseline)
+        assert await meals(client) == []
+
+
 async def test_deleting_rule_preserves_today_past_and_edited_entries(tmp_path, recurring_clock):
     async with runtime(tmp_path) as (app, client):
         item = await recipe(client)

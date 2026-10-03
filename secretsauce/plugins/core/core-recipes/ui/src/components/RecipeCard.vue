@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Slot } from '@secretsauce/ui'
-const props = defineProps<{ recipe: { id: string; title: string; prep_time_minutes?: number | null; cook_time_minutes?: number | null; tags?: string[]; cover_asset_id?: string | null } }>()
+const props = defineProps<{ recipe: { id: string; title: string; prep_time_minutes?: number | null; cook_time_minutes?: number | null; tags?: string[]; cover_asset_id?: string | null; cover_url?: string | null } }>()
 const emit = defineEmits<{ select: [string] }>()
 </script>
 <template>
   <article class="recipe-card" @click="emit('select', props.recipe.id)">
-    <div class="cover-image"><img v-if="props.recipe.cover_asset_id" :src="`/api/assets/${props.recipe.cover_asset_id}/file`" :alt="props.recipe.title"><i v-else class="pi pi-book placeholder-cover" aria-hidden="true" /></div>
+    <div class="cover-image"><img v-if="props.recipe.cover_asset_id" :src="props.recipe.cover_url || `/api/assets/${props.recipe.cover_asset_id}/file`" :alt="props.recipe.title"><i v-else class="pi pi-book placeholder-cover" aria-hidden="true" /></div>
     <div class="card-body">
       <div class="card-header"><h3><Button :label="props.recipe.title" text class="recipe-title" @click.stop="emit('select', props.recipe.id)" /></h3><div class="actions" @click.stop><Slot name="recipe.card.actions" :context="{ recipe: props.recipe }" /></div></div>
       <div class="meta"><span v-if="props.recipe.prep_time_minutes"><i class="pi pi-clock" /> {{ props.recipe.prep_time_minutes }}m prep</span><span v-if="props.recipe.cook_time_minutes">{{ props.recipe.cook_time_minutes }}m cook</span></div>

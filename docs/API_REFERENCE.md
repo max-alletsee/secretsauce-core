@@ -485,7 +485,7 @@ Creates a rule and **immediately** materializes the 14-day horizon (today includ
 The hourly background round fills matching unskipped, unoccupied slots and uses canonical ids before legacy labels. Tracking by `(rule_id, date)` survives schedule-entry deletion, preventing removed occurrences from being recreated on later rounds or restart. Existing schema-1 recurring entries are backfilled into tracking.
 
 #### `DELETE /api/x/core-recurring/rules/{id}`
-Atomically deletes a rule and its **future, unedited tracked entries** (date after today and revision 1). Today/past, edited and manual entries are preserved. A missing rule returns `404 not_found`.
+Atomically deletes a rule and its **future, unedited tracked entries** (date after today and revision 1). Today/past, edited/manual entries and entries still tracked by another existing rule are preserved. Shared entries are eligible for removal when their final owning rule is deleted. A missing rule returns `404 not_found`.
 - **Status:** `200 OK`
 - **Response:** `{"ok": true}`
 
