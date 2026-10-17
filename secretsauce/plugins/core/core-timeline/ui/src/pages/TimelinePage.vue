@@ -37,7 +37,7 @@ function more(){windowDates.value={...windowDates.value,to:shiftDate(windowDates
 async function reset(){today.value=localToday();windowDates.value={from:shiftDate(today.value,-2),to:shiftDate(today.value,6)};expanded.value.clear();await load();await nextTick();document.querySelector('.day-card.is-today')?.scrollIntoView?.({block:'start',behavior:'smooth'})}
 function toggle(date:string){if(expanded.value.has(date))expanded.value.delete(date);else expanded.value.add(date)}
 function pastLabel(date:string){return new Date(`${date}T12:00:00`).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})}
-function summary(day:any){return day.slots.flatMap((slot:any)=>slot.entries.map((entry:any)=>`${slot.label.toUpperCase()} ${entry.recipe?.title||entry.title||'Planned meal'}`)).join(' · ')||'Nothing planned'}
+function summary(day:any){return day.slots.flatMap((slot:any)=>slot.entries.map((entry:any)=>`${slot.label.toUpperCase()} ${entry.recipe?.title||entry.title||'Planned meal'}`)).join(' · ')||'—'}
 onMounted(()=>{load();window.addEventListener('resize',resize)})
 onBeforeUnmount(()=>{disposed=true;++revision;clearTimeout(timer);stops.forEach(stop=>{if(typeof stop==='function')stop()});window.removeEventListener('resize',resize)})
 </script>

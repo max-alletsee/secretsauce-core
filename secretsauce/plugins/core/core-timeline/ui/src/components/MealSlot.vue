@@ -26,8 +26,8 @@ const actions=computed(()=>[{label:'Add another meal',icon:'pi pi-plus',command:
     <div v-if="slot.skipped" class="skipped-row"><span>Skipped this day</span><Button label="Undo" text :loading="busy" @click="write('undo')" /></div>
     <template v-else>
       <IntentTrigger v-for="entry in slot.entries" :key="entry.id" hub="entry:interact" :context="{entry,mealType:slot.id}" @resolve="emit('changed')"><template #default="{open}"><ScheduleCard :entry="entry" @interact="open" /></template></IntentTrigger>
-      <Button v-if="!slot.entries.length" label="Add meal" icon="pi pi-plus" text @click="add" />
+      <Button v-if="!slot.entries.length" class="empty-slot-btn" icon="pi pi-plus" text aria-label="Add meal" @click="add" />
     </template>
   </div>
 </template>
-<style scoped>.meal-slot{padding:.5rem 0;border-top:1px solid var(--p-content-border-color)}.slot-header{display:flex;align-items:center;justify-content:space-between}.slot-name{text-transform:uppercase;letter-spacing:.05em;color:var(--p-text-muted-color);font-size:.8rem;font-weight:600}.skipped{text-decoration:line-through}.skipped-row{display:flex;align-items:center;gap:.5rem;color:var(--p-text-muted-color)}</style>
+<style scoped>.meal-slot{padding:.5rem 0;border-top:1px solid var(--p-content-border-color)}.slot-header{display:flex;align-items:center;justify-content:space-between}.slot-name{text-transform:uppercase;letter-spacing:.05em;color:var(--p-text-muted-color);font-size:.8rem;font-weight:600}.skipped{text-decoration:line-through}.skipped-row{display:flex;align-items:center;gap:.5rem;color:var(--p-text-muted-color)}.empty-slot-btn{width:100%;border:1.5px dashed var(--p-content-border-color)!important;background:transparent!important;border-radius:var(--p-border-radius);padding:.4rem .5rem;color:var(--p-text-muted-color)!important;justify-content:center;transition:border-color .15s ease,color .15s ease}.empty-slot-btn:hover{border-color:var(--p-primary-color)!important;color:var(--p-primary-color)!important}</style>
