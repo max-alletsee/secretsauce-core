@@ -42,6 +42,18 @@ async def deterministic_completion(self, base_url, api_key, model, schema, promp
         result = {"title": "Weeknight suggestions", "suggestions": [
             {"recipe_id": library[0]["id"], "recipe_title": library[0]["title"], "meal_type": "dinner",
              "reasoning": "Easy weeknight meal", "confidence": 0.95}]} if library else {"suggestions": []}
+    elif schema.__name__ == "RecipeAdaptationResponse":
+        result = {
+            "title": "Vegetarian Pasta",
+            "description": "Plant-based pasta adaptation",
+            "servings": 4,
+            "prep_time_minutes": 15,
+            "cook_time_minutes": 20,
+            "tags": ["vegetarian", "pasta"],
+            "ingredients": [{"name": "Mushrooms", "quantity": 300, "unit": "g", "notes": "sliced"}],
+            "steps": [{"instruction": "Sauté mushrooms and toss with pasta."}],
+            "adaptation_summary": "Replaced ground meat with sautéed mushrooms.",
+        }
     else:
         raise AssertionError(f"Unexpected paid AI schema: {schema}")
     return schema.model_validate(result).model_dump(), 12, 8

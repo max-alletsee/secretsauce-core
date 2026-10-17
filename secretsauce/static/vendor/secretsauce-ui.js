@@ -210,7 +210,7 @@ const re = /* @__PURE__ */ P({
   for (const [a, u] of n)
     o[a] = u;
   return o;
-}, ce = /* @__PURE__ */ te(ee, [["__scopeId", "data-v-d14d4df4"]]);
+}, ce = /* @__PURE__ */ te(ee, [["__scopeId", "data-v-50c3b741"]]);
 function ue(t = "test-plugin") {
   const n = d({
     id: "m1",

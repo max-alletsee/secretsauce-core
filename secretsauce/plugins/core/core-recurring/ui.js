@@ -142,7 +142,7 @@ const H = /* @__PURE__ */ B({
   for (const [u, i] of t)
     a[u] = i;
   return a;
-}, J = /* @__PURE__ */ W(H, [["__scopeId", "data-v-35d222c5"]]), K = { class: "recurring-settings" }, Q = { key: 2 }, X = { key: 3 }, Y = /* @__PURE__ */ B({
+}, J = /* @__PURE__ */ W(H, [["__scopeId", "data-v-3d3e7905"]]), K = { class: "recurring-settings" }, Q = { key: 2 }, X = { key: 3 }, Y = /* @__PURE__ */ B({
   __name: "RecurringSettings",
   setup(r) {
     const t = N(), a = p([]), u = p(!0), i = p(!1), o = p(""), s = p(!1);
@@ -241,7 +241,7 @@ const H = /* @__PURE__ */ B({
       ]);
     };
   }
-}), Z = /* @__PURE__ */ W(Y, [["__scopeId", "data-v-7326780d"]]);
+}), Z = /* @__PURE__ */ W(Y, [["__scopeId", "data-v-bc51bd31"]]);
 function ee(r) {
   return (r + 6) % 7;
 }

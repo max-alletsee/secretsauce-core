@@ -333,7 +333,7 @@ const Z = { class: "import-recipe-dialog" }, ee = ["src"], te = {
   for (const [c, v] of P)
     g[c] = v;
   return g;
-}, ue = /* @__PURE__ */ ne(oe, [["__scopeId", "data-v-33ea47b3"]]);
+}, ue = /* @__PURE__ */ ne(oe, [["__scopeId", "data-v-e37051b4"]]);
 function se(x) {
   x.intent.provider({
     hub: "recipe:create",

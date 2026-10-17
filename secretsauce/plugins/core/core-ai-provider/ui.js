@@ -268,7 +268,7 @@ const q = { class: "ai-settings" }, z = { class: "fields" }, H = { class: "api-k
   for (const [s, l] of a)
     d[s] = l;
   return d;
-}, ee = /* @__PURE__ */ Z(Y, [["__scopeId", "data-v-2ef13f9b"]]);
+}, ee = /* @__PURE__ */ Z(Y, [["__scopeId", "data-v-984332b5"]]);
 function oe(p) {
   var a;
   (a = p.settings) != null && a.section && p.settings.section({

@@ -106,7 +106,7 @@ const O = { class: "translate-dialog" }, $ = { class: "dialog-actions" }, j = /*
   for (const [i, t] of o)
     a[i] = t;
   return a;
-}, F = /* @__PURE__ */ z(j, [["__scopeId", "data-v-6f9d852e"]]);
+}, F = /* @__PURE__ */ z(j, [["__scopeId", "data-v-c3854657"]]);
 function L(n) {
   n.intent.provider({
     hub: "recipe:actions",

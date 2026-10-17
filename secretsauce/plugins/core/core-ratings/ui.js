@@ -9,31 +9,31 @@ const z = { class: "vote-rating" }, E = {
     context: {}
   },
   setup(i) {
-    const v = i, e = q(), u = b(0), r = b(null), m = b(!1), p = b("");
+    const v = i, e = q(), u = b(0), a = b(null), m = b(!1), p = b("");
     let y = 0;
     async function x() {
       var s, n, l, c;
-      const o = (n = (s = v.context) == null ? void 0 : s.entry) == null ? void 0 : n.id, t = (l = e.store.currentMember.value) == null ? void 0 : l.id, a = ++y;
-      if (r.value = null, !!o)
+      const o = (n = (s = v.context) == null ? void 0 : s.entry) == null ? void 0 : n.id, t = (l = e.store.currentMember.value) == null ? void 0 : l.id, r = ++y;
+      if (a.value = null, !!o)
         try {
           const d = await e.api.get("/api/x/core-ratings", { journal_id: o });
-          if (a !== y) return;
-          u.value = d.net_score, r.value = ((c = d.scores.find((k) => k.member_id === t)) == null ? void 0 : c.score) ?? null;
+          if (r !== y) return;
+          u.value = d.net_score, a.value = ((c = d.scores.find((k) => k.member_id === t)) == null ? void 0 : c.score) ?? null;
         } catch (d) {
-          a === y && (p.value = (d == null ? void 0 : d.message) || "Could not load ratings");
+          r === y && (p.value = (d == null ? void 0 : d.message) || "Could not load ratings");
         }
     }
     j(() => {
-      var o, t, a;
-      return [(t = (o = v.context) == null ? void 0 : o.entry) == null ? void 0 : t.id, (a = e.store.currentMember.value) == null ? void 0 : a.id];
+      var o, t, r;
+      return [(t = (o = v.context) == null ? void 0 : o.entry) == null ? void 0 : t.id, (r = e.store.currentMember.value) == null ? void 0 : r.id];
     }, x, { immediate: !0 });
     async function h(o) {
       var s, n, l;
-      const t = (n = (s = v.context) == null ? void 0 : s.entry) == null ? void 0 : n.id, a = (l = e.store.currentMember.value) == null ? void 0 : l.id;
-      if (!(!t || !a || m.value)) {
+      const t = (n = (s = v.context) == null ? void 0 : s.entry) == null ? void 0 : n.id, r = (l = e.store.currentMember.value) == null ? void 0 : l.id;
+      if (!(!t || !r || m.value)) {
         m.value = !0, p.value = "";
         try {
-          r.value === o ? await e.api.delete("/api/x/core-ratings", { journal_id: t, member_id: a }) : await e.api.put("/api/x/core-ratings", { journal_id: t, member_id: a, score: o }), await x();
+          a.value === o ? await e.api.delete("/api/x/core-ratings", { journal_id: t, member_id: r }) : await e.api.put("/api/x/core-ratings", { journal_id: t, member_id: r, score: o }), await x();
         } catch (c) {
           p.value = (c == null ? void 0 : c.message) || "Could not save rating";
         } finally {
@@ -42,15 +42,15 @@ const z = { class: "vote-rating" }, E = {
       }
     }
     return (o, t) => {
-      const a = w("Button"), s = w("Message"), n = D("tooltip");
+      const r = w("Button"), s = w("Message"), n = D("tooltip");
       return _(), g("div", z, [
         C((_(), g("span", null, [
-          M(a, {
+          M(r, {
             class: "upvote-btn",
             icon: "pi pi-thumbs-up",
             "aria-label": "Upvote",
-            "aria-pressed": r.value === 1,
-            outlined: r.value !== 1,
+            "aria-pressed": a.value === 1,
+            outlined: a.value !== 1,
             size: "small",
             disabled: m.value || !f(e).store.currentMember.value,
             onClick: t[0] || (t[0] = (l) => h(1))
@@ -66,12 +66,12 @@ const z = { class: "vote-rating" }, E = {
           /* TEXT */
         ),
         C((_(), g("span", null, [
-          M(a, {
+          M(r, {
             class: "downvote-btn",
             icon: "pi pi-thumbs-down",
             "aria-label": "Downvote",
-            "aria-pressed": r.value === -1,
-            outlined: r.value !== -1,
+            "aria-pressed": a.value === -1,
+            outlined: a.value !== -1,
             severity: "secondary",
             size: "small",
             disabled: m.value || !f(e).store.currentMember.value,
@@ -99,10 +99,10 @@ const z = { class: "vote-rating" }, E = {
   }
 }), T = (i, v) => {
   const e = i.__vccOpts || i;
-  for (const [u, r] of v)
-    e[u] = r;
+  for (const [u, a] of v)
+    e[u] = a;
   return e;
-}, U = /* @__PURE__ */ T(O, [["__scopeId", "data-v-9b5a6e58"]]);
+}, U = /* @__PURE__ */ T(O, [["__scopeId", "data-v-0618b771"]]);
 function G(i) {
   i.slot("journal.entry.footer", U, { order: 10 });
 }
