@@ -16,6 +16,30 @@ describe('registered Recipe pages (API boundary double)', () => {
     await wrapper.find('.btn-scaler-plus').trigger('click'); await wrapper.find('.btn-scaler-plus').trigger('click')
     expect(wrapper.find('.ingredient-item strong').text()).toBe('400')
   })
+  it.each([
+    { kind: 'missing IDs', ids: [undefined, undefined, undefined] },
+    { kind: 'duplicate IDs', ids: ['same', 'same', 'same'] },
+    { kind: 'unique IDs', ids: ['one', 'two', 'three'] },
+  ])('keeps ingredient checks independent with $kind and resets on recipe navigation', async ({ ids }) => {
+    const ingredients = ['Flour', 'Sugar', 'Flour'].map((name, index) => ({
+      name, quantity: 100, unit: 'g', ...(ids[index] === undefined ? {} : { id: ids[index] }),
+    }))
+    const { wrapper, harness } = await registeredRoute(activate, 'core-recipes', { get: async (path: string) => {
+      if (path === '/api/recipes/cake_en' || path === '/api/recipes/other_en') return { ...savedRecipe, ingredients }
+      return []
+    } } as any, '/recipes/cake_en')
+    wrappers.push(wrapper)
+    const inputs = () => wrapper.findAll<HTMLInputElement>('.ingredient-item input[type=checkbox]')
+    await inputs()[0].setValue(true)
+    expect(inputs().map(input => input.element.checked)).toEqual([true, false, false])
+    expect(wrapper.findAll('.ingredient-item label').map(label => label.classes().includes('struck'))).toEqual([true, false, false])
+    await inputs()[2].setValue(true)
+    await inputs()[0].setValue(false)
+    expect(inputs().map(input => input.element.checked)).toEqual([false, false, true])
+    await harness.router.push('/recipes/other_en')
+    await flushPromises()
+    expect(inputs().map(input => input.element.checked)).toEqual([false, false, false])
+  })
   it('renders the real empty-state intents and navigates to manual creation', async () => {
     const { wrapper, harness } = await registeredRoute(activate, 'core-recipes', { get: async (path: string) => path === '/api/recipes' ? { items: [], total: 0, limit: 50, offset: 0 } : [] } as any, '/recipes')
     wrappers.push(wrapper)

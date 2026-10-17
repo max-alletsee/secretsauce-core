@@ -1,4 +1,4 @@
-import { defineComponent as P, resolveComponent as f, openBlock as u, createElementBlock as v, createElementVNode as t, createVNode as s, withModifiers as H, unref as L, createTextVNode as z, toDisplayString as N, createCommentVNode as q, Fragment as M, renderList as O, createBlock as D, ref as _, onMounted as ne, watch as E, computed as Q, withCtx as Z, normalizeClass as ae } from "vue";
+import { defineComponent as P, resolveComponent as f, openBlock as u, createElementBlock as d, createElementVNode as t, createVNode as s, withModifiers as H, unref as L, createTextVNode as z, toDisplayString as N, createCommentVNode as q, Fragment as M, renderList as O, createBlock as D, ref as m, onMounted as ne, watch as E, computed as Q, withCtx as Z, normalizeClass as ae } from "vue";
 import { Slot as F, useSecretSauce as W, IntentTrigger as K } from "@secretsauce/ui";
 const oe = { class: "cover-image" }, se = ["src", "alt"], ue = {
   key: 1,
@@ -10,25 +10,25 @@ const oe = { class: "cover-image" }, se = ["src", "alt"], ue = {
     recipe: {}
   },
   emits: ["select"],
-  setup(p, { emit: $ }) {
-    const r = p, h = $;
+  setup(c, { emit: $ }) {
+    const r = c, h = $;
     return (l, n) => {
-      const d = f("Button"), I = f("Tag");
-      return u(), v("article", {
+      const p = f("Button"), C = f("Tag");
+      return u(), d("article", {
         class: "recipe-card",
         onClick: n[2] || (n[2] = (g) => h("select", r.recipe.id))
       }, [
         t("div", oe, [
-          r.recipe.cover_asset_id ? (u(), v("img", {
+          r.recipe.cover_asset_id ? (u(), d("img", {
             key: 0,
             src: r.recipe.cover_url || `/api/assets/${r.recipe.cover_asset_id}/file`,
             alt: r.recipe.title
-          }, null, 8, se)) : (u(), v("i", ue))
+          }, null, 8, se)) : (u(), d("i", ue))
         ]),
         t("div", re, [
           t("div", ce, [
             t("h3", null, [
-              s(d, {
+              s(p, {
                 label: r.recipe.title,
                 text: "",
                 class: "recipe-title",
@@ -47,7 +47,7 @@ const oe = { class: "cover-image" }, se = ["src", "alt"], ue = {
             ])
           ]),
           t("div", pe, [
-            r.recipe.prep_time_minutes ? (u(), v("span", de, [
+            r.recipe.prep_time_minutes ? (u(), d("span", de, [
               n[3] || (n[3] = t(
                 "i",
                 { class: "pi pi-clock" },
@@ -61,7 +61,7 @@ const oe = { class: "cover-image" }, se = ["src", "alt"], ue = {
                 /* TEXT */
               )
             ])) : q("v-if", !0),
-            r.recipe.cook_time_minutes ? (u(), v(
+            r.recipe.cook_time_minutes ? (u(), d(
               "span",
               ve,
               N(r.recipe.cook_time_minutes) + "m cook",
@@ -70,10 +70,10 @@ const oe = { class: "cover-image" }, se = ["src", "alt"], ue = {
             )) : q("v-if", !0)
           ]),
           t("div", me, [
-            (u(!0), v(
+            (u(!0), d(
               M,
               null,
-              O(r.recipe.tags, (g) => (u(), D(I, {
+              O(r.recipe.tags, (g) => (u(), D(C, {
                 key: g,
                 value: g,
                 class: "tag",
@@ -87,17 +87,17 @@ const oe = { class: "cover-image" }, se = ["src", "alt"], ue = {
       ]);
     };
   }
-}), J = (p, $) => {
-  const r = p.__vccOpts || p;
+}), J = (c, $) => {
+  const r = c.__vccOpts || c;
   for (const [h, l] of $)
     r[h] = l;
   return r;
-}, ge = /* @__PURE__ */ J(_e, [["__scopeId", "data-v-9f869dc2"]]);
-async function X(p, $) {
+}, ge = /* @__PURE__ */ J(_e, [["__scopeId", "data-v-d73374e4"]]);
+async function X(c, $) {
   var r;
   if (!$) return null;
   try {
-    return ((r = (await p.get("/api/assets", { entity_type: "recipe", entity_id: $ })).filter((l) => l.slot === "cover").at(-1)) == null ? void 0 : r.id) || null;
+    return ((r = (await c.get("/api/assets", { entity_type: "recipe", entity_id: $ })).filter((l) => l.slot === "cover").at(-1)) == null ? void 0 : r.id) || null;
   } catch {
     return null;
   }
@@ -111,9 +111,9 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
 }, ke = /* @__PURE__ */ P({
   __name: "RecipeListPage",
   emits: ["openRecipe"],
-  setup(p, { emit: $ }) {
-    const r = $, h = W(), l = _([]), n = _(""), d = _(null), I = _("title"), g = _(""), S = _(!1), k = _(/* @__PURE__ */ new Set());
-    let C = 0;
+  setup(c, { emit: $ }) {
+    const r = $, h = W(), l = m([]), n = m(""), p = m(null), C = m("title"), g = m(""), U = m(!1), k = m(/* @__PURE__ */ new Set());
+    let w = 0;
     async function y() {
       try {
         const o = await h.api.get("/api/x/core-shortlist");
@@ -122,22 +122,22 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
       }
     }
     async function B() {
-      S.value = !S.value, S.value && await y();
+      U.value = !U.value, U.value && await y();
     }
-    async function w() {
-      const o = ++C;
+    async function S() {
+      const o = ++w;
       g.value = "";
       try {
         const a = await h.api.get("/api/recipes", { q: n.value.trim() });
-        if (o !== C) return;
+        if (o !== w) return;
         l.value = a.items;
-        const U = await Promise.all(a.items.map(async (A) => {
-          const c = await X(h.api, A.group_id);
-          return { ...A, cover_asset_id: c, cover_url: c ? h.url(`/api/assets/${c}/file`) : null };
+        const x = await Promise.all(a.items.map(async (A) => {
+          const _ = await X(h.api, A.group_id);
+          return { ...A, cover_asset_id: _, cover_url: _ ? h.url(`/api/assets/${_}/file`) : null };
         }));
-        o === C && (l.value = U);
+        o === w && (l.value = x);
       } catch (a) {
-        o === C && (g.value = (a == null ? void 0 : a.message) || "Could not load recipes");
+        o === w && (g.value = (a == null ? void 0 : a.message) || "Could not load recipes");
       }
     }
     function V(o) {
@@ -145,18 +145,18 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
       r("openRecipe", o), (a = h.navigate) == null || a.call(h, `/recipes/${o}`);
     }
     ne(() => {
-      w(), y();
-    }), E(n, w);
-    const i = Q(() => [...new Set(l.value.flatMap((o) => o.tags || []))]), m = Q(() => {
+      S(), y();
+    }), E(n, S);
+    const i = Q(() => [...new Set(l.value.flatMap((o) => o.tags || []))]), v = Q(() => {
       let o = l.value.map((a) => ({ ...a, is_shortlisted: k.value.has(a.id) }));
-      return S.value && (o = o.filter((a) => k.value.has(a.id))), d.value && (o = o.filter((a) => {
-        var U;
-        return (U = a.tags) == null ? void 0 : U.includes(d.value);
-      })), o.sort(I.value === "title" ? (a, U) => a.title.localeCompare(U.title) : (a, U) => (a.prep_time_minutes || 0) - (U.prep_time_minutes || 0));
+      return U.value && (o = o.filter((a) => k.value.has(a.id))), p.value && (o = o.filter((a) => {
+        var x;
+        return (x = a.tags) == null ? void 0 : x.includes(p.value);
+      })), o.sort(C.value === "title" ? (a, x) => a.title.localeCompare(x.title) : (a, x) => (a.prep_time_minutes || 0) - (x.prep_time_minutes || 0));
     });
     return (o, a) => {
-      const U = f("InputIcon"), A = f("InputText"), c = f("IconField"), R = f("Button"), e = f("Select"), T = f("Message");
-      return u(), v("div", fe, [
+      const x = f("InputIcon"), A = f("InputText"), _ = f("IconField"), I = f("Button"), e = f("Select"), T = f("Message");
+      return u(), d("div", fe, [
         a[3] || (a[3] = t(
           "h1",
           null,
@@ -165,9 +165,9 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
           /* CACHED */
         )),
         t("div", be, [
-          s(c, { class: "search-box" }, {
+          s(_, { class: "search-box" }, {
             default: Z(() => [
-              s(U, { class: "pi pi-search" }),
+              s(x, { class: "pi pi-search" }),
               s(A, {
                 modelValue: n.value,
                 "onUpdate:modelValue": a[0] || (a[0] = (b) => n.value = b),
@@ -189,25 +189,25 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
         t("div", ye, [
           s(L(F), {
             name: "recipe.list.filters",
-            context: { active: S.value, toggle: B }
+            context: { active: U.value, toggle: B }
           }, null, 8, ["context"]),
-          (u(!0), v(
+          (u(!0), d(
             M,
             null,
-            O(i.value, (b) => (u(), D(R, {
+            O(i.value, (b) => (u(), D(I, {
               key: b,
               label: b,
               size: "small",
-              outlined: d.value !== b,
-              "aria-pressed": d.value === b,
-              onClick: (j) => d.value = d.value === b ? null : b
+              outlined: p.value !== b,
+              "aria-pressed": p.value === b,
+              onClick: (j) => p.value = p.value === b ? null : b
             }, null, 8, ["label", "outlined", "aria-pressed", "onClick"]))),
             128
             /* KEYED_FRAGMENT */
           )),
           s(e, {
-            modelValue: I.value,
-            "onUpdate:modelValue": a[1] || (a[1] = (b) => I.value = b),
+            modelValue: C.value,
+            "onUpdate:modelValue": a[1] || (a[1] = (b) => C.value = b),
             "aria-label": "Sort recipes",
             options: [{ id: "title", label: "Title (A–Z)" }, { id: "prep", label: "Prep time" }],
             optionLabel: "label",
@@ -228,11 +228,11 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
           _: 1
           /* STABLE */
         })) : q("v-if", !0),
-        m.value.length ? (u(), v("div", Ve, [
-          (u(!0), v(
+        v.value.length ? (u(), d("div", Ve, [
+          (u(!0), d(
             M,
             null,
-            O(m.value, (b) => (u(), D(ge, {
+            O(v.value, (b) => (u(), D(ge, {
               key: b.id,
               recipe: b,
               onSelect: V
@@ -240,7 +240,7 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
             128
             /* KEYED_FRAGMENT */
           ))
-        ])) : (u(), v("div", $e, [
+        ])) : (u(), d("div", $e, [
           a[2] || (a[2] = t(
             "p",
             null,
@@ -256,10 +256,10 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
       ]);
     };
   }
-}), he = /* @__PURE__ */ J(ke, [["__scopeId", "data-v-bf3b992c"]]), Ie = { class: "recipe-detail-page" }, Ce = {
+}), he = /* @__PURE__ */ J(ke, [["__scopeId", "data-v-edfe0742"]]), Ie = { class: "recipe-detail-page" }, Ce = {
   key: 0,
   class: "lang-bar"
-}, we = { class: "detail-header" }, Se = { key: 0 }, xe = { class: "detail-actions" }, Ue = ["src", "alt"], Re = { class: "scaler-card" }, Te = { class: "servings-value" }, Ne = { class: "content-grid" }, Be = { class: "ingredient-checklist" }, Le = ["for"], qe = {
+}, we = { class: "detail-header" }, Se = { key: 0 }, Ue = { class: "detail-actions" }, Re = ["src", "alt"], xe = { class: "scaler-card" }, Te = { class: "servings-value" }, Ne = { class: "content-grid" }, Be = { class: "ingredient-checklist" }, Le = ["for"], qe = {
   key: 0,
   class: "notes"
 }, Ae = { class: "steps-list" }, Me = /* @__PURE__ */ P({
@@ -269,51 +269,51 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
     id: {}
   },
   emits: ["switchLanguage"],
-  setup(p, { emit: $ }) {
-    const r = p, h = $, l = W(), n = _(null), d = _(2), I = _({}), g = _(""), S = _(!1), k = Q(() => r.id || r.recipeId || ""), C = _(null);
+  setup(c, { emit: $ }) {
+    const r = c, h = $, l = W(), n = m(null), p = m(2), C = m({}), g = m(""), U = m(!1), k = Q(() => r.id || r.recipeId || ""), w = m(null);
     let y = 0;
     E(k, async (V) => {
       if (!V) return;
       const i = ++y;
-      g.value = "", C.value = null;
+      g.value = "", w.value = null;
       try {
-        const m = await l.api.get(`/api/recipes/${V}`);
+        const v = await l.api.get(`/api/recipes/${V}`);
         if (i !== y) return;
-        n.value = m, d.value = m.servings || 2, I.value = {}, S.value = !1;
-        const o = await X(l.api, m.group_id);
+        n.value = v, p.value = v.servings || 2, C.value = {}, U.value = !1;
+        const o = await X(l.api, v.group_id);
         if (i !== y) return;
-        C.value = o;
+        w.value = o;
         try {
           const a = await l.api.get("/api/x/core-shortlist");
-          i === y && (S.value = a.some((U) => U.recipe_id === V));
+          i === y && (U.value = a.some((x) => x.recipe_id === V));
         } catch {
         }
-      } catch (m) {
-        i === y && (n.value = null, g.value = (m == null ? void 0 : m.message) || "Could not load recipe");
+      } catch (v) {
+        i === y && (n.value = null, g.value = (v == null ? void 0 : v.message) || "Could not load recipe");
       }
     }, { immediate: !0 });
     function B(V) {
       var i;
       h("switchLanguage", V), (i = l.navigate) == null || i.call(l, `/recipes/${V}`);
     }
-    function w(V) {
-      var m;
+    function S(V) {
+      var v;
       if (V == null) return "";
-      const i = V * d.value / (((m = n.value) == null ? void 0 : m.servings) || 1);
+      const i = V * p.value / (((v = n.value) == null ? void 0 : v.servings) || 1);
       return Number.isInteger(i) ? String(i) : i.toFixed(1);
     }
     return (V, i) => {
       var A;
-      const m = f("Button"), o = f("Message"), a = f("Checkbox"), U = f("Tag");
-      return u(), v("div", Ie, [
-        s(m, {
+      const v = f("Button"), o = f("Message"), a = f("Checkbox"), x = f("Tag");
+      return u(), d("div", Ie, [
+        s(v, {
           label: "All recipes",
           class: "btn-back",
           icon: "pi pi-arrow-left",
           text: "",
-          onClick: i[0] || (i[0] = (c) => {
-            var R, e;
-            return (e = (R = L(l)).navigate) == null ? void 0 : e.call(R, "/recipes");
+          onClick: i[0] || (i[0] = (_) => {
+            var I, e;
+            return (e = (I = L(l)).navigate) == null ? void 0 : e.call(I, "/recipes");
           })
         }),
         g.value ? (u(), D(o, {
@@ -330,11 +330,11 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
           _: 1
           /* STABLE */
         })) : q("v-if", !0),
-        n.value ? (u(), v(
+        n.value ? (u(), d(
           M,
           { key: 1 },
           [
-            ((A = n.value.languages) == null ? void 0 : A.length) > 1 ? (u(), v("div", Ce, [
+            ((A = n.value.languages) == null ? void 0 : A.length) > 1 ? (u(), d("div", Ce, [
               i[3] || (i[3] = t(
                 "span",
                 null,
@@ -342,15 +342,15 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
                 -1
                 /* CACHED */
               )),
-              (u(!0), v(
+              (u(!0), d(
                 M,
                 null,
-                O(n.value.languages, (c) => (u(), D(m, {
-                  key: c,
-                  label: c.toUpperCase(),
+                O(n.value.languages, (_) => (u(), D(v, {
+                  key: _,
+                  label: _.toUpperCase(),
                   size: "small",
-                  outlined: c !== n.value.language,
-                  onClick: (R) => B(`${n.value.group_id}_${c}`)
+                  outlined: _ !== n.value.language,
+                  onClick: (I) => B(`${n.value.group_id}_${_}`)
                 }, null, 8, ["label", "outlined", "onClick"]))),
                 128
                 /* KEYED_FRAGMENT */
@@ -365,7 +365,7 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
                   1
                   /* TEXT */
                 ),
-                n.value.description ? (u(), v(
+                n.value.description ? (u(), d(
                   "p",
                   Se,
                   N(n.value.description),
@@ -373,10 +373,10 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
                   /* TEXT */
                 )) : q("v-if", !0)
               ]),
-              t("div", xe, [
+              t("div", Ue, [
                 s(L(F), {
                   name: "recipe.card.actions",
-                  context: { recipe: n.value, isShortlisted: S.value }
+                  context: { recipe: n.value, isShortlisted: U.value }
                 }, null, 8, ["context"]),
                 s(L(K), {
                   hub: "recipe:actions",
@@ -385,13 +385,13 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
                 }, null, 8, ["context"])
               ])
             ]),
-            C.value ? (u(), v("img", {
+            w.value ? (u(), d("img", {
               key: 1,
-              src: L(l).url(`/api/assets/${C.value}/file`),
+              src: L(l).url(`/api/assets/${w.value}/file`),
               alt: n.value.title,
               class: "recipe-cover"
-            }, null, 8, Ue)) : q("v-if", !0),
-            t("div", Re, [
+            }, null, 8, Re)) : q("v-if", !0),
+            t("div", xe, [
               i[4] || (i[4] = t(
                 "span",
                 null,
@@ -399,29 +399,29 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
                 -1
                 /* CACHED */
               )),
-              s(m, {
+              s(v, {
                 class: "btn-scaler-minus",
                 icon: "pi pi-minus",
                 "aria-label": "Decrease servings",
                 rounded: "",
                 outlined: "",
-                disabled: d.value <= 1,
-                onClick: i[1] || (i[1] = (c) => d.value--)
+                disabled: p.value <= 1,
+                onClick: i[1] || (i[1] = (_) => p.value--)
               }, null, 8, ["disabled"]),
               t(
                 "span",
                 Te,
-                N(d.value),
+                N(p.value),
                 1
                 /* TEXT */
               ),
-              s(m, {
+              s(v, {
                 class: "btn-scaler-plus",
                 icon: "pi pi-plus",
                 "aria-label": "Increase servings",
                 rounded: "",
                 outlined: "",
-                onClick: i[2] || (i[2] = (c) => d.value++)
+                onClick: i[2] || (i[2] = (_) => p.value++)
               })
             ]),
             t("div", Ne, [
@@ -434,39 +434,39 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
                   /* CACHED */
                 )),
                 t("ul", Be, [
-                  (u(!0), v(
+                  (u(!0), d(
                     M,
                     null,
-                    O(n.value.ingredients, (c) => (u(), v("li", {
-                      key: c.id,
+                    O(n.value.ingredients, (_, I) => (u(), d("li", {
+                      key: I,
                       class: "ingredient-item"
                     }, [
                       s(a, {
-                        inputId: `ingredient-${c.id}`,
-                        modelValue: I.value[c.id],
-                        "onUpdate:modelValue": (R) => I.value[c.id] = R,
+                        inputId: `ingredient-${I}`,
+                        modelValue: C.value[I],
+                        "onUpdate:modelValue": (e) => C.value[I] = e,
                         binary: ""
                       }, null, 8, ["inputId", "modelValue", "onUpdate:modelValue"]),
                       t("label", {
-                        for: `ingredient-${c.id}`,
-                        class: ae({ struck: I.value[c.id] })
+                        for: `ingredient-${I}`,
+                        class: ae({ struck: C.value[I] })
                       }, [
                         t(
                           "strong",
                           null,
-                          N(w(c.quantity)),
+                          N(S(_.quantity)),
                           1
                           /* TEXT */
                         ),
                         z(
-                          " " + N(c.unit) + " " + N(c.name),
+                          " " + N(_.unit) + " " + N(_.name),
                           1
                           /* TEXT */
                         ),
-                        c.notes ? (u(), v(
+                        _.notes ? (u(), d(
                           "span",
                           qe,
-                          " (" + N(c.notes) + ")",
+                          " (" + N(_.notes) + ")",
                           1
                           /* TEXT */
                         )) : q("v-if", !0)
@@ -486,22 +486,22 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
                   /* CACHED */
                 )),
                 t("ol", Ae, [
-                  (u(!0), v(
+                  (u(!0), d(
                     M,
                     null,
-                    O(n.value.steps, (c) => (u(), v("li", {
-                      key: c.id
+                    O(n.value.steps, (_) => (u(), d("li", {
+                      key: _.id
                     }, [
                       t(
                         "p",
                         null,
-                        N(c.instruction),
+                        N(_.instruction),
                         1
                         /* TEXT */
                       ),
-                      c.timer_minutes ? (u(), D(U, {
+                      _.timer_minutes ? (u(), D(x, {
                         key: 0,
-                        value: `${c.timer_minutes} min`,
+                        value: `${_.timer_minutes} min`,
                         icon: "pi pi-clock",
                         severity: "info"
                       }, null, 8, ["value"])) : q("v-if", !0)
@@ -527,38 +527,38 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
       ]);
     };
   }
-}), Oe = /* @__PURE__ */ J(Me, [["__scopeId", "data-v-4fd21f7b"]]), De = { class: "ingredient-row-list" }, Pe = { class: "reorder-btns" }, Je = /* @__PURE__ */ P({
+}), Oe = /* @__PURE__ */ J(Me, [["__scopeId", "data-v-10a15bc6"]]), De = { class: "ingredient-row-list" }, Pe = { class: "reorder-btns" }, Je = /* @__PURE__ */ P({
   __name: "IngredientRowList",
   props: {
     modelValue: {}
   },
   emits: ["update:modelValue"],
-  setup(p, { emit: $ }) {
-    const r = p, h = $, l = _(JSON.parse(JSON.stringify(r.modelValue || [])));
+  setup(c, { emit: $ }) {
+    const r = c, h = $, l = m(JSON.parse(JSON.stringify(r.modelValue || [])));
     E(() => r.modelValue, (k) => {
       l.value = JSON.parse(JSON.stringify(k || []));
     }, { deep: !0 });
     const n = [null, "g", "kg", "ml", "l", "tsp", "tbsp", "cup", "oz", "lb", "piece", "clove", "pinch", "can"].map((k) => ({ id: k, label: k || "(none)" }));
-    function d() {
+    function p() {
       h("update:modelValue", l.value);
     }
-    function I() {
-      l.value.push({ id: crypto.randomUUID(), quantity: 1, unit: "g", name: "", notes: "" }), d();
+    function C() {
+      l.value.push({ id: crypto.randomUUID(), quantity: 1, unit: "g", name: "", notes: "" }), p();
     }
     function g(k) {
-      l.value.splice(k, 1), d();
+      l.value.splice(k, 1), p();
     }
-    function S(k, C) {
-      const y = k + C;
-      y < 0 || y >= l.value.length || (l.value.splice(y, 0, l.value.splice(k, 1)[0]), d());
+    function U(k, w) {
+      const y = k + w;
+      y < 0 || y >= l.value.length || (l.value.splice(y, 0, l.value.splice(k, 1)[0]), p());
     }
-    return (k, C) => {
-      const y = f("Button"), B = f("InputNumber"), w = f("Select"), V = f("InputText");
-      return u(), v("div", De, [
-        (u(!0), v(
+    return (k, w) => {
+      const y = f("Button"), B = f("InputNumber"), S = f("Select"), V = f("InputText");
+      return u(), d("div", De, [
+        (u(!0), d(
           M,
           null,
-          O(l.value, (i, m) => (u(), v("div", {
+          O(l.value, (i, v) => (u(), d("div", {
             key: i.id,
             class: "ingredient-row"
           }, [
@@ -568,50 +568,50 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
                 "aria-label": "Move ingredient up",
                 text: "",
                 size: "small",
-                disabled: m === 0,
-                onClick: (o) => S(m, -1)
+                disabled: v === 0,
+                onClick: (o) => U(v, -1)
               }, null, 8, ["disabled", "onClick"]),
               s(y, {
                 icon: "pi pi-angle-down",
                 "aria-label": "Move ingredient down",
                 text: "",
                 size: "small",
-                disabled: m === l.value.length - 1,
-                onClick: (o) => S(m, 1)
+                disabled: v === l.value.length - 1,
+                onClick: (o) => U(v, 1)
               }, null, 8, ["disabled", "onClick"])
             ]),
             s(B, {
               modelValue: i.quantity,
-              "onUpdate:modelValue": [(o) => i.quantity = o, d],
+              "onUpdate:modelValue": [(o) => i.quantity = o, p],
               inputClass: "input-qty",
-              "aria-label": `Ingredient ${m + 1} quantity`,
+              "aria-label": `Ingredient ${v + 1} quantity`,
               min: 0,
               maxFractionDigits: 3
             }, null, 8, ["modelValue", "onUpdate:modelValue", "aria-label"]),
-            s(w, {
+            s(S, {
               modelValue: i.unit,
-              "onUpdate:modelValue": [(o) => i.unit = o, d],
+              "onUpdate:modelValue": [(o) => i.unit = o, p],
               options: L(n),
               optionLabel: "label",
               optionValue: "id",
               class: "select-unit",
-              "aria-label": `Ingredient ${m + 1} unit`
+              "aria-label": `Ingredient ${v + 1} unit`
             }, null, 8, ["modelValue", "onUpdate:modelValue", "options", "aria-label"]),
             s(V, {
               modelValue: i.name,
               "onUpdate:modelValue": (o) => i.name = o,
               class: "input-name",
-              "aria-label": `Ingredient ${m + 1} name`,
+              "aria-label": `Ingredient ${v + 1} name`,
               placeholder: "Ingredient name",
-              onInput: d
+              onInput: p
             }, null, 8, ["modelValue", "onUpdate:modelValue", "aria-label"]),
             s(V, {
               modelValue: i.notes,
               "onUpdate:modelValue": (o) => i.notes = o,
               class: "input-notes",
-              "aria-label": `Ingredient ${m + 1} notes`,
+              "aria-label": `Ingredient ${v + 1} notes`,
               placeholder: "Notes",
-              onInput: d
+              onInput: p
             }, null, 8, ["modelValue", "onUpdate:modelValue", "aria-label"]),
             s(y, {
               icon: "pi pi-times",
@@ -619,7 +619,7 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
               "aria-label": "Remove ingredient",
               text: "",
               severity: "danger",
-              onClick: (o) => g(m)
+              onClick: (o) => g(v)
             }, null, 8, ["onClick"])
           ]))),
           128
@@ -630,39 +630,39 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
           class: "btn-add-ingredient",
           icon: "pi pi-plus",
           outlined: "",
-          onClick: I
+          onClick: C
         })
       ]);
     };
   }
-}), Fe = /* @__PURE__ */ J(Je, [["__scopeId", "data-v-8bdce0ca"]]), ze = { class: "step-list" }, Ee = { class: "step-inputs" }, Qe = { class: "timer-row" }, Ze = ["for"], je = /* @__PURE__ */ P({
+}), Fe = /* @__PURE__ */ J(Je, [["__scopeId", "data-v-2ffdf2db"]]), ze = { class: "step-list" }, Ee = { class: "step-inputs" }, Qe = { class: "timer-row" }, Ze = ["for"], je = /* @__PURE__ */ P({
   __name: "StepList",
   props: {
     modelValue: {}
   },
   emits: ["update:modelValue"],
-  setup(p, { emit: $ }) {
-    const r = p, h = $, l = _(JSON.parse(JSON.stringify(r.modelValue || [])));
+  setup(c, { emit: $ }) {
+    const r = c, h = $, l = m(JSON.parse(JSON.stringify(r.modelValue || [])));
     E(() => r.modelValue, (g) => {
       l.value = JSON.parse(JSON.stringify(g || []));
     }, { deep: !0 });
     function n() {
       h("update:modelValue", l.value);
     }
-    function d() {
+    function p() {
       l.value.push({ id: crypto.randomUUID(), instruction: "", timer_minutes: null }), n();
     }
-    function I(g) {
+    function C(g) {
       l.value.splice(g, 1), n();
     }
-    return (g, S) => {
-      const k = f("Tag"), C = f("Textarea"), y = f("InputNumber"), B = f("Button");
-      return u(), v("div", ze, [
-        (u(!0), v(
+    return (g, U) => {
+      const k = f("Tag"), w = f("Textarea"), y = f("InputNumber"), B = f("Button");
+      return u(), d("div", ze, [
+        (u(!0), d(
           M,
           null,
-          O(l.value, (w, V) => (u(), v("div", {
-            key: w.id,
+          O(l.value, (S, V) => (u(), d("div", {
+            key: S.id,
             class: "step-row"
           }, [
             s(k, {
@@ -670,9 +670,9 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
               severity: "secondary"
             }, null, 8, ["value"]),
             t("div", Ee, [
-              s(C, {
-                modelValue: w.instruction,
-                "onUpdate:modelValue": (i) => w.instruction = i,
+              s(w, {
+                modelValue: S.instruction,
+                "onUpdate:modelValue": (i) => S.instruction = i,
                 class: "textarea-instruction",
                 "aria-label": `Step ${V + 1} instruction`,
                 rows: "3",
@@ -681,12 +681,12 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
               }, null, 8, ["modelValue", "onUpdate:modelValue", "aria-label"]),
               t("div", Qe, [
                 t("label", {
-                  for: `timer-${w.id}`
+                  for: `timer-${S.id}`
                 }, "Timer (min)", 8, Ze),
                 s(y, {
-                  inputId: `timer-${w.id}`,
-                  modelValue: w.timer_minutes,
-                  "onUpdate:modelValue": [(i) => w.timer_minutes = i, n],
+                  inputId: `timer-${S.id}`,
+                  modelValue: S.timer_minutes,
+                  "onUpdate:modelValue": [(i) => S.timer_minutes = i, n],
                   min: 0,
                   inputClass: "input-timer"
                 }, null, 8, ["inputId", "modelValue", "onUpdate:modelValue"])
@@ -698,7 +698,7 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
               "aria-label": "Remove step",
               severity: "danger",
               text: "",
-              onClick: (i) => I(V)
+              onClick: (i) => C(V)
             }, null, 8, ["onClick"])
           ]))),
           128
@@ -709,38 +709,38 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
           class: "btn-add-step",
           icon: "pi pi-plus",
           outlined: "",
-          onClick: d
+          onClick: p
         })
       ]);
     };
   }
-}), Ge = /* @__PURE__ */ J(je, [["__scopeId", "data-v-24edd28a"]]), He = { class: "edit-top-bar" }, Ke = { class: "form-group" }, We = { class: "form-group" }, Xe = { class: "form-row" }, Ye = { class: "form-group" }, et = { class: "form-group" }, tt = { class: "form-group" }, lt = { class: "form-group" }, it = { class: "form-group" }, nt = { class: "form-group" }, at = ["disabled"], ot = { key: 0 }, st = { key: 1 }, ut = ["src"], rt = { class: "actions-row" }, ct = /* @__PURE__ */ P({
+}), Ge = /* @__PURE__ */ J(je, [["__scopeId", "data-v-5fad147a"]]), He = { class: "edit-top-bar" }, Ke = { class: "form-group" }, We = { class: "form-group" }, Xe = { class: "form-row" }, Ye = { class: "form-group" }, et = { class: "form-group" }, tt = { class: "form-group" }, lt = { class: "form-group" }, it = { class: "form-group" }, nt = { class: "form-group" }, at = ["disabled"], ot = { key: 0 }, st = { key: 1 }, ut = ["src"], rt = { class: "actions-row" }, ct = /* @__PURE__ */ P({
   __name: "RecipeEditPage",
   props: {
     recipeId: {},
     id: {}
   },
   emits: ["saved"],
-  setup(p, { emit: $ }) {
-    var c;
-    const r = p, h = $, l = W(), n = Q(() => r.id || r.recipeId || ""), d = _(""), I = _(""), g = _(((c = l.store.household.value) == null ? void 0 : c.languages.primary) || "en"), S = _(2), k = _(""), C = _(null), y = _(null), B = _([]), w = _(null), V = _([]), i = _([]), m = _(1), o = _(!1), a = _("");
-    E(n, async (R) => {
-      if (R)
+  setup(c, { emit: $ }) {
+    var _;
+    const r = c, h = $, l = W(), n = Q(() => r.id || r.recipeId || ""), p = m(""), C = m(""), g = m(((_ = l.store.household.value) == null ? void 0 : _.languages.primary) || "en"), U = m(2), k = m(""), w = m(null), y = m(null), B = m([]), S = m(null), V = m([]), i = m([]), v = m(1), o = m(!1), a = m("");
+    E(n, async (I) => {
+      if (I)
         try {
-          const e = await l.api.get(`/api/recipes/${R}`);
-          d.value = e.title, I.value = e.description || "", g.value = e.language, S.value = e.servings, C.value = e.prep_time_minutes, y.value = e.cook_time_minutes, B.value = [...e.tags], V.value = e.ingredients, i.value = e.steps, m.value = e.revision, w.value = await X(l.api, e.group_id), k.value = e.group_id;
+          const e = await l.api.get(`/api/recipes/${I}`);
+          p.value = e.title, C.value = e.description || "", g.value = e.language, U.value = e.servings, w.value = e.prep_time_minutes, y.value = e.cook_time_minutes, B.value = [...e.tags], V.value = e.ingredients, i.value = e.steps, v.value = e.revision, S.value = await X(l.api, e.group_id), k.value = e.group_id;
         } catch (e) {
           a.value = (e == null ? void 0 : e.message) || "Could not load recipe";
         }
     }, { immediate: !0 });
-    async function U(R) {
+    async function x(I) {
       var T;
-      const e = (T = R.target.files) == null ? void 0 : T[0];
+      const e = (T = I.target.files) == null ? void 0 : T[0];
       if (!(!e || o.value || !k.value)) {
         o.value = !0, a.value = "";
         try {
           const b = new FormData();
-          b.append("file", e), b.append("entity_type", "recipe"), b.append("entity_id", k.value), b.append("slot", "cover"), w.value = (await l.api.upload("/api/assets", b)).id, l.notify({ level: "success", message: "Cover image saved" });
+          b.append("file", e), b.append("entity_type", "recipe"), b.append("entity_id", k.value), b.append("slot", "cover"), S.value = (await l.api.upload("/api/assets", b)).id, l.notify({ level: "success", message: "Cover image saved" });
         } catch (b) {
           a.value = (b == null ? void 0 : b.message) || "Could not upload image";
         } finally {
@@ -750,11 +750,11 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
     }
     async function A() {
       var e;
-      if (!d.value.trim() || o.value) return;
+      if (!p.value.trim() || o.value) return;
       o.value = !0, a.value = "";
-      const R = { title: d.value.trim(), description: I.value.trim(), language: g.value, servings: S.value, prep_time_minutes: C.value, cook_time_minutes: y.value, tags: B.value, ingredients: V.value, steps: i.value };
+      const I = { title: p.value.trim(), description: C.value.trim(), language: g.value, servings: U.value, prep_time_minutes: w.value, cook_time_minutes: y.value, tags: B.value, ingredients: V.value, steps: i.value };
       try {
-        const T = n.value ? await l.api.patch(`/api/recipes/${n.value}`, { ...R, revision: m.value }) : await l.api.post("/api/recipes", R);
+        const T = n.value ? await l.api.patch(`/api/recipes/${n.value}`, { ...I, revision: v.value }) : await l.api.post("/api/recipes", I);
         h("saved", T), l.notify({ level: "success", message: "Recipe saved" }), (e = l.navigate) == null || e.call(l, `/recipes/${T.id}`);
       } catch (T) {
         a.value = (T == null ? void 0 : T.message) || "Could not save recipe";
@@ -762,9 +762,9 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
         o.value = !1;
       }
     }
-    return (R, e) => {
+    return (I, e) => {
       const T = f("Button"), b = f("Message"), j = f("InputText"), le = f("Textarea"), G = f("InputNumber"), ie = f("AutoComplete");
-      return u(), v(
+      return u(), d(
         "form",
         {
           class: "recipe-edit-page",
@@ -784,7 +784,7 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
               class: "btn-cancel",
               severity: "secondary",
               disabled: o.value,
-              onClick: e[0] || (e[0] = (x) => {
+              onClick: e[0] || (e[0] = (R) => {
                 var Y, ee;
                 return (ee = (Y = L(l)).navigate) == null ? void 0 : ee.call(Y, n.value ? `/recipes/${n.value}` : "/recipes");
               })
@@ -814,8 +814,8 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
             )),
             s(j, {
               id: "recipe-title",
-              modelValue: d.value,
-              "onUpdate:modelValue": e[1] || (e[1] = (x) => d.value = x),
+              modelValue: p.value,
+              "onUpdate:modelValue": e[1] || (e[1] = (R) => p.value = R),
               class: "input-title",
               required: "",
               fluid: ""
@@ -831,8 +831,8 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
             )),
             s(le, {
               id: "recipe-description",
-              modelValue: I.value,
-              "onUpdate:modelValue": e[2] || (e[2] = (x) => I.value = x),
+              modelValue: C.value,
+              "onUpdate:modelValue": e[2] || (e[2] = (R) => C.value = R),
               class: "textarea",
               rows: "3",
               fluid: ""
@@ -850,7 +850,7 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
               s(j, {
                 id: "recipe-language",
                 modelValue: g.value,
-                "onUpdate:modelValue": e[3] || (e[3] = (x) => g.value = x),
+                "onUpdate:modelValue": e[3] || (e[3] = (R) => g.value = R),
                 fluid: ""
               }, null, 8, ["modelValue"])
             ]),
@@ -864,8 +864,8 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
               )),
               s(G, {
                 inputId: "recipe-servings",
-                modelValue: S.value,
-                "onUpdate:modelValue": e[4] || (e[4] = (x) => S.value = x),
+                modelValue: U.value,
+                "onUpdate:modelValue": e[4] || (e[4] = (R) => U.value = R),
                 min: 1,
                 fluid: ""
               }, null, 8, ["modelValue"])
@@ -880,8 +880,8 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
               )),
               s(G, {
                 inputId: "recipe-prep",
-                modelValue: C.value,
-                "onUpdate:modelValue": e[5] || (e[5] = (x) => C.value = x),
+                modelValue: w.value,
+                "onUpdate:modelValue": e[5] || (e[5] = (R) => w.value = R),
                 min: 0,
                 fluid: ""
               }, null, 8, ["modelValue"])
@@ -897,7 +897,7 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
               s(G, {
                 inputId: "recipe-cook",
                 modelValue: y.value,
-                "onUpdate:modelValue": e[6] || (e[6] = (x) => y.value = x),
+                "onUpdate:modelValue": e[6] || (e[6] = (R) => y.value = R),
                 min: 0,
                 fluid: ""
               }, null, 8, ["modelValue"])
@@ -914,7 +914,7 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
             s(ie, {
               inputId: "recipe-tags",
               modelValue: B.value,
-              "onUpdate:modelValue": e[7] || (e[7] = (x) => B.value = x),
+              "onUpdate:modelValue": e[7] || (e[7] = (R) => B.value = R),
               multiple: "",
               typeahead: !1,
               fluid: ""
@@ -933,12 +933,12 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
               type: "file",
               accept: "image/*",
               disabled: o.value || !k.value,
-              onChange: U
+              onChange: x
             }, null, 40, at),
-            n.value ? (u(), v("small", st, "Cover uploads are saved immediately, separately from recipe edits.")) : (u(), v("small", ot, "Save your recipe first to add a cover image.")),
-            w.value ? (u(), v("img", {
+            n.value ? (u(), d("small", st, "Cover uploads are saved immediately, separately from recipe edits.")) : (u(), d("small", ot, "Save your recipe first to add a cover image.")),
+            S.value ? (u(), d("img", {
               key: 2,
-              src: L(l).url(`/api/assets/${w.value}/file`),
+              src: L(l).url(`/api/assets/${S.value}/file`),
               alt: "Recipe cover",
               class: "cover-preview"
             }, null, 8, ut)) : q("v-if", !0)
@@ -953,7 +953,7 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
             )),
             s(Fe, {
               modelValue: V.value,
-              "onUpdate:modelValue": e[8] || (e[8] = (x) => V.value = x)
+              "onUpdate:modelValue": e[8] || (e[8] = (R) => V.value = R)
             }, null, 8, ["modelValue"])
           ]),
           t("section", null, [
@@ -966,7 +966,7 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
             )),
             s(Ge, {
               modelValue: i.value,
-              "onUpdate:modelValue": e[9] || (e[9] = (x) => i.value = x)
+              "onUpdate:modelValue": e[9] || (e[9] = (R) => i.value = R)
             }, null, 8, ["modelValue"])
           ]),
           t("div", rt, [
@@ -976,7 +976,7 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
               class: "btn-primary",
               icon: "pi pi-check",
               loading: o.value,
-              disabled: !d.value.trim()
+              disabled: !p.value.trim()
             }, null, 8, ["loading", "disabled"])
           ])
         ],
@@ -985,9 +985,9 @@ const fe = { class: "recipe-list-page" }, be = { class: "intent-header-bar" }, y
       );
     };
   }
-}), te = /* @__PURE__ */ J(ct, [["__scopeId", "data-v-db0c1b59"]]);
-function vt(p) {
-  p.route({ path: "/recipes", component: he, nav: { label: "Recipes", icon: "book", order: 10 } }), p.route({ path: "/recipes/new", component: te }), p.route({ path: "/recipes/:id", component: Oe }), p.route({ path: "/recipes/:id/edit", component: te }), p.intent.hub({ id: "recipe:create", title: "Add or Import Recipe" }), p.intent.provider({
+}), te = /* @__PURE__ */ J(ct, [["__scopeId", "data-v-6c8a1df8"]]);
+function vt(c) {
+  c.route({ path: "/recipes", component: he, nav: { label: "Recipes", icon: "book", order: 10 } }), c.route({ path: "/recipes/new", component: te }), c.route({ path: "/recipes/:id", component: Oe }), c.route({ path: "/recipes/:id/edit", component: te }), c.intent.hub({ id: "recipe:create", title: "Add or Import Recipe" }), c.intent.provider({
     hub: "recipe:create",
     id: "manual",
     title: "Blank recipe",
@@ -995,9 +995,9 @@ function vt(p) {
     order: 100,
     kind: "headless",
     execute: () => {
-      p.navigate ? p.navigate("/recipes/new") : window.location.href = p.url ? p.url("/recipes/new") : "/recipes/new";
+      c.navigate ? c.navigate("/recipes/new") : window.location.href = c.url ? c.url("/recipes/new") : "/recipes/new";
     }
-  }), p.intent.hub({ id: "recipe:actions", title: "Recipe Actions" }), p.intent.provider({
+  }), c.intent.hub({ id: "recipe:actions", title: "Recipe Actions" }), c.intent.provider({
     hub: "recipe:actions",
     id: "edit",
     title: "Edit",
@@ -1005,7 +1005,7 @@ function vt(p) {
     kind: "headless",
     execute: ($) => {
       var r;
-      (r = $ == null ? void 0 : $.recipe) != null && r.id && (p.navigate ? p.navigate(`/recipes/${$.recipe.id}/edit`) : window.location.href = p.url ? p.url(`/recipes/${$.recipe.id}/edit`) : `/recipes/${$.recipe.id}/edit`);
+      (r = $ == null ? void 0 : $.recipe) != null && r.id && (c.navigate ? c.navigate(`/recipes/${$.recipe.id}/edit`) : window.location.href = c.url ? c.url(`/recipes/${$.recipe.id}/edit`) : `/recipes/${$.recipe.id}/edit`);
     }
   });
 }

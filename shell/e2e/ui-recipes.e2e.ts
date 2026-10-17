@@ -1,6 +1,44 @@
 import { test, expect } from './helpers/state'
 import { login } from './helpers/ui'
 
+test('ingredient checkboxes and labels toggle only their own row without ingredient IDs', async ({ page, request }) => {
+  await login(page)
+  const response = await request.post('/api/recipes', { data: {
+    title: 'Independent ingredient checklist', language: 'en', servings: 2,
+    ingredients: [
+      { name: 'Flour', quantity: 200, unit: 'g' },
+      { name: 'Sugar', quantity: 100, unit: 'g' },
+      { name: 'Flour', quantity: 20, unit: 'g', notes: 'for dusting' },
+    ],
+  } })
+  expect(response.status()).toBe(201)
+  const recipe = await response.json()
+  await page.goto(`/recipes/${recipe.id}`)
+  const rows = page.locator('.ingredient-item')
+  const checkboxes = rows.getByRole('checkbox')
+  await expect(checkboxes).toHaveCount(3)
+  await checkboxes.nth(0).check()
+  await expect(checkboxes.nth(0)).toBeChecked()
+  await expect(checkboxes.nth(1)).not.toBeChecked()
+  await expect(checkboxes.nth(2)).not.toBeChecked()
+  await expect(rows.nth(0).locator('label')).toHaveClass(/struck/)
+  await expect(rows.nth(1).locator('label')).not.toHaveClass(/struck/)
+  await expect(rows.nth(2).locator('label')).not.toHaveClass(/struck/)
+
+  // Labels must target their own input, including repeated ingredient names.
+  await rows.nth(2).locator('label').click()
+  await expect(checkboxes.nth(2)).toBeChecked()
+  await expect(checkboxes.nth(1)).not.toBeChecked()
+  await rows.nth(0).locator('label').click()
+  await expect(checkboxes.nth(0)).not.toBeChecked()
+  await expect(checkboxes.nth(2)).toBeChecked()
+  await page.getByRole('button', { name: 'Increase servings', exact: true }).click()
+  await expect(checkboxes.nth(2)).toBeChecked()
+  await page.reload()
+  await expect(checkboxes).toHaveCount(3)
+  for (const checkbox of await checkboxes.all()) await expect(checkbox).not.toBeChecked()
+})
+
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lS0AAAAASUVORK5CYII=','base64')
 
 test('cover upload belongs to the recipe group and survives editor list and detail reloads',async({page,request})=>{
