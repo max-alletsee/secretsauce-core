@@ -1,7 +1,7 @@
 from typing import Any
 
 from fastapi import APIRouter, Request, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from secretsauce.auth import (
     MIN_PASSPHRASE_LENGTH,
@@ -21,6 +21,25 @@ class HouseholdPatchPayload(MealTypesPayload):
     household_name: str | None = Field(default=None, min_length=1, max_length=200)
     languages: dict[str, Any] | None = None
     units: str | None = Field(default=None, pattern="^(metric|us_customary)$")
+    predefined_notes: list[str] | None = None
+
+    @field_validator("predefined_notes")
+    @classmethod
+    def check_predefined_notes(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return None
+        cleaned = []
+        for note in value:
+            if not isinstance(note, str):
+                raise ValueError("Note must be a string")
+            s = note.strip()
+            if not s:
+                raise ValueError("Note cannot be blank")
+            if len(s) > 64:
+                raise ValueError("Note cannot exceed 64 characters")
+            if s not in cleaned:
+                cleaned.append(s)
+        return cleaned
 
 
 class PassphraseRotatePayload(BaseModel):
@@ -35,9 +54,12 @@ async def get_household(request: Request):
 
 @router.patch("")
 async def patch_household(payload: HouseholdPatchPayload, request: Request):
-    return await request.app.state.kernel.household.update_config(
-        payload.model_dump(exclude_unset=True)
-    )
+    updates = payload.model_dump(exclude_unset=True)
+    if "meal_types" in updates and payload.meal_types is not None:
+        updates["meal_types"] = [
+            slot.model_dump(exclude_none=True) for slot in payload.meal_types
+        ]
+    return await request.app.state.kernel.household.update_config(updates)
 
 
 @router.put("/passphrase", status_code=204)

@@ -70,3 +70,59 @@ async def test_setup_omission_preserves_default_slots(tmp_path):
         assert (await client.get("/api/household")).json()["meal_types"] == [
             {"id": "breakfast", "label": "Breakfast"}, {"id": "lunch", "label": "Lunch"}, {"id": "dinner", "label": "Dinner"},
         ]
+
+
+async def test_predefined_notes_on_meal_types_and_household(tmp_path):
+    async with runtime(tmp_path) as (_, client):
+        # Initial config should have default predefined_notes
+        initial = (await client.get("/api/household")).json()
+        assert initial["predefined_notes"] == ["Dining out", "Leftovers", "Takeout", "Quick meal"]
+
+        # Patch custom predefined notes on a meal slot (e.g. Brotzeit)
+        slots_with_notes = [
+            {"id": "breakfast", "label": "Breakfast", "predefined_notes": ["Quick meal"]},
+            {"id": "dinner", "label": "Dinner", "predefined_notes": ["Dining out", "Leftovers", "Takeout", "Quick meal", "Brotzeit"]},
+        ]
+        res = await client.patch("/api/household", json={"meal_types": slots_with_notes})
+        assert res.status_code == 200, res.text
+        data = res.json()
+        assert data["meal_types"] == slots_with_notes
+
+        # Get confirms persistence
+        fetched = (await client.get("/api/household")).json()
+        assert fetched["meal_types"] == slots_with_notes
+
+        # Household-level predefined_notes update
+        res2 = await client.patch("/api/household", json={"predefined_notes": ["Dining out", "Leftovers", "Brotzeit"]})
+        assert res2.status_code == 200, res2.text
+        assert res2.json()["predefined_notes"] == ["Dining out", "Leftovers", "Brotzeit"]
+
+
+async def test_predefined_notes_validation(tmp_path):
+    async with runtime(tmp_path) as (_, client):
+        # Blank note in slot
+        bad_slot_blank = [{"id": "dinner", "label": "Dinner", "predefined_notes": ["   "]}]
+        res = await client.patch("/api/household", json={"meal_types": bad_slot_blank})
+        assert res.status_code == 422
+
+        # Note too long in slot (>64 chars)
+        bad_slot_long = [{"id": "dinner", "label": "Dinner", "predefined_notes": ["x" * 65]}]
+        res = await client.patch("/api/household", json={"meal_types": bad_slot_long})
+        assert res.status_code == 422
+
+        # Blank note on household
+        res = await client.patch("/api/household", json={"predefined_notes": [""]})
+        assert res.status_code == 422
+
+        # Note too long on household (>64 chars)
+        res = await client.patch("/api/household", json={"predefined_notes": ["y" * 65]})
+        assert res.status_code == 422
+
+        # Deduplication works cleanly
+        res = await client.patch("/api/household", json={
+            "predefined_notes": ["Brotzeit", "Brotzeit", "  Brotzeit  ", "Takeout"],
+            "meal_types": [{"id": "dinner", "label": "Dinner", "predefined_notes": ["Brotzeit", "Brotzeit"]}],
+        })
+        assert res.status_code == 200
+        assert res.json()["predefined_notes"] == ["Brotzeit", "Takeout"]
+        assert res.json()["meal_types"][0]["predefined_notes"] == ["Brotzeit"]

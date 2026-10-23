@@ -54,7 +54,7 @@ async def perform_setup(payload: SetupPayload, request: Request, response: Respo
                 "household_name": payload.household_name,
                 "languages": payload.languages or {"primary": "en"},
                 "units": payload.units or "metric",
-                "meal_types": [slot.model_dump() for slot in payload.meal_types] if payload.meal_types is not None else DEFAULT_MEAL_TYPES,
+                "meal_types": [slot.model_dump(exclude_none=True) for slot in payload.meal_types] if payload.meal_types is not None else DEFAULT_MEAL_TYPES,
             }
         )
         version = await kernel.household.set_passphrase(pass_hash)

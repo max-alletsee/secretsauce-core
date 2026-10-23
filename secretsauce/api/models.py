@@ -41,6 +41,25 @@ class _Revisioned(_Body):
 class MealType(_Body):
     id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,63}$")
     label: str = Field(min_length=1, max_length=64)
+    predefined_notes: list[str] | None = None
+
+    @field_validator("predefined_notes")
+    @classmethod
+    def check_predefined_notes(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return None
+        cleaned = []
+        for note in value:
+            if not isinstance(note, str):
+                raise ValueError("Note must be a string")
+            s = note.strip()
+            if not s:
+                raise ValueError("Note cannot be blank")
+            if len(s) > 64:
+                raise ValueError("Note cannot exceed 64 characters")
+            if s not in cleaned:
+                cleaned.append(s)
+        return cleaned
 
 
 class MealTypesPayload(_Body):

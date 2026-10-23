@@ -1,3 +1,5 @@
+export const DEFAULT_PREDEFINED_NOTES = ['Dining out', 'Leftovers', 'Takeout', 'Quick meal']
+
 /** Stable, bounded ASCII ids; renames never call this helper. */
 export function slugMealType(label: string, existingIds: string[]): string {
   const base = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'slot'

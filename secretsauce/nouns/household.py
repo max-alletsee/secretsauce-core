@@ -10,11 +10,18 @@ DEFAULT_MEAL_TYPES = [
     {"id": "dinner", "label": "Dinner"},
 ]
 
+DEFAULT_PREDEFINED_NOTES = [
+    "Dining out",
+    "Leftovers",
+    "Takeout",
+    "Quick meal",
+]
+
 DEFAULT_LANGUAGES = {"primary": "en"}
 DEFAULT_UNITS = "metric"
 DEFAULT_HOUSEHOLD_NAME = "Our Household"
 
-CONFIG_KEYS = frozenset({"household_name", "meal_types", "languages", "units"})
+CONFIG_KEYS = frozenset({"household_name", "meal_types", "languages", "units", "predefined_notes"})
 
 _UPSERT = """
 INSERT INTO household_config (key, value, updated_at)
@@ -65,6 +72,7 @@ class HouseholdRepo:
             "meal_types": raw.get("meal_types", DEFAULT_MEAL_TYPES),
             "languages": raw.get("languages", DEFAULT_LANGUAGES),
             "units": raw.get("units", DEFAULT_UNITS),
+            "predefined_notes": raw.get("predefined_notes", list(DEFAULT_PREDEFINED_NOTES)),
             "passphrase_version": raw.get("passphrase_version", 1),
         }
 

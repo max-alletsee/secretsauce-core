@@ -48,4 +48,45 @@ describe('registered Timeline route (API boundary double)', () => {
     expect(document.querySelector('[role=dialog]')).toBeNull()
     expect(wrapper.text()).toContain('Chocolate cake')
   })
+  it('schedules a custom pre-defined note like Brotzeit from slot settings', async () => {
+    let scheduled: any
+    const { wrapper, harness } = await registeredRoute(activate, 'core-timeline', {
+      get: async (path: string, query: any) => {
+        if (path === '/api/recipes') return { items: [], total: 0, limit: 50, offset: 0 }
+        if (path === '/api/x/core-shortlist') return []
+        if (path === '/api/x/core-timeline/slots') return resolved(query.from, query.to)
+        if (path.startsWith('/api/schedule')) return scheduled ? [scheduled] : []
+        if (path.startsWith('/api/journal')) return []
+        throw new Error(`Unexpected GET ${path}`)
+      },
+      post: async (path: string, body: any) => {
+        expect(path).toBe('/api/schedule')
+        expect(body.entry_type).toBe('note')
+        expect(body.title).toBe('Brotzeit')
+        expect(body.meal_type).toBe('dinner')
+        scheduled = { ...body, id: 'entry-note-1', revision: 1, origin: 'member', created_at: '2026-09-28T12:00:00Z', updated_at: '2026-09-28T12:00:00Z' }
+        return scheduled
+      },
+    } as any, '/timeline')
+    wrappers.push(wrapper)
+
+    harness.householdStore.household = {
+      household_name: 'Our Household',
+      meal_types: [
+        { id: 'dinner', label: 'Dinner', predefined_notes: ['Leftovers', 'Brotzeit'] }
+      ],
+      languages: { primary: 'en' },
+      units: 'metric',
+    }
+
+    await clickButton('Add meal', wrapper.find('.is-today').element)
+    await clickButton('Note')
+    expect(document.querySelector('.quick-notes')?.textContent).toContain('Brotzeit')
+    await clickButton('Brotzeit')
+    const noteInput = document.querySelector<HTMLInputElement>('#entry-note')!
+    expect(noteInput.value).toBe('Brotzeit')
+    await clickButton('Add meal', document.querySelector('[role=dialog]')!)
+    expect(document.querySelector('[role=dialog]')).toBeNull()
+    expect(wrapper.text()).toContain('Brotzeit')
+  })
 })

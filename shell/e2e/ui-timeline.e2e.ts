@@ -245,3 +245,35 @@ test('phone sidebar precedes the feed and widgets start collapsed', async ({ pag
   expect((await sidebar.boundingBox())!.y).toBeLessThan((await firstCard.boundingBox())!.y)
   await expect(sidebar.locator('[data-pc-name=accordionheader]').first()).toHaveAttribute('aria-expanded','false')
 })
+
+test('user can define pre-defined notes like Brotzeit and use them in recipe slots', async ({ page }) => {
+  await login(page)
+  await page.goto('/settings?section=household')
+  const dinnerNotes = page.locator('[data-slot-notes="dinner"]')
+  await expect(dinnerNotes).toBeVisible()
+  const noteInput = page.getByLabel('New note for Dinner')
+  await noteInput.fill('Brotzeit')
+  await page.getByRole('button', { name: 'Add note to Dinner', exact: true }).click()
+  await expect(dinnerNotes).toContainText('Brotzeit')
+  await page.getByRole('button', { name: 'Save household', exact: true }).click()
+  await expect(page.getByText('Household saved')).toBeVisible()
+
+  await page.goto('/timeline')
+  const slot = page.locator('.day-card.is-today .meal-slot[data-slot-id="dinner"]')
+  const trigger = slot.getByRole('button', { name: 'Slot actions', exact: true })
+  if (await trigger.isVisible()) {
+    await trigger.click()
+    await page.getByRole('menuitem', { name: 'Add another meal', exact: true }).click()
+  } else {
+    await slot.getByRole('button', { name: 'Add meal', exact: true }).click()
+  }
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('tab', { name: 'Note', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: 'Brotzeit', exact: true })).toBeVisible()
+  await dialog.getByRole('button', { name: 'Brotzeit', exact: true }).click()
+  await expect(dialog.getByLabel('Note title', { exact: true })).toHaveValue('Brotzeit')
+  await dialog.getByRole('button', { name: 'Add meal', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+  await expect(slot).toContainText('Brotzeit')
+})
+

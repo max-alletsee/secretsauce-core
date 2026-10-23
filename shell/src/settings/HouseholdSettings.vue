@@ -5,7 +5,17 @@ import { useHouseholdStore } from '../stores/household'
 import MealSlotEditor from './MealSlotEditor.vue'
 const api = inject<ApiClient>('__SS_API__')!
 const store = useHouseholdStore()
-function copy(h: Household): Household { return { ...h, languages: { ...h.languages, ...(h.languages.translations ? { translations: [...h.languages.translations] } : {}) }, meal_types: h.meal_types.map(slot => ({ ...slot })) } }
+function copy(h: Household): Household {
+  return {
+    ...h,
+    languages: { ...h.languages, ...(h.languages.translations ? { translations: [...h.languages.translations] } : {}) },
+    meal_types: (h.meal_types || []).map(slot => ({
+      ...slot,
+      ...(slot.predefined_notes ? { predefined_notes: [...slot.predefined_notes] } : {})
+    })),
+    ...(h.predefined_notes ? { predefined_notes: [...h.predefined_notes] } : {})
+  }
+}
 const draft = ref(copy(store.household)), busy = ref(false), error = ref(''), saved = ref(false)
 watch(() => store.household, h => { draft.value = copy(h) })
 const units = [{ label: 'Metric', value: 'metric' }, { label: 'US customary', value: 'us_customary' }]
@@ -14,8 +24,10 @@ async function save() {
   if (busy.value) return
   busy.value = true; error.value = ''; saved.value = false
   try {
-    const { household_name, units, languages, meal_types } = draft.value
-    store.household = await api.patch<Household>('/api/household', { household_name, units, languages, meal_types })
+    const { household_name, units, languages, meal_types, predefined_notes } = draft.value
+    const payload: any = { household_name, units, languages, meal_types }
+    if (predefined_notes !== undefined) payload.predefined_notes = predefined_notes
+    store.household = await api.patch<Household>('/api/household', payload)
     saved.value = true
   } catch (err: any) { error.value = err.message || 'Could not save household' }
   finally { busy.value = false }

@@ -62,6 +62,9 @@ worktrees/
 
 # Local Scratch
 my-test-data/
+dev-data/
+test-data/
+pi-session-*.html
 tmp_claudecode/
 pi resume.txt
 docs/pi-sessions/

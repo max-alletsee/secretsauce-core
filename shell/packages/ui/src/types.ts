@@ -106,11 +106,18 @@ export interface Member {
   preferred_language: string
 }
 
+export interface MealSlotType {
+  id: string
+  label: string
+  predefined_notes?: string[]
+}
+
 export interface Household {
   household_name: string
-  meal_types: { id: string; label: string }[]
+  meal_types: MealSlotType[]
   languages: { primary: string; translations?: string[] }
   units: 'metric' | 'us_customary'
+  predefined_notes?: string[]
 }
 
 export interface IntentHub {
