@@ -93,3 +93,32 @@ test('denied device storage still permits household editing and saving', async (
   await expect(panel.getByLabel('Household name', { exact: true })).toHaveValue('Storage-free household')
   expect(failures).toEqual([])
 })
+
+test('recipe magic settings are inline in the plugin card and not a top-level settings section', async ({ page }) => {
+  await login(page)
+  await page.goto('/settings?section=plugins')
+
+  // 1. Verify Recipe Magic is not a top-level accordion panel in settings
+  await expect(page.locator('#settings-core-recipe-magic')).toHaveCount(0)
+
+  // 2. Find core-recipe-magic card in plugins manager
+  const pluginCard = page.locator('.plugin-card[data-plugin-id="core-recipe-magic"]')
+  await expect(pluginCard).toBeVisible()
+
+  // 3. Toggle settings inline
+  const settingsBtn = pluginCard.getByRole('button', { name: 'Settings', exact: true })
+  await expect(settingsBtn).toBeVisible()
+  await settingsBtn.click()
+
+  // 4. Verify inline settings expanded inside plugin card
+  await expect(pluginCard.locator('.magic-inline-settings')).toBeVisible()
+  await expect(pluginCard.getByText('Magic Actions & Prompts')).toBeVisible()
+  await expect(pluginCard.locator('.action-card')).toHaveCount(5)
+
+  // 5. Toggle collapse
+  const closeBtn = pluginCard.getByRole('button', { name: 'Close Settings', exact: true })
+  await expect(closeBtn).toBeVisible()
+  await closeBtn.click()
+  await expect(pluginCard.locator('.magic-inline-settings')).toHaveCount(0)
+})
+

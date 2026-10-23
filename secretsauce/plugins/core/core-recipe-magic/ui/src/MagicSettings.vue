@@ -76,7 +76,7 @@ onMounted(() => {
   <div class="magic-settings">
     <div class="settings-header">
       <div>
-        <h3>Magic Actions & Prompts</h3>
+        <h4 class="settings-title">Magic Actions & Prompts</h4>
         <p class="subtitle">Configure Ottolenghi SIMPLE actions or create custom recipe transformation prompts.</p>
       </div>
       <div class="header-actions">
@@ -84,6 +84,8 @@ onMounted(() => {
           label="Reset to Defaults"
           icon="pi pi-refresh"
           severity="secondary"
+          size="small"
+          outlined
           class="btn-reset-actions"
           :disabled="loading || saving"
           @click="resetActions"
@@ -91,6 +93,7 @@ onMounted(() => {
         <Button
           label="Add Action"
           icon="pi pi-plus"
+          size="small"
           class="btn-add-action"
           :disabled="loading || saving"
           @click="addAction"
@@ -113,31 +116,37 @@ onMounted(() => {
         <div class="card-header">
           <div class="card-title-group">
             <span class="index-badge">#{{ idx + 1 }}</span>
-            <InputText v-model="act.title" placeholder="Action Title" class="title-input" />
+            <InputText v-model="act.title" placeholder="Action Title" class="title-input" size="small" fluid />
           </div>
           <div class="card-tools">
             <Button
               icon="pi pi-arrow-up"
               text
+              rounded
               size="small"
               class="btn-move-up"
+              aria-label="Move up"
               :disabled="idx === 0"
               @click="move(idx, -1)"
             />
             <Button
               icon="pi pi-arrow-down"
               text
+              rounded
               size="small"
               class="btn-move-down"
+              aria-label="Move down"
               :disabled="idx === actions.length - 1"
               @click="move(idx, 1)"
             />
             <Button
               icon="pi pi-trash"
               text
+              rounded
               size="small"
               severity="danger"
               class="btn-remove-action"
+              aria-label="Remove action"
               :disabled="actions.length <= 1"
               @click="remove(idx)"
             />
@@ -147,11 +156,11 @@ onMounted(() => {
         <div class="card-body">
           <div class="form-group">
             <label>Description</label>
-            <InputText v-model="act.description" placeholder="Brief explanation shown on card" fluid />
+            <InputText v-model="act.description" placeholder="Brief explanation shown on card" fluid size="small" />
           </div>
           <div class="form-group">
             <label>AI Prompt Instructions</label>
-            <Textarea v-model="act.prompt" placeholder="Instruction given to AI..." rows="3" fluid />
+            <Textarea v-model="act.prompt" placeholder="Instruction given to AI..." rows="3" fluid autoResize />
           </div>
         </div>
       </div>
@@ -161,6 +170,7 @@ onMounted(() => {
       <Button
         label="Save Actions"
         icon="pi pi-check"
+        size="small"
         class="btn-save-settings"
         :loading="saving"
         :disabled="loading || !actions.length"
@@ -171,27 +181,36 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.magic-settings { display: grid; gap: 1.25rem; }
+.magic-settings { display: grid; gap: 1rem; }
 .settings-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
-.settings-header h3 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+.settings-title { margin: 0; font-size: 1rem; font-weight: 600; color: var(--p-text-color); }
 .subtitle { margin: .25rem 0 0 0; color: var(--p-text-muted-color); font-size: .85rem; }
 .header-actions { display: flex; gap: .5rem; }
-.actions-list { display: grid; gap: .85rem; }
+.loading-state { display: flex; justify-content: center; padding: 2rem; }
+.actions-list { display: grid; gap: .75rem; }
 .action-card {
-  background: var(--p-surface-900, #18181b);
-  border: 1px solid var(--p-surface-700, #3f3f46);
-  border-radius: var(--p-border-radius, 6px);
-  padding: 1rem;
+  background: var(--p-surface-50);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius);
+  padding: .85rem 1rem;
   display: grid;
   gap: .75rem;
 }
 .card-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-.card-title-group { display: flex; align-items: center; gap: .5rem; flex: 1; }
-.index-badge { font-size: .75rem; color: var(--p-text-muted-color); font-weight: 600; }
-.title-input { font-weight: 600; max-width: 20rem; }
-.card-tools { display: flex; gap: .25rem; align-items: center; }
+.card-title-group { display: flex; align-items: center; gap: .5rem; flex: 1; min-width: 0; }
+.index-badge {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--p-text-muted-color);
+  background: var(--p-surface-200);
+  padding: .15rem .4rem;
+  border-radius: var(--p-border-radius-sm);
+  flex-shrink: 0;
+}
+.title-input { font-weight: 600; max-width: 18rem; }
+.card-tools { display: flex; gap: .25rem; align-items: center; flex-shrink: 0; }
 .card-body { display: grid; gap: .6rem; }
 .form-group { display: grid; gap: .25rem; }
 .form-group label { font-size: .75rem; color: var(--p-text-muted-color); font-weight: 500; }
-.footer-actions { display: flex; justify-content: flex-end; margin-top: .5rem; }
+.footer-actions { display: flex; justify-content: flex-end; margin-top: .25rem; }
 </style>

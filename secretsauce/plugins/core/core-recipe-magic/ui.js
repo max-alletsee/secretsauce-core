@@ -1,35 +1,35 @@
-import { defineComponent as L, ref as V, watch as J, computed as W, resolveComponent as k, openBlock as r, createBlock as E, withCtx as S, createElementVNode as t, createCommentVNode as I, createElementBlock as m, Fragment as B, renderList as D, normalizeClass as F, toDisplayString as M, createTextVNode as Z, createVNode as s, onMounted as K } from "vue";
+import { defineComponent as E, ref as C, watch as J, computed as W, resolveComponent as h, openBlock as u, createBlock as R, withCtx as $, createElementVNode as t, createCommentVNode as x, createElementBlock as m, Fragment as U, renderList as T, normalizeClass as L, toDisplayString as I, createTextVNode as O, createVNode as s, onMounted as K } from "vue";
 import { useSecretSauce as j } from "@secretsauce/ui";
-function R(f) {
-  return (f || "").toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+function P(g) {
+  return (g || "").toLowerCase().trim().replace(/[^a-z0-9]/g, "");
 }
-function Q(f = [], _ = []) {
+function Q(g = [], c = []) {
   const n = /* @__PURE__ */ new Map();
-  f.forEach((i) => {
-    n.set(R(i.name), i);
+  g.forEach((i) => {
+    n.set(P(i.name), i);
   });
-  const v = /* @__PURE__ */ new Map();
-  _.forEach((i) => {
-    v.set(R(i.name), i);
+  const f = /* @__PURE__ */ new Map();
+  c.forEach((i) => {
+    f.set(P(i.name), i);
   });
-  const o = [], d = [], b = [], p = [];
-  for (const i of _) {
-    const x = R(i.name), a = n.get(x);
-    a ? a.quantity !== i.quantity || a.unit !== i.unit || (a.notes || "") !== (i.notes || "") ? b.push(i) : p.push(i) : o.push(i);
+  const a = [], d = [], y = [], r = [];
+  for (const i of c) {
+    const k = P(i.name), l = n.get(k);
+    l ? l.quantity !== i.quantity || l.unit !== i.unit || (l.notes || "") !== (i.notes || "") ? y.push(i) : r.push(i) : a.push(i);
   }
-  for (const i of f) {
-    const x = R(i.name);
-    v.has(x) || d.push(i);
+  for (const i of g) {
+    const k = P(i.name);
+    f.has(k) || d.push(i);
   }
-  return { added: o, removed: d, modified: b, unchanged: p };
+  return { added: a, removed: d, modified: y, unchanged: r };
 }
 const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { class: "action-grid" }, te = ["disabled", "onClick"], ne = { key: 0 }, le = {
   key: 2,
   class: "loading-state"
-}, oe = { class: "preview-area" }, ae = { class: "adaptation-summary" }, ie = { class: "meta-row" }, se = { class: "form-group" }, de = { class: "form-group" }, ue = { class: "form-group" }, re = { class: "form-group" }, ce = { class: "diff-grid" }, pe = { class: "diff-pane original-pane" }, ve = { class: "diff-pane adapted-pane" }, me = { class: "ing-edit-row" }, ge = { class: "steps-preview" }, fe = { class: "dialog-actions" }, _e = {
+}, ae = { class: "preview-area" }, oe = { class: "adaptation-summary" }, ie = { class: "meta-row" }, se = { class: "form-group" }, de = { class: "form-group" }, ue = { class: "form-group" }, ce = { class: "form-group" }, re = { class: "diff-grid" }, pe = { class: "diff-pane original-pane" }, ve = { class: "diff-pane adapted-pane" }, me = { class: "ing-edit-row" }, ge = { class: "steps-preview" }, fe = { class: "dialog-actions" }, _e = {
   key: 0,
   class: "commit-actions"
-}, ye = /* @__PURE__ */ L({
+}, ye = /* @__PURE__ */ E({
   inheritAttrs: !1,
   __name: "MagicWandDialog",
   props: {
@@ -37,15 +37,15 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
     context: {}
   },
   emits: ["update:visible", "resolved"],
-  setup(f, { emit: _ }) {
-    const n = f, v = _, o = j(), d = V([]), b = V(""), p = V(!1), i = V(""), x = V(!1), a = V(null);
+  setup(g, { emit: c }) {
+    const n = g, f = c, a = j(), d = C([]), y = C(""), r = C(!1), i = C(""), k = C(!1), l = C(null);
     J(
       () => n.visible,
-      async (g) => {
-        if (g) {
-          i.value = "", x.value = !1, a.value = null, b.value = "";
+      async (_) => {
+        if (_) {
+          i.value = "", k.value = !1, l.value = null, y.value = "";
           try {
-            d.value = await o.api.get("/api/x/core-recipe-magic/actions");
+            d.value = await a.api.get("/api/x/core-recipe-magic/actions");
           } catch (e) {
             i.value = (e == null ? void 0 : e.message) || "Failed to load actions";
           }
@@ -53,67 +53,67 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
       },
       { immediate: !0 }
     );
-    const $ = W(() => {
-      var g, e;
-      return a.value ? Q(
-        ((g = n.context.recipe) == null ? void 0 : g.ingredients) || [],
-        ((e = a.value) == null ? void 0 : e.ingredients) || []
+    const S = W(() => {
+      var _, e;
+      return l.value ? Q(
+        ((_ = n.context.recipe) == null ? void 0 : _.ingredients) || [],
+        ((e = l.value) == null ? void 0 : e.ingredients) || []
       ) : { added: [], removed: [], modified: [], unchanged: [] };
     });
-    async function c(g) {
-      b.value = g.id, p.value = !0, i.value = "", x.value = !1, a.value = null;
+    async function v(_) {
+      y.value = _.id, r.value = !0, i.value = "", k.value = !1, l.value = null;
       try {
         const e = {
-          action_id: g.id,
+          action_id: _.id,
           recipe: n.context.recipe
-        }, u = await o.api.post("/api/x/core-recipe-magic/adapt", e);
-        a.value = u;
+        }, p = await a.api.post("/api/x/core-recipe-magic/adapt", e);
+        l.value = p;
       } catch (e) {
-        (e == null ? void 0 : e.code) === "unavailable" || (e == null ? void 0 : e.status) === 503 ? x.value = !0 : i.value = (e == null ? void 0 : e.message) || "Adaptation failed";
+        (e == null ? void 0 : e.code) === "unavailable" || (e == null ? void 0 : e.status) === 503 ? k.value = !0 : i.value = (e == null ? void 0 : e.message) || "Adaptation failed";
       } finally {
-        p.value = !1;
+        r.value = !1;
       }
     }
     function A() {
-      var g;
-      y(), (g = o.navigate) == null || g.call(o, "/settings?section=core-ai-provider");
+      var _;
+      b(), (_ = a.navigate) == null || _.call(a, "/settings?section=core-ai-provider");
     }
-    function y() {
-      v("update:visible", !1);
+    function b() {
+      f("update:visible", !1);
     }
-    function T() {
-      a.value && (n.context.applyAdaptation(a.value), o.notify({ level: "success", message: "Recipe adapted" }), v("resolved", a.value), y());
+    function z() {
+      l.value && (n.context.applyAdaptation(l.value), a.notify({ level: "success", message: "Recipe adapted" }), f("resolved", l.value), b());
     }
-    async function z() {
-      var g, e;
-      if (!(!a.value || p.value)) {
-        p.value = !0, i.value = "";
+    async function F() {
+      var _, e;
+      if (!(!l.value || r.value)) {
+        r.value = !0, i.value = "";
         try {
-          const u = {
-            ...a.value,
-            language: ((g = n.context.recipe) == null ? void 0 : g.language) || "en"
+          const p = {
+            ...l.value,
+            language: ((_ = n.context.recipe) == null ? void 0 : _.language) || "en"
           };
-          delete u.id, delete u.adaptation_summary;
-          const w = await o.api.post("/api/recipes", u);
-          o.notify({ level: "success", message: "Saved as new recipe variation" }), v("resolved", w), y(), (e = o.navigate) == null || e.call(o, `/recipes/${w.id}`);
-        } catch (u) {
-          i.value = (u == null ? void 0 : u.message) || "Failed to save new recipe";
+          delete p.id, delete p.adaptation_summary;
+          const V = await a.api.post("/api/recipes", p);
+          a.notify({ level: "success", message: "Saved as new recipe variation" }), f("resolved", V), b(), (e = a.navigate) == null || e.call(a, `/recipes/${V.id}`);
+        } catch (p) {
+          i.value = (p == null ? void 0 : p.message) || "Failed to save new recipe";
         } finally {
-          p.value = !1;
+          r.value = !1;
         }
       }
     }
-    return (g, e) => {
-      const u = k("Button"), w = k("Message"), C = k("ProgressSpinner"), q = k("InputText"), N = k("InputNumber"), G = k("Textarea"), H = k("Dialog");
-      return r(), E(H, {
+    return (_, e) => {
+      const p = h("Button"), V = h("Message"), M = h("ProgressSpinner"), Z = h("InputText"), D = h("InputNumber"), G = h("Textarea"), H = h("Dialog");
+      return u(), R(H, {
         visible: n.visible,
         modal: "",
         "append-to": "self",
         class: "magic-wand-dialog",
         style: { width: "min(54rem, 95vw)" },
-        "onUpdate:visible": e[4] || (e[4] = (P) => v("update:visible", P))
+        "onUpdate:visible": e[4] || (e[4] = (N) => f("update:visible", N))
       }, {
-        header: S(() => [...e[5] || (e[5] = [
+        header: $(() => [...e[5] || (e[5] = [
           t(
             "div",
             { class: "dialog-header" },
@@ -140,38 +140,38 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
             /* CACHED */
           )
         ])]),
-        footer: S(() => [
+        footer: $(() => [
           t("div", fe, [
-            s(u, {
+            s(p, {
               label: "Cancel",
               severity: "secondary",
-              disabled: p.value,
-              onClick: y
+              disabled: r.value,
+              onClick: b
             }, null, 8, ["disabled"]),
-            a.value ? (r(), m("div", _e, [
-              s(u, {
+            l.value ? (u(), m("div", _e, [
+              s(p, {
                 label: "Save as New Recipe",
                 icon: "pi pi-copy",
                 class: "btn-save-fork",
                 outlined: "",
-                loading: p.value,
-                onClick: z
+                loading: r.value,
+                onClick: F
               }, null, 8, ["loading"]),
-              s(u, {
+              s(p, {
                 label: "Apply to Editor",
                 icon: "pi pi-check",
                 class: "btn-apply-editor",
-                loading: p.value,
-                onClick: T
+                loading: r.value,
+                onClick: z
               }, null, 8, ["loading"])
-            ])) : I("v-if", !0)
+            ])) : x("v-if", !0)
           ])
         ]),
-        default: S(() => {
-          var P;
+        default: $(() => {
+          var N;
           return [
             t("div", X, [
-              I(" Action Selection "),
+              x(" Action Selection "),
               t("div", Y, [
                 e[6] || (e[6] = t(
                   "label",
@@ -181,47 +181,47 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                   /* CACHED */
                 )),
                 t("div", ee, [
-                  (r(!0), m(
-                    B,
+                  (u(!0), m(
+                    U,
                     null,
-                    D(d.value, (l) => (r(), m("button", {
-                      key: l.id,
+                    T(d.value, (o) => (u(), m("button", {
+                      key: o.id,
                       type: "button",
-                      class: F(["action-chip", { active: b.value === l.id }]),
-                      disabled: p.value,
-                      onClick: (U) => c(l)
+                      class: L(["action-chip", { active: y.value === o.id }]),
+                      disabled: r.value,
+                      onClick: (B) => v(o)
                     }, [
                       t(
                         "strong",
                         null,
-                        M(l.title),
+                        I(o.title),
                         1
                         /* TEXT */
                       ),
-                      l.description ? (r(), m(
+                      o.description ? (u(), m(
                         "small",
                         ne,
-                        M(l.description),
+                        I(o.description),
                         1
                         /* TEXT */
-                      )) : I("v-if", !0)
+                      )) : x("v-if", !0)
                     ], 10, te))),
                     128
                     /* KEYED_FRAGMENT */
                   ))
                 ])
               ]),
-              x.value ? (r(), E(w, {
+              k.value ? (u(), R(V, {
                 key: 0,
                 severity: "warn"
               }, {
-                default: S(() => [
-                  e[7] || (e[7] = Z(
+                default: $(() => [
+                  e[7] || (e[7] = O(
                     " AI isn’t set up yet. ",
                     -1
                     /* CACHED */
                   )),
-                  s(u, {
+                  s(p, {
                     label: "Open AI settings",
                     severity: "secondary",
                     size: "small",
@@ -230,23 +230,23 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                 ]),
                 _: 1
                 /* STABLE */
-              })) : i.value ? (r(), E(w, {
+              })) : i.value ? (u(), R(V, {
                 key: 1,
                 severity: "error"
               }, {
-                default: S(() => [
-                  Z(
-                    M(i.value),
+                default: $(() => [
+                  O(
+                    I(i.value),
                     1
                     /* TEXT */
                   )
                 ]),
                 _: 1
                 /* STABLE */
-              })) : I("v-if", !0),
-              I(" Loading State "),
-              p.value ? (r(), m("div", le, [
-                s(C, { style: { width: "2.5rem", height: "2.5rem" } }),
+              })) : x("v-if", !0),
+              x(" Loading State "),
+              r.value ? (u(), m("div", le, [
+                s(M, { style: { width: "2.5rem", height: "2.5rem" } }),
                 e[8] || (e[8] = t(
                   "p",
                   null,
@@ -254,13 +254,13 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                   -1
                   /* CACHED */
                 ))
-              ])) : a.value ? (r(), m(
-                B,
+              ])) : l.value ? (u(), m(
+                U,
                 { key: 3 },
                 [
-                  I(" Transformed Result & Diff "),
-                  t("div", oe, [
-                    t("div", ae, [
+                  x(" Transformed Result & Diff "),
+                  t("div", ae, [
+                    t("div", oe, [
                       e[10] || (e[10] = t(
                         "i",
                         {
@@ -282,7 +282,7 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                         t(
                           "p",
                           null,
-                          M(a.value.adaptation_summary),
+                          I(l.value.adaptation_summary),
                           1
                           /* TEXT */
                         )
@@ -297,9 +297,9 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                           -1
                           /* CACHED */
                         )),
-                        s(q, {
-                          modelValue: a.value.title,
-                          "onUpdate:modelValue": e[0] || (e[0] = (l) => a.value.title = l),
+                        s(Z, {
+                          modelValue: l.value.title,
+                          "onUpdate:modelValue": e[0] || (e[0] = (o) => l.value.title = o),
                           fluid: ""
                         }, null, 8, ["modelValue"])
                       ]),
@@ -311,9 +311,9 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                           -1
                           /* CACHED */
                         )),
-                        s(N, {
-                          modelValue: a.value.servings,
-                          "onUpdate:modelValue": e[1] || (e[1] = (l) => a.value.servings = l),
+                        s(D, {
+                          modelValue: l.value.servings,
+                          "onUpdate:modelValue": e[1] || (e[1] = (o) => l.value.servings = o),
                           min: 1,
                           fluid: ""
                         }, null, 8, ["modelValue"])
@@ -326,14 +326,14 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                           -1
                           /* CACHED */
                         )),
-                        s(N, {
-                          modelValue: a.value.prep_time_minutes,
-                          "onUpdate:modelValue": e[2] || (e[2] = (l) => a.value.prep_time_minutes = l),
+                        s(D, {
+                          modelValue: l.value.prep_time_minutes,
+                          "onUpdate:modelValue": e[2] || (e[2] = (o) => l.value.prep_time_minutes = o),
                           min: 0,
                           fluid: ""
                         }, null, 8, ["modelValue"])
                       ]),
-                      t("div", re, [
+                      t("div", ce, [
                         e[14] || (e[14] = t(
                           "label",
                           null,
@@ -341,16 +341,16 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                           -1
                           /* CACHED */
                         )),
-                        s(N, {
-                          modelValue: a.value.cook_time_minutes,
-                          "onUpdate:modelValue": e[3] || (e[3] = (l) => a.value.cook_time_minutes = l),
+                        s(D, {
+                          modelValue: l.value.cook_time_minutes,
+                          "onUpdate:modelValue": e[3] || (e[3] = (o) => l.value.cook_time_minutes = o),
                           min: 0,
                           fluid: ""
                         }, null, 8, ["modelValue"])
                       ])
                     ]),
-                    I(" Diff Split "),
-                    t("div", ce, [
+                    x(" Diff Split "),
+                    t("div", re, [
                       t("div", pe, [
                         e[15] || (e[15] = t(
                           "h4",
@@ -360,20 +360,20 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                           /* CACHED */
                         )),
                         t("ul", null, [
-                          (r(!0), m(
-                            B,
+                          (u(!0), m(
+                            U,
                             null,
-                            D(((P = n.context.recipe) == null ? void 0 : P.ingredients) || [], (l, U) => (r(), m(
+                            T(((N = n.context.recipe) == null ? void 0 : N.ingredients) || [], (o, B) => (u(), m(
                               "li",
                               {
-                                key: U,
-                                class: F({ removed: $.value.removed.some((h) => h.name === l.name) })
+                                key: B,
+                                class: L({ removed: S.value.removed.some((w) => w.name === o.name) })
                               },
                               [
                                 t(
                                   "span",
                                   null,
-                                  M(l.quantity) + " " + M(l.unit) + " " + M(l.name),
+                                  I(o.quantity) + " " + I(o.unit) + " " + I(o.name),
                                   1
                                   /* TEXT */
                                 )
@@ -395,35 +395,35 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                           /* CACHED */
                         )),
                         t("ul", null, [
-                          (r(!0), m(
-                            B,
+                          (u(!0), m(
+                            U,
                             null,
-                            D(a.value.ingredients || [], (l, U) => (r(), m(
+                            T(l.value.ingredients || [], (o, B) => (u(), m(
                               "li",
                               {
-                                key: U,
-                                class: F({
-                                  added: $.value.added.some((h) => h.name === l.name),
-                                  modified: $.value.modified.some((h) => h.name === l.name)
+                                key: B,
+                                class: L({
+                                  added: S.value.added.some((w) => w.name === o.name),
+                                  modified: S.value.modified.some((w) => w.name === o.name)
                                 })
                               },
                               [
                                 t("div", me, [
-                                  s(N, {
-                                    modelValue: l.quantity,
-                                    "onUpdate:modelValue": (h) => l.quantity = h,
+                                  s(D, {
+                                    modelValue: o.quantity,
+                                    "onUpdate:modelValue": (w) => o.quantity = w,
                                     min: 0,
                                     class: "ing-qty"
                                   }, null, 8, ["modelValue", "onUpdate:modelValue"]),
-                                  s(q, {
-                                    modelValue: l.unit,
-                                    "onUpdate:modelValue": (h) => l.unit = h,
+                                  s(Z, {
+                                    modelValue: o.unit,
+                                    "onUpdate:modelValue": (w) => o.unit = w,
                                     class: "ing-unit",
                                     placeholder: "unit"
                                   }, null, 8, ["modelValue", "onUpdate:modelValue"]),
-                                  s(q, {
-                                    modelValue: l.name,
-                                    "onUpdate:modelValue": (h) => l.name = h,
+                                  s(Z, {
+                                    modelValue: o.name,
+                                    "onUpdate:modelValue": (w) => o.name = w,
                                     class: "ing-name",
                                     placeholder: "ingredient",
                                     fluid: ""
@@ -439,7 +439,7 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                         ])
                       ])
                     ]),
-                    I(" Steps preview "),
+                    x(" Steps preview "),
                     t("div", ge, [
                       e[17] || (e[17] = t(
                         "h4",
@@ -449,13 +449,13 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                         /* CACHED */
                       )),
                       t("ol", null, [
-                        (r(!0), m(
-                          B,
+                        (u(!0), m(
+                          U,
                           null,
-                          D(a.value.steps || [], (l, U) => (r(), m("li", { key: U }, [
+                          T(l.value.steps || [], (o, B) => (u(), m("li", { key: B }, [
                             s(G, {
-                              modelValue: l.instruction,
-                              "onUpdate:modelValue": (h) => l.instruction = h,
+                              modelValue: o.instruction,
+                              "onUpdate:modelValue": (w) => o.instruction = w,
                               rows: "2",
                               fluid: ""
                             }, null, 8, ["modelValue", "onUpdate:modelValue"])
@@ -469,7 +469,7 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                 ],
                 2112
                 /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */
-              )) : I("v-if", !0)
+              )) : x("v-if", !0)
             ])
           ];
         }),
@@ -478,33 +478,33 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
       }, 8, ["visible"]);
     };
   }
-}), O = (f, _) => {
-  const n = f.__vccOpts || f;
-  for (const [v, o] of _)
-    n[v] = o;
+}), q = (g, c) => {
+  const n = g.__vccOpts || g;
+  for (const [f, a] of c)
+    n[f] = a;
   return n;
-}, be = /* @__PURE__ */ O(ye, [["__scopeId", "data-v-038b39bf"]]), he = { class: "magic-wand-trigger-container" }, ke = /* @__PURE__ */ L({
+}, be = /* @__PURE__ */ q(ye, [["__scopeId", "data-v-56cd1e93"]]), he = { class: "magic-wand-trigger-container" }, ke = /* @__PURE__ */ E({
   __name: "MagicWandButton",
   props: {
     context: {}
   },
-  setup(f) {
-    const _ = f, n = V(!1), v = W(() => {
-      var d, b;
-      const o = (d = _.context) == null ? void 0 : d.recipe;
-      return !!(o && ((b = o.title) != null && b.trim() || o.ingredients && o.ingredients.length > 0));
+  setup(g) {
+    const c = g, n = C(!1), f = W(() => {
+      var d, y;
+      const a = (d = c.context) == null ? void 0 : d.recipe;
+      return !!(a && ((y = a.title) != null && y.trim() || a.ingredients && a.ingredients.length > 0));
     });
-    return (o, d) => {
-      const b = k("Button");
-      return r(), m("div", he, [
-        s(b, {
+    return (a, d) => {
+      const y = h("Button");
+      return u(), m("div", he, [
+        s(y, {
           label: "Make it Magic",
           class: "btn-make-it-magic",
           outlined: "",
-          disabled: !v.value,
-          onClick: d[0] || (d[0] = (p) => n.value = !0)
+          disabled: !f.value,
+          onClick: d[0] || (d[0] = (r) => n.value = !0)
         }, {
-          icon: S(() => [...d[2] || (d[2] = [
+          icon: $(() => [...d[2] || (d[2] = [
             t(
               "svg",
               {
@@ -533,174 +533,185 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
         }, 8, ["disabled"]),
         s(be, {
           visible: n.value,
-          "onUpdate:visible": d[1] || (d[1] = (p) => n.value = p),
-          context: _.context
+          "onUpdate:visible": d[1] || (d[1] = (r) => n.value = r),
+          context: c.context
         }, null, 8, ["visible", "context"])
       ]);
     };
   }
-}), we = /* @__PURE__ */ O(ke, [["__scopeId", "data-v-62945de9"]]), Ve = { class: "magic-settings" }, xe = { class: "settings-header" }, Ae = { class: "header-actions" }, Ce = {
+}), we = /* @__PURE__ */ q(ke, [["__scopeId", "data-v-62945de9"]]), Ve = { class: "magic-settings" }, xe = { class: "settings-header" }, Ce = { class: "header-actions" }, Ae = {
   key: 1,
   class: "loading-state"
-}, Ie = {
+}, Me = {
   key: 2,
   class: "actions-list"
-}, Me = { class: "card-header" }, Se = { class: "card-title-group" }, $e = { class: "index-badge" }, Ue = { class: "card-tools" }, Be = { class: "card-body" }, Te = { class: "form-group" }, De = { class: "form-group" }, Ne = { class: "footer-actions" }, Pe = /* @__PURE__ */ L({
+}, Se = { class: "card-header" }, Ie = { class: "card-title-group" }, $e = { class: "index-badge" }, Ue = { class: "card-tools" }, Be = { class: "card-body" }, ze = { class: "form-group" }, Te = { class: "form-group" }, De = { class: "footer-actions" }, Ne = /* @__PURE__ */ E({
   __name: "MagicSettings",
-  setup(f) {
-    const _ = j(), n = V([]), v = V(!1), o = V(!1), d = V("");
-    async function b() {
-      v.value = !0, d.value = "";
+  setup(g) {
+    const c = j(), n = C([]), f = C(!1), a = C(!1), d = C("");
+    async function y() {
+      f.value = !0, d.value = "";
       try {
-        n.value = await _.api.get("/api/x/core-recipe-magic/actions");
-      } catch (c) {
-        d.value = (c == null ? void 0 : c.message) || "Failed to load actions";
+        n.value = await c.api.get("/api/x/core-recipe-magic/actions");
+      } catch (v) {
+        d.value = (v == null ? void 0 : v.message) || "Failed to load actions";
       } finally {
-        v.value = !1;
+        f.value = !1;
       }
     }
-    function p(c, A) {
-      const y = c + A;
-      if (y < 0 || y >= n.value.length) return;
-      const T = n.value.splice(c, 1)[0];
-      n.value.splice(y, 0, T);
+    function r(v, A) {
+      const b = v + A;
+      if (b < 0 || b >= n.value.length) return;
+      const z = n.value.splice(v, 1)[0];
+      n.value.splice(b, 0, z);
     }
-    function i(c) {
-      n.value.splice(c, 1);
+    function i(v) {
+      n.value.splice(v, 1);
     }
-    function x() {
-      const c = `custom_${Date.now()}`;
+    function k() {
+      const v = `custom_${Date.now()}`;
       n.value.push({
-        id: c,
+        id: v,
         title: "New Custom Action",
         description: "Custom adaptation rule",
         prompt: "Adapt this recipe to..."
       });
     }
-    async function a() {
-      o.value = !0, d.value = "";
+    async function l() {
+      a.value = !0, d.value = "";
       try {
-        n.value = await _.api.put("/api/x/core-recipe-magic/actions", n.value), _.notify({ level: "success", message: "Magic actions saved" });
-      } catch (c) {
-        d.value = (c == null ? void 0 : c.message) || "Failed to save actions";
+        n.value = await c.api.put("/api/x/core-recipe-magic/actions", n.value), c.notify({ level: "success", message: "Magic actions saved" });
+      } catch (v) {
+        d.value = (v == null ? void 0 : v.message) || "Failed to save actions";
       } finally {
-        o.value = !1;
+        a.value = !1;
       }
     }
-    async function $() {
-      o.value = !0, d.value = "";
+    async function S() {
+      a.value = !0, d.value = "";
       try {
-        n.value = await _.api.post("/api/x/core-recipe-magic/actions/reset"), _.notify({ level: "success", message: "Reset actions to Ottolenghi SIMPLE defaults" });
-      } catch (c) {
-        d.value = (c == null ? void 0 : c.message) || "Failed to reset actions";
+        n.value = await c.api.post("/api/x/core-recipe-magic/actions/reset"), c.notify({ level: "success", message: "Reset actions to Ottolenghi SIMPLE defaults" });
+      } catch (v) {
+        d.value = (v == null ? void 0 : v.message) || "Failed to reset actions";
       } finally {
-        o.value = !1;
+        a.value = !1;
       }
     }
     return K(() => {
-      b();
-    }), (c, A) => {
-      const y = k("Button"), T = k("Message"), z = k("ProgressSpinner"), g = k("InputText"), e = k("Textarea");
-      return r(), m("div", Ve, [
+      y();
+    }), (v, A) => {
+      const b = h("Button"), z = h("Message"), F = h("ProgressSpinner"), _ = h("InputText"), e = h("Textarea");
+      return u(), m("div", Ve, [
         t("div", xe, [
           A[0] || (A[0] = t(
             "div",
             null,
             [
-              t("h3", null, "Magic Actions & Prompts"),
+              t("h4", { class: "settings-title" }, "Magic Actions & Prompts"),
               t("p", { class: "subtitle" }, "Configure Ottolenghi SIMPLE actions or create custom recipe transformation prompts.")
             ],
             -1
             /* CACHED */
           )),
-          t("div", Ae, [
-            s(y, {
+          t("div", Ce, [
+            s(b, {
               label: "Reset to Defaults",
               icon: "pi pi-refresh",
               severity: "secondary",
+              size: "small",
+              outlined: "",
               class: "btn-reset-actions",
-              disabled: v.value || o.value,
-              onClick: $
+              disabled: f.value || a.value,
+              onClick: S
             }, null, 8, ["disabled"]),
-            s(y, {
+            s(b, {
               label: "Add Action",
               icon: "pi pi-plus",
+              size: "small",
               class: "btn-add-action",
-              disabled: v.value || o.value,
-              onClick: x
+              disabled: f.value || a.value,
+              onClick: k
             }, null, 8, ["disabled"])
           ])
         ]),
-        d.value ? (r(), E(T, {
+        d.value ? (u(), R(z, {
           key: 0,
           severity: "error"
         }, {
-          default: S(() => [
-            Z(
-              M(d.value),
+          default: $(() => [
+            O(
+              I(d.value),
               1
               /* TEXT */
             )
           ]),
           _: 1
           /* STABLE */
-        })) : I("v-if", !0),
-        v.value ? (r(), m("div", Ce, [
-          s(z, { style: { width: "2rem", height: "2rem" } })
-        ])) : (r(), m("div", Ie, [
-          (r(!0), m(
-            B,
+        })) : x("v-if", !0),
+        f.value ? (u(), m("div", Ae, [
+          s(F, { style: { width: "2rem", height: "2rem" } })
+        ])) : (u(), m("div", Me, [
+          (u(!0), m(
+            U,
             null,
-            D(n.value, (u, w) => (r(), m("div", {
-              key: u.id,
+            T(n.value, (p, V) => (u(), m("div", {
+              key: p.id,
               class: "action-card"
             }, [
-              t("div", Me, [
-                t("div", Se, [
+              t("div", Se, [
+                t("div", Ie, [
                   t(
                     "span",
                     $e,
-                    "#" + M(w + 1),
+                    "#" + I(V + 1),
                     1
                     /* TEXT */
                   ),
-                  s(g, {
-                    modelValue: u.title,
-                    "onUpdate:modelValue": (C) => u.title = C,
+                  s(_, {
+                    modelValue: p.title,
+                    "onUpdate:modelValue": (M) => p.title = M,
                     placeholder: "Action Title",
-                    class: "title-input"
+                    class: "title-input",
+                    size: "small",
+                    fluid: ""
                   }, null, 8, ["modelValue", "onUpdate:modelValue"])
                 ]),
                 t("div", Ue, [
-                  s(y, {
+                  s(b, {
                     icon: "pi pi-arrow-up",
                     text: "",
+                    rounded: "",
                     size: "small",
                     class: "btn-move-up",
-                    disabled: w === 0,
-                    onClick: (C) => p(w, -1)
+                    "aria-label": "Move up",
+                    disabled: V === 0,
+                    onClick: (M) => r(V, -1)
                   }, null, 8, ["disabled", "onClick"]),
-                  s(y, {
+                  s(b, {
                     icon: "pi pi-arrow-down",
                     text: "",
+                    rounded: "",
                     size: "small",
                     class: "btn-move-down",
-                    disabled: w === n.value.length - 1,
-                    onClick: (C) => p(w, 1)
+                    "aria-label": "Move down",
+                    disabled: V === n.value.length - 1,
+                    onClick: (M) => r(V, 1)
                   }, null, 8, ["disabled", "onClick"]),
-                  s(y, {
+                  s(b, {
                     icon: "pi pi-trash",
                     text: "",
+                    rounded: "",
                     size: "small",
                     severity: "danger",
                     class: "btn-remove-action",
+                    "aria-label": "Remove action",
                     disabled: n.value.length <= 1,
-                    onClick: (C) => i(w)
+                    onClick: (M) => i(V)
                   }, null, 8, ["disabled", "onClick"])
                 ])
               ]),
               t("div", Be, [
-                t("div", Te, [
+                t("div", ze, [
                   A[1] || (A[1] = t(
                     "label",
                     null,
@@ -708,14 +719,15 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                     -1
                     /* CACHED */
                   )),
-                  s(g, {
-                    modelValue: u.description,
-                    "onUpdate:modelValue": (C) => u.description = C,
+                  s(_, {
+                    modelValue: p.description,
+                    "onUpdate:modelValue": (M) => p.description = M,
                     placeholder: "Brief explanation shown on card",
-                    fluid: ""
+                    fluid: "",
+                    size: "small"
                   }, null, 8, ["modelValue", "onUpdate:modelValue"])
                 ]),
-                t("div", De, [
+                t("div", Te, [
                   A[2] || (A[2] = t(
                     "label",
                     null,
@@ -724,11 +736,12 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
                     /* CACHED */
                   )),
                   s(e, {
-                    modelValue: u.prompt,
-                    "onUpdate:modelValue": (C) => u.prompt = C,
+                    modelValue: p.prompt,
+                    "onUpdate:modelValue": (M) => p.prompt = M,
                     placeholder: "Instruction given to AI...",
                     rows: "3",
-                    fluid: ""
+                    fluid: "",
+                    autoResize: ""
                   }, null, 8, ["modelValue", "onUpdate:modelValue"])
                 ])
               ])
@@ -737,29 +750,65 @@ const X = { class: "dialog-content" }, Y = { class: "action-picker" }, ee = { cl
             /* KEYED_FRAGMENT */
           ))
         ])),
-        t("div", Ne, [
-          s(y, {
+        t("div", De, [
+          s(b, {
             label: "Save Actions",
             icon: "pi pi-check",
+            size: "small",
             class: "btn-save-settings",
-            loading: o.value,
-            disabled: v.value || !n.value.length,
-            onClick: a
+            loading: a.value,
+            disabled: f.value || !n.value.length,
+            onClick: l
           }, null, 8, ["loading", "disabled"])
         ])
       ]);
     };
   }
-}), Re = /* @__PURE__ */ O(Pe, [["__scopeId", "data-v-b0f56a1c"]]);
-function qe(f) {
-  f.slot("recipe.edit.actions", we, { order: 10 }), f.settings.section({
-    id: "core-recipe-magic",
-    title: "Recipe Magic",
-    component: Re
-  });
+}), Pe = /* @__PURE__ */ q(Ne, [["__scopeId", "data-v-556db475"]]), Re = {
+  key: 0,
+  class: "magic-inline-settings"
+}, Ee = /* @__PURE__ */ E({
+  __name: "MagicPluginSettings",
+  props: {
+    context: {}
+  },
+  setup(g) {
+    const c = C(!1);
+    function n() {
+      c.value = !c.value;
+    }
+    return (f, a) => {
+      var y, r, i, k, l, S;
+      const d = h("Button");
+      return ((r = (y = g.context) == null ? void 0 : y.plugin) == null ? void 0 : r.id) === "core-recipe-magic" ? (u(), m(
+        U,
+        { key: 0 },
+        [
+          s(d, {
+            label: c.value ? "Close Settings" : "Settings",
+            icon: c.value ? "pi pi-chevron-up" : "pi pi-cog",
+            size: "small",
+            outlined: !c.value,
+            disabled: ((k = (i = g.context) == null ? void 0 : i.plugin) == null ? void 0 : k.state) !== "active",
+            class: "btn-magic-settings-toggle",
+            onClick: n
+          }, null, 8, ["label", "icon", "outlined", "disabled"]),
+          c.value && ((S = (l = g.context) == null ? void 0 : l.plugin) == null ? void 0 : S.state) === "active" ? (u(), m("div", Re, [
+            s(Pe)
+          ])) : x("v-if", !0)
+        ],
+        64
+        /* STABLE_FRAGMENT */
+      )) : x("v-if", !0);
+    };
+  }
+}), qe = /* @__PURE__ */ q(Ee, [["__scopeId", "data-v-3957efc7"]]);
+function Le(g) {
+  g.slot("recipe.edit.actions", we, { order: 10 }), g.slot("plugin_manager.plugin.actions", qe, { order: 10 });
 }
 export {
-  Re as MagicSettings,
+  qe as MagicPluginSettings,
+  Pe as MagicSettings,
   we as MagicWandButton,
-  qe as default
+  Le as default
 };
