@@ -93,6 +93,7 @@ uv run secretsauce serve --host 0.0.0.0 --port 8080 --data-dir ./data
 
 ## Documentation
 
+- [Podman VPS Deployment](docs/DEPLOY_PODMAN.md) - Two isolated family instances, systemd restart/boot behavior, HTTPS proxy, releases, backups, and rollback.
 - [Frontend Shell & PWA Architecture](docs/SHELL_ARCHITECTURE.md) - Deep-dive into Vue 3 shell, service worker caching, outbox queue, slot & intent registries, and theming.
 - [Kernel Architecture Guide](docs/KERNEL_ARCHITECTURE.md) - Deep-dive into database concurrency, cryptographic derivation, entity models, event dispatching, and background jobs.
 - [REST API Reference](docs/API_REFERENCE.md) - Endpoints, request/response models, authentication headers, error codes, and SSE stream framing.

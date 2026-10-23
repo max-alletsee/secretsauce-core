@@ -1,0 +1,8 @@
+# Replace these example hostnames with DNS names pointing to the VPS.
+family-a.example.com {
+    reverse_proxy 127.0.0.1:8081
+}
+
+family-b.example.com {
+    reverse_proxy 127.0.0.1:8082
+}
