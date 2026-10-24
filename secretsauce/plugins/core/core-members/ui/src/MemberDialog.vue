@@ -23,7 +23,22 @@ const fields = [
 ] as const
 const suggestions = ref<Record<string, string[]>>({})
 function suggest(field: typeof fields[number], query: string) { suggestions.value[field.key] = field.suggestions.filter(value => value.toLowerCase().includes(query.toLowerCase())) }
+function commitPendingInputs() {
+  for (const field of fields) {
+    const el = document.getElementById(`member-${field.id}`) as HTMLInputElement | null
+    if (el && el.value && el.value.trim()) {
+      const parts = el.value.split(',').map(s => s.trim()).filter(Boolean)
+      for (const val of parts) {
+        if (!draft.value[field.key].includes(val)) {
+          draft.value[field.key] = [...draft.value[field.key], val]
+        }
+      }
+      el.value = ''
+    }
+  }
+}
 async function save() {
+  commitPendingInputs()
   if (busy.value || !draft.value.name.trim() || draft.value.serving_ratio == null || draft.value.serving_ratio < .25 || draft.value.serving_ratio > 10) return
   busy.value = true; error.value = ''
   try {

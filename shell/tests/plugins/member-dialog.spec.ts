@@ -60,4 +60,13 @@ describe('member dialog through registered Settings (API boundary doubles)', () 
     expect((document.querySelector('#member-name') as HTMLInputElement).value).toBe('Unsaved')
     expect(wrapper.text()).toContain('Ann')
   })
+  it('commits pending input into dietary preferences when saving without pressing enter', async () => {
+    const saved = { ...testMember, revision: 2, dietary_restrictions: ['vegan'] }
+    const api = { patch: vi.fn(async () => saved) }
+    await settings(api)
+    await clickButton('Edit Ann')
+    input('member-dietary', 'vegan')
+    await clickButton('Save Member')
+    expect(api.patch).toHaveBeenCalledWith('/api/members/member-1', expect.objectContaining({ revision: 1, dietary_restrictions: ['vegan'] }))
+  })
 })

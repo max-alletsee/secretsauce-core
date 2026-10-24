@@ -1,46 +1,46 @@
-import { defineComponent as L, ref as k, computed as F, resolveComponent as g, openBlock as v, createElementBlock as M, createVNode as y, withCtx as I, unref as C, createBlock as h, normalizeStyle as q, createCommentVNode as A, createElementVNode as m, toDisplayString as S, watch as J, withModifiers as K, createTextVNode as z, Fragment as w, renderList as V } from "vue";
-import { useSecretSauce as N } from "@secretsauce/ui";
-const E = ["blue", "emerald", "violet", "rose", "amber", "cyan", "indigo", "teal"];
-function j(p) {
-  let t = 0;
-  for (const u of p) t = Math.imul(t, 31) + u.charCodeAt(0) >>> 0;
-  return `var(--p-${E[t % E.length]}-700)`;
+import { defineComponent as N, ref as y, computed as q, resolveComponent as g, openBlock as c, createElementBlock as h, createVNode as _, withCtx as $, unref as M, createBlock as k, normalizeStyle as z, createCommentVNode as B, createElementVNode as m, toDisplayString as I, watch as K, withModifiers as Q, createTextVNode as j, Fragment as w, renderList as A } from "vue";
+import { useSecretSauce as T } from "@secretsauce/ui";
+const R = ["blue", "emerald", "violet", "rose", "amber", "cyan", "indigo", "teal"];
+function O(p) {
+  let l = 0;
+  for (const u of p) l = Math.imul(l, 31) + u.charCodeAt(0) >>> 0;
+  return `var(--p-${R[l % R.length]}-700)`;
 }
-const Q = { class: "ss-member-picker" }, X = /* @__PURE__ */ L({
+const X = { class: "ss-member-picker" }, Y = /* @__PURE__ */ N({
   __name: "MemberPicker",
   setup(p) {
-    const t = N(), u = k();
+    const l = T(), u = y();
     function r(i) {
-      t.store.currentMember.value = t.store.members.value.find((d) => d.id === i) || null;
+      l.store.currentMember.value = l.store.members.value.find((d) => d.id === i) || null;
       try {
         i ? localStorage.setItem("ss-current-member", i) : localStorage.removeItem("ss-current-member");
       } catch {
       }
     }
-    const f = F(() => [{ label: "All members", command: () => r("") }, ...t.store.members.value.map((i) => ({ label: i.name, command: () => r(i.id) }))]);
+    const f = q(() => [{ label: "All members", command: () => r("") }, ...l.store.members.value.map((i) => ({ label: i.name, command: () => r(i.id) }))]);
     return (i, d) => {
-      const x = g("Avatar"), s = g("Button"), $ = g("Menu");
-      return v(), M("div", Q, [
-        y(s, {
+      const C = g("Avatar"), n = g("Button"), x = g("Menu");
+      return c(), h("div", X, [
+        _(n, {
           class: "member-select",
           "aria-label": "Current member",
           text: "",
-          onClick: d[0] || (d[0] = (n) => u.value.toggle(n))
+          onClick: d[0] || (d[0] = (a) => u.value.toggle(a))
         }, {
-          default: I(() => {
-            var n;
+          default: $(() => {
+            var a;
             return [
-              C(t).store.currentMember.value ? (v(), h(x, {
+              M(l).store.currentMember.value ? (c(), k(C, {
                 key: 0,
                 class: "member-avatar",
-                label: C(t).store.currentMember.value.name.slice(0, 1).toUpperCase(),
+                label: M(l).store.currentMember.value.name.slice(0, 1).toUpperCase(),
                 shape: "circle",
-                style: q({ background: C(j)(C(t).store.currentMember.value.id), color: "var(--p-surface-0)" })
-              }, null, 8, ["label", "style"])) : A("v-if", !0),
+                style: z({ background: M(O)(M(l).store.currentMember.value.id), color: "var(--p-surface-0)" })
+              }, null, 8, ["label", "style"])) : B("v-if", !0),
               m(
                 "span",
                 null,
-                S(((n = C(t).store.currentMember.value) == null ? void 0 : n.name) || "All members"),
+                I(((a = M(l).store.currentMember.value) == null ? void 0 : a.name) || "All members"),
                 1
                 /* TEXT */
               ),
@@ -59,7 +59,7 @@ const Q = { class: "ss-member-picker" }, X = /* @__PURE__ */ L({
           _: 1
           /* STABLE */
         }),
-        y($, {
+        _(x, {
           ref_key: "menu",
           ref: u,
           model: f.value,
@@ -68,134 +68,145 @@ const Q = { class: "ss-member-picker" }, X = /* @__PURE__ */ L({
       ]);
     };
   }
-}), T = (p, t) => {
+}), P = (p, l) => {
   const u = p.__vccOpts || p;
-  for (const [r, f] of t)
+  for (const [r, f] of l)
     u[r] = f;
   return u;
-}, Y = /* @__PURE__ */ T(X, [["__scopeId", "data-v-1a9f45d2"]]), Z = ["for"], ee = { class: "actions" }, te = /* @__PURE__ */ L({
+}, Z = /* @__PURE__ */ P(Y, [["__scopeId", "data-v-1a9f45d2"]]), ee = ["for"], te = { class: "actions" }, le = /* @__PURE__ */ N({
   __name: "MemberDialog",
   props: {
     visible: { type: Boolean },
     member: {}
   },
   emits: ["update:visible", "saved"],
-  setup(p, { emit: t }) {
-    const u = N(), r = p, f = t, i = k(!1), d = k("");
-    function x(e) {
+  setup(p, { emit: l }) {
+    const u = T(), r = p, f = l, i = y(!1), d = y("");
+    function C(t) {
       return {
-        name: (e == null ? void 0 : e.name) || "",
-        preferred_language: (e == null ? void 0 : e.preferred_language) || u.store.household.value.languages.primary,
-        serving_ratio: (e == null ? void 0 : e.serving_ratio) ?? 1,
-        dietary_restrictions: [...(e == null ? void 0 : e.dietary_restrictions) || []],
-        allergies: [...(e == null ? void 0 : e.allergies) || []],
-        disliked_ingredients: [...(e == null ? void 0 : e.disliked_ingredients) || []],
-        favorite_cuisines: [...(e == null ? void 0 : e.favorite_cuisines) || []]
+        name: (t == null ? void 0 : t.name) || "",
+        preferred_language: (t == null ? void 0 : t.preferred_language) || u.store.household.value.languages.primary,
+        serving_ratio: (t == null ? void 0 : t.serving_ratio) ?? 1,
+        dietary_restrictions: [...(t == null ? void 0 : t.dietary_restrictions) || []],
+        allergies: [...(t == null ? void 0 : t.allergies) || []],
+        disliked_ingredients: [...(t == null ? void 0 : t.disliked_ingredients) || []],
+        favorite_cuisines: [...(t == null ? void 0 : t.favorite_cuisines) || []]
       };
     }
-    const s = k(x()), $ = k(1);
-    J(() => [r.visible, r.member], () => {
-      var e;
-      r.visible && (s.value = x(r.member), $.value = ((e = r.member) == null ? void 0 : e.revision) || 1, d.value = "");
+    const n = y(C()), x = y(1);
+    K(() => [r.visible, r.member], () => {
+      var t;
+      r.visible && (n.value = C(r.member), x.value = ((t = r.member) == null ? void 0 : t.revision) || 1, d.value = "");
     }, { immediate: !0 });
-    const n = F(() => {
-      var e;
-      return [.../* @__PURE__ */ new Set([u.store.household.value.languages.primary, ...u.store.household.value.languages.translations || [], ...(e = r.member) != null && e.preferred_language ? [r.member.preferred_language] : [], "en", "de", "fr", "es", "it", "nl"])];
-    }), c = [
+    const a = q(() => {
+      var t;
+      return [.../* @__PURE__ */ new Set([u.store.household.value.languages.primary, ...u.store.household.value.languages.translations || [], ...(t = r.member) != null && t.preferred_language ? [r.member.preferred_language] : [], "en", "de", "fr", "es", "it", "nl"])];
+    }), v = [
       { key: "dietary_restrictions", id: "dietary", label: "Dietary restrictions", suggestions: ["vegetarian", "vegan", "gluten-free", "dairy-free"] },
       { key: "allergies", id: "allergies", label: "Allergies", suggestions: ["peanut", "tree nut", "milk", "egg", "shellfish"] },
       { key: "disliked_ingredients", id: "dislikes", label: "Disliked ingredients", suggestions: ["mushroom", "olive", "coriander"] },
       { key: "favorite_cuisines", id: "cuisines", label: "Favourite cuisines", suggestions: ["Italian", "Indian", "Mexican", "Thai"] }
-    ], b = k({});
-    function B(e, l) {
-      b.value[e.key] = e.suggestions.filter((a) => a.toLowerCase().includes(l.toLowerCase()));
+    ], b = y({});
+    function D(t, e) {
+      b.value[t.key] = t.suggestions.filter((s) => s.toLowerCase().includes(e.toLowerCase()));
     }
-    async function D() {
-      var e;
-      if (!(i.value || !s.value.name.trim() || s.value.serving_ratio == null || s.value.serving_ratio < 0.25 || s.value.serving_ratio > 10)) {
+    function U() {
+      for (const t of v) {
+        const e = document.getElementById(`member-${t.id}`);
+        if (e && e.value && e.value.trim()) {
+          const s = e.value.split(",").map((S) => S.trim()).filter(Boolean);
+          for (const S of s)
+            n.value[t.key].includes(S) || (n.value[t.key] = [...n.value[t.key], S]);
+          e.value = "";
+        }
+      }
+    }
+    async function V() {
+      var t;
+      if (U(), !(i.value || !n.value.name.trim() || n.value.serving_ratio == null || n.value.serving_ratio < 0.25 || n.value.serving_ratio > 10)) {
         i.value = !0, d.value = "";
         try {
-          const l = { ...s.value, name: s.value.name.trim() }, a = r.member ? await u.api.patch(`/api/members/${r.member.id}`, { ...l, revision: $.value }) : await u.api.post("/api/members", l);
-          f("saved", a), f("update:visible", !1);
-        } catch (l) {
-          const a = ((e = l.details) == null ? void 0 : e.current) || l.current;
-          l.status === 409 && r.member && a ? (s.value = x(a), $.value = a.revision, d.value = "Someone else changed this member. The latest profile has been reloaded.") : d.value = l.message || "Could not save member";
+          const e = { ...n.value, name: n.value.name.trim() }, s = r.member ? await u.api.patch(`/api/members/${r.member.id}`, { ...e, revision: x.value }) : await u.api.post("/api/members", e);
+          f("saved", s), f("update:visible", !1);
+        } catch (e) {
+          const s = ((t = e.details) == null ? void 0 : t.current) || e.current;
+          e.status === 409 && r.member && s ? (n.value = C(s), x.value = s.revision, d.value = "Someone else changed this member. The latest profile has been reloaded.") : d.value = e.message || "Could not save member";
         } finally {
           i.value = !1;
         }
       }
     }
-    return (e, l) => {
-      const a = g("Message"), _ = g("InputText"), O = g("Select"), W = g("InputNumber"), G = g("AutoComplete"), P = g("Button"), H = g("Dialog");
-      return v(), h(H, {
+    return (t, e) => {
+      const s = g("Message"), S = g("InputText"), W = g("Select"), G = g("InputNumber"), H = g("AutoComplete"), E = g("Button"), J = g("Dialog");
+      return c(), k(J, {
         visible: p.visible,
-        "onUpdate:visible": l[4] || (l[4] = (o) => f("update:visible", o)),
+        "onUpdate:visible": e[4] || (e[4] = (o) => f("update:visible", o)),
         header: p.member ? "Edit household member" : "Add household member",
         modal: "",
         style: { width: "32rem", maxWidth: "95vw" }
       }, {
-        default: I(() => [
+        default: $(() => [
           m(
             "form",
             {
               class: "member-form",
-              onSubmit: K(D, ["prevent"])
+              onSubmit: Q(V, ["prevent"])
             },
             [
-              d.value ? (v(), h(a, {
+              d.value ? (c(), k(s, {
                 key: 0,
                 severity: "error"
               }, {
-                default: I(() => [
-                  z(
-                    S(d.value),
+                default: $(() => [
+                  j(
+                    I(d.value),
                     1
                     /* TEXT */
                   )
                 ]),
                 _: 1
                 /* STABLE */
-              })) : A("v-if", !0),
-              l[5] || (l[5] = m(
+              })) : B("v-if", !0),
+              e[5] || (e[5] = m(
                 "label",
                 { for: "member-name" },
                 "Name",
                 -1
                 /* CACHED */
               )),
-              y(_, {
+              _(S, {
                 id: "member-name",
-                modelValue: s.value.name,
-                "onUpdate:modelValue": l[0] || (l[0] = (o) => s.value.name = o),
+                modelValue: n.value.name,
+                "onUpdate:modelValue": e[0] || (e[0] = (o) => n.value.name = o),
                 required: "",
                 fluid: ""
               }, null, 8, ["modelValue"]),
-              l[6] || (l[6] = m(
+              e[6] || (e[6] = m(
                 "label",
                 { for: "member-language" },
                 "Language",
                 -1
                 /* CACHED */
               )),
-              y(O, {
+              _(W, {
                 inputId: "member-language",
                 "aria-label": "Language",
-                modelValue: s.value.preferred_language,
-                "onUpdate:modelValue": l[1] || (l[1] = (o) => s.value.preferred_language = o),
-                options: n.value,
+                modelValue: n.value.preferred_language,
+                "onUpdate:modelValue": e[1] || (e[1] = (o) => n.value.preferred_language = o),
+                options: a.value,
                 fluid: ""
               }, null, 8, ["modelValue", "options"]),
-              l[7] || (l[7] = m(
+              e[7] || (e[7] = m(
                 "label",
                 { for: "member-serving" },
                 "Portion size",
                 -1
                 /* CACHED */
               )),
-              y(W, {
+              _(G, {
                 inputId: "member-serving",
-                modelValue: s.value.serving_ratio,
-                "onUpdate:modelValue": l[2] || (l[2] = (o) => s.value.serving_ratio = o),
+                modelValue: n.value.serving_ratio,
+                "onUpdate:modelValue": e[2] || (e[2] = (o) => n.value.serving_ratio = o),
                 min: 0.25,
                 max: 10,
                 step: 0.25,
@@ -203,17 +214,17 @@ const Q = { class: "ss-member-picker" }, X = /* @__PURE__ */ L({
                 showButtons: "",
                 fluid: ""
               }, null, 8, ["modelValue"]),
-              l[8] || (l[8] = m(
+              e[8] || (e[8] = m(
                 "small",
                 null,
                 "Relative to one adult portion",
                 -1
                 /* CACHED */
               )),
-              (v(), M(
+              (c(), h(
                 w,
                 null,
-                V(c, (o) => (v(), M(
+                A(v, (o) => (c(), h(
                   w,
                   {
                     key: o.key
@@ -221,17 +232,17 @@ const Q = { class: "ss-member-picker" }, X = /* @__PURE__ */ L({
                   [
                     m("label", {
                       for: `member-${o.id}`
-                    }, S(o.label), 9, Z),
-                    y(G, {
+                    }, I(o.label), 9, ee),
+                    _(H, {
                       inputId: `member-${o.id}`,
                       "aria-label": o.label,
-                      modelValue: s.value[o.key],
-                      "onUpdate:modelValue": (U) => s.value[o.key] = U,
+                      modelValue: n.value[o.key],
+                      "onUpdate:modelValue": (L) => n.value[o.key] = L,
                       multiple: "",
                       typeahead: !1,
                       dropdown: "",
                       suggestions: b.value[o.key] || [],
-                      onComplete: (U) => B(o, U.query),
+                      onComplete: (L) => D(o, L.query),
                       fluid: ""
                     }, null, 8, ["inputId", "aria-label", "modelValue", "onUpdate:modelValue", "suggestions", "onComplete"])
                   ],
@@ -241,19 +252,19 @@ const Q = { class: "ss-member-picker" }, X = /* @__PURE__ */ L({
                 64
                 /* STABLE_FRAGMENT */
               )),
-              m("div", ee, [
-                y(P, {
+              m("div", te, [
+                _(E, {
                   label: "Cancel",
                   severity: "secondary",
                   text: "",
                   disabled: i.value,
-                  onClick: l[3] || (l[3] = (o) => f("update:visible", !1))
+                  onClick: e[3] || (e[3] = (o) => f("update:visible", !1))
                 }, null, 8, ["disabled"]),
-                y(P, {
+                _(E, {
                   type: "submit",
                   label: "Save Member",
                   loading: i.value,
-                  disabled: !s.value.name.trim()
+                  disabled: !n.value.name.trim()
                 }, null, 8, ["loading", "disabled"])
               ])
             ],
@@ -266,163 +277,163 @@ const Q = { class: "ss-member-picker" }, X = /* @__PURE__ */ L({
       }, 8, ["visible", "header"]);
     };
   }
-}), le = /* @__PURE__ */ T(te, [["__scopeId", "data-v-59fafb91"]]), ae = { class: "ss-member-settings" }, ne = { class: "header-row" }, se = { class: "members-grid" }, re = { class: "member-card-header" }, ie = { class: "tags" }, oe = /* @__PURE__ */ L({
+}), ae = /* @__PURE__ */ P(le, [["__scopeId", "data-v-89c975ec"]]), ne = { class: "ss-member-settings" }, se = { class: "header-row" }, re = { class: "members-grid" }, ie = { class: "member-card-header" }, oe = { class: "tags" }, ue = /* @__PURE__ */ N({
   __name: "MemberSettings",
   setup(p) {
-    const t = N(), u = k(!1), r = k(null), f = k(""), i = k(/* @__PURE__ */ new Set());
-    function d(n) {
-      r.value = n, u.value = !0, f.value = "";
+    const l = T(), u = y(!1), r = y(null), f = y(""), i = y(/* @__PURE__ */ new Set());
+    function d(a) {
+      r.value = a, u.value = !0, f.value = "";
     }
-    function x(n) {
-      const c = t.store.members.value.findIndex((b) => b.id === n.id);
-      c < 0 ? t.store.members.value.push(n) : t.store.members.value.splice(c, 1, n), (!t.store.currentMember.value || t.store.currentMember.value.id === n.id) && (t.store.currentMember.value = n);
+    function C(a) {
+      const v = l.store.members.value.findIndex((b) => b.id === a.id);
+      v < 0 ? l.store.members.value.push(a) : l.store.members.value.splice(v, 1, a), (!l.store.currentMember.value || l.store.currentMember.value.id === a.id) && (l.store.currentMember.value = a);
     }
-    function s(n) {
-      return ![n.dietary_restrictions, n.allergies, n.disliked_ingredients, n.favorite_cuisines].some((c) => c.length);
+    function n(a) {
+      return ![a.dietary_restrictions, a.allergies, a.disliked_ingredients, a.favorite_cuisines].some((v) => v.length);
     }
-    async function $(n) {
-      var c;
-      if (!(t.store.members.value.length <= 1 || i.value.has(n.id))) {
-        i.value.add(n.id);
+    async function x(a) {
+      var v;
+      if (!(l.store.members.value.length <= 1 || i.value.has(a.id))) {
+        i.value.add(a.id);
         try {
-          if (!await t.confirm({ header: "Remove member", message: `Remove ${n.name}?`, acceptLabel: "Remove", rejectLabel: "Cancel", severity: "danger" })) return;
-          if (await t.api.delete(`/api/members/${n.id}`, { revision: n.revision }), t.store.members.value = t.store.members.value.filter((b) => b.id !== n.id), ((c = t.store.currentMember.value) == null ? void 0 : c.id) === n.id) {
-            t.store.currentMember.value = t.store.members.value[0] || null;
+          if (!await l.confirm({ header: "Remove member", message: `Remove ${a.name}?`, acceptLabel: "Remove", rejectLabel: "Cancel", severity: "danger" })) return;
+          if (await l.api.delete(`/api/members/${a.id}`, { revision: a.revision }), l.store.members.value = l.store.members.value.filter((b) => b.id !== a.id), ((v = l.store.currentMember.value) == null ? void 0 : v.id) === a.id) {
+            l.store.currentMember.value = l.store.members.value[0] || null;
             try {
-              t.store.currentMember.value ? localStorage.setItem("ss-current-member", t.store.currentMember.value.id) : localStorage.removeItem("ss-current-member");
+              l.store.currentMember.value ? localStorage.setItem("ss-current-member", l.store.currentMember.value.id) : localStorage.removeItem("ss-current-member");
             } catch {
             }
           }
         } catch (b) {
           f.value = b.message || "Could not remove member";
         } finally {
-          i.value.delete(n.id);
+          i.value.delete(a.id);
         }
       }
     }
-    return (n, c) => {
-      const b = g("Button"), B = g("Message"), D = g("Avatar"), e = g("Tag"), l = g("Card");
-      return v(), M("div", ae, [
-        m("div", ne, [
-          c[2] || (c[2] = m(
+    return (a, v) => {
+      const b = g("Button"), D = g("Message"), U = g("Avatar"), V = g("Tag"), t = g("Card");
+      return c(), h("div", ne, [
+        m("div", se, [
+          v[2] || (v[2] = m(
             "p",
             null,
             "Manage household profiles, preferences and dietary restrictions.",
             -1
             /* CACHED */
           )),
-          y(b, {
+          _(b, {
             label: "Add Member",
             icon: "pi pi-plus",
-            onClick: c[0] || (c[0] = (a) => d(null))
+            onClick: v[0] || (v[0] = (e) => d(null))
           })
         ]),
-        f.value ? (v(), h(B, {
+        f.value ? (c(), k(D, {
           key: 0,
           severity: "error"
         }, {
-          default: I(() => [
-            z(
-              S(f.value),
+          default: $(() => [
+            j(
+              I(f.value),
               1
               /* TEXT */
             )
           ]),
           _: 1
           /* STABLE */
-        })) : A("v-if", !0),
-        m("div", se, [
-          (v(!0), M(
+        })) : B("v-if", !0),
+        m("div", re, [
+          (c(!0), h(
             w,
             null,
-            V(C(t).store.members.value, (a) => (v(), h(l, {
-              key: a.id,
-              "data-member-id": a.id,
+            A(M(l).store.members.value, (e) => (c(), k(t, {
+              key: e.id,
+              "data-member-id": e.id,
               class: "member-card"
             }, {
-              title: I(() => [
-                m("div", re, [
-                  y(D, {
-                    label: a.name.slice(0, 1).toUpperCase(),
+              title: $(() => [
+                m("div", ie, [
+                  _(U, {
+                    label: e.name.slice(0, 1).toUpperCase(),
                     shape: "circle",
-                    style: q({ background: C(j)(a.id), color: "var(--p-surface-0)" })
+                    style: z({ background: M(O)(e.id), color: "var(--p-surface-0)" })
                   }, null, 8, ["label", "style"]),
                   m(
                     "span",
                     null,
-                    S(a.name),
+                    I(e.name),
                     1
                     /* TEXT */
                   )
                 ])
               ]),
-              content: I(() => [
+              content: $(() => [
                 m(
                   "p",
                   null,
-                  S(a.preferred_language) + " · Portion " + S(a.serving_ratio) + "×",
+                  I(e.preferred_language) + " · Portion " + I(e.serving_ratio) + "×",
                   1
                   /* TEXT */
                 ),
-                m("div", ie, [
-                  (v(!0), M(
+                m("div", oe, [
+                  (c(!0), h(
                     w,
                     null,
-                    V(a.dietary_restrictions, (_) => (v(), h(e, {
-                      key: _,
-                      value: _,
+                    A(e.dietary_restrictions, (s) => (c(), k(V, {
+                      key: s,
+                      value: s,
                       severity: "info"
                     }, null, 8, ["value"]))),
                     128
                     /* KEYED_FRAGMENT */
                   )),
-                  (v(!0), M(
+                  (c(!0), h(
                     w,
                     null,
-                    V(a.allergies, (_) => (v(), h(e, {
-                      key: _,
-                      value: `Allergy: ${_}`,
+                    A(e.allergies, (s) => (c(), k(V, {
+                      key: s,
+                      value: `Allergy: ${s}`,
                       severity: "danger",
                       icon: "pi pi-exclamation-triangle"
                     }, null, 8, ["value"]))),
                     128
                     /* KEYED_FRAGMENT */
                   )),
-                  (v(!0), M(
+                  (c(!0), h(
                     w,
                     null,
-                    V(a.disliked_ingredients, (_) => (v(), h(e, {
-                      key: _,
-                      value: `Dislikes: ${_}`,
+                    A(e.disliked_ingredients, (s) => (c(), k(V, {
+                      key: s,
+                      value: `Dislikes: ${s}`,
                       severity: "secondary"
                     }, null, 8, ["value"]))),
                     128
                     /* KEYED_FRAGMENT */
                   ))
                 ]),
-                s(a) ? (v(), h(b, {
+                n(e) ? (c(), k(b, {
                   key: 0,
                   label: "Add dietary preferences",
                   text: "",
-                  onClick: (_) => d(a)
-                }, null, 8, ["onClick"])) : A("v-if", !0)
+                  onClick: (s) => d(e)
+                }, null, 8, ["onClick"])) : B("v-if", !0)
               ]),
-              footer: I(() => [
-                y(b, {
+              footer: $(() => [
+                _(b, {
                   icon: "pi pi-pencil",
-                  "aria-label": `Edit ${a.name}`,
+                  "aria-label": `Edit ${e.name}`,
                   rounded: "",
                   text: "",
-                  onClick: (_) => d(a)
+                  onClick: (s) => d(e)
                 }, null, 8, ["aria-label", "onClick"]),
-                y(b, {
+                _(b, {
                   icon: "pi pi-trash",
-                  "aria-label": `Delete ${a.name}`,
+                  "aria-label": `Delete ${e.name}`,
                   severity: "danger",
                   rounded: "",
                   text: "",
-                  disabled: C(t).store.members.value.length <= 1 || i.value.has(a.id),
-                  onClick: (_) => $(a)
+                  disabled: M(l).store.members.value.length <= 1 || i.value.has(e.id),
+                  onClick: (s) => x(e)
                 }, null, 8, ["aria-label", "disabled", "onClick"])
               ]),
               _: 2
@@ -432,25 +443,25 @@ const Q = { class: "ss-member-picker" }, X = /* @__PURE__ */ L({
             /* KEYED_FRAGMENT */
           ))
         ]),
-        y(le, {
+        _(ae, {
           visible: u.value,
-          "onUpdate:visible": c[1] || (c[1] = (a) => u.value = a),
+          "onUpdate:visible": v[1] || (v[1] = (e) => u.value = e),
           member: r.value,
-          onSaved: x
+          onSaved: C
         }, null, 8, ["visible", "member"])
       ]);
     };
   }
-}), R = /* @__PURE__ */ T(oe, [["__scopeId", "data-v-bd63d5fb"]]);
-function ve(p) {
-  var t;
-  p.slot("shell.header.right", Y, { order: 10 }), (t = p.settings) != null && t.section ? p.settings.section({
+}), F = /* @__PURE__ */ P(ue, [["__scopeId", "data-v-bd63d5fb"]]);
+function ce(p) {
+  var l;
+  p.slot("shell.header.right", Z, { order: 10 }), (l = p.settings) != null && l.section ? p.settings.section({
     id: "members",
     title: "Members",
     order: 10,
-    component: R
-  }) : p.slot("settings.content", R, { order: 10 });
+    component: F
+  }) : p.slot("settings.content", F, { order: 10 });
 }
 export {
-  ve as default
+  ce as default
 };
