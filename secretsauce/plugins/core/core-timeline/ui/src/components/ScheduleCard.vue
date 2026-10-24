@@ -14,10 +14,13 @@ const emit = defineEmits<{ interact: [event: Event] }>()
 </template>
 
 <style scoped>
-.schedule-card { display: block; text-align: left; width: 100%; padding: .5rem .625rem; background: var(--p-content-background); color: var(--p-text-color); border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); margin-bottom: .375rem; }
+.schedule-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .125rem .5rem; text-align: left; width: 100%; padding: .25rem .5rem; background: var(--p-content-background); color: var(--p-text-color); border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); margin-bottom: .2rem; }
+.schedule-card:last-child { margin-bottom: 0; }
 .schedule-card:hover { border-color: var(--p-primary-color); }
-.card-header { display: flex; justify-content: space-between; align-items: center; gap: .25rem; }
-.card-title { font-weight: 500; font-size: .9rem; }
-.card-servings, .card-note { color: var(--p-text-muted-color); font-size: .75rem; margin-top: .125rem; }
-.card-note { font-style: italic; }
+.card-header { display: flex; align-items: center; gap: .35rem; flex: 1; min-width: 0; }
+.card-header :deep(.p-tag) { padding: .1rem .35rem; font-size: .7rem; }
+.card-title { font-weight: 500; font-size: .85rem; line-height: 1.25; }
+.card-servings, .card-note { color: var(--p-text-muted-color); font-size: .72rem; line-height: 1.2; }
+.card-servings { white-space: nowrap; }
+.card-note { flex-basis: 100%; font-style: italic; }
 </style>

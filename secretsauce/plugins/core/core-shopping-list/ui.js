@@ -471,7 +471,7 @@ const fe = { class: "shopping-list-page" }, ye = { class: "date-controls" }, ge 
   for (const [b, d] of r)
     c[b] = d;
   return c;
-}, xe = /* @__PURE__ */ Se(we, [["__scopeId", "data-v-6b65b138"]]);
+}, xe = /* @__PURE__ */ Se(we, [["__scopeId", "data-v-0d18343a"]]);
 function Te(x) {
   x.route({
     path: "/shopping-list",

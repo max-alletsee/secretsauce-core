@@ -12,10 +12,10 @@ function label(date:string){return new Date(`${date}T12:00:00`).toLocaleDateStri
 </script>
 <template>
   <section class="day-card" :class="{'is-today':day.isToday}" :data-timeline-date="day.date">
-    <header><h3>{{label(day.date)}}</h3><Tag v-if="day.isToday" value="Today" /><Button icon="pi pi-ellipsis-v" text rounded aria-label="Day actions" @click="menu.toggle($event)" /><Menu ref="menu" :model="actions" popup /></header>
+    <header><h3>{{label(day.date)}}</h3><Tag v-if="day.isToday" value="Today" /><Button icon="pi pi-ellipsis-v" size="small" text rounded aria-label="Day actions" @click="menu.toggle($event)" /><Menu ref="menu" :model="actions" popup /></header>
     <MealSlot v-for="slot in day.slots" :key="slot.id" :slot="slot" :date="day.date" @add="emit('add',$event)" @changed="emit('changed')" />
     <Slot name="timeline.day.footer" :context="{date:day.date}" />
     <AddSlotDialog v-model:visible="adding" :date="day.date" :slots="day.slots" @changed="emit('changed')" />
   </section>
 </template>
-<style scoped>.day-card{padding:1rem;background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:var(--p-content-border-radius)}.is-today{border:2px solid var(--p-primary-color)}header{display:flex;gap:.75rem;align-items:center;margin-bottom:.5rem}h3{margin:0;flex:1;font-size:1rem}</style>
+<style scoped>.day-card{padding:.5rem .625rem;background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:var(--p-content-border-radius)}.is-today{border:2px solid var(--p-primary-color)}header{display:flex;gap:.375rem;align-items:center;margin-bottom:.25rem}h3{margin:0;flex:1;font-size:.925rem;line-height:1.2}header :deep(.p-tag){padding:.1rem .375rem;font-size:.72rem}header :deep(.p-button){width:1.5rem;height:1.5rem;padding:0}@media(max-width:767px){.day-card{padding:.375rem .5rem}}</style>

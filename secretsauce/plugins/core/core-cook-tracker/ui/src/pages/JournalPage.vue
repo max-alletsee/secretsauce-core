@@ -22,5 +22,6 @@ onMounted(async () => {
   </div>
 </template>
 <style scoped>
-.journal-page { padding: 1.5rem; max-width: 55rem; margin: 0 auto; }h2 { margin-top: 0; }.journal-list { display: grid; gap: 1rem; }.empty-hint { color: var(--p-text-muted-color); text-align: center; padding: 2rem; }
+.journal-page { padding: .75rem 1rem; max-width: 55rem; margin: 0 auto; }h2 { margin: 0 0 .5rem; font-size: 1.25rem; line-height: 1.2; }.journal-list { display: grid; gap: .5rem; }.journal-entry-card :deep(.p-card-body) { padding: .625rem .75rem; gap: .25rem; }.journal-entry-card p { margin: .25rem 0 0; }.empty-hint { color: var(--p-text-muted-color); text-align: center; padding: 1.25rem; }
+@media (max-width: 767px) { .journal-page { padding: .5rem .625rem; } }
 </style>

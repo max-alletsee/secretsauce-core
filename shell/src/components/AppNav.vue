@@ -25,9 +25,9 @@ const navRoutes = computed(() => props.routes.filter(r => r.nav && !['/settings'
 </template>
 
 <style scoped>
-.ss-app-nav { display:flex; flex-direction:column; width:220px; min-height:100%; border-right:1px solid var(--p-content-border-color); }
-.nav-list { list-style:none; padding:12px; margin:0; display:flex; flex-direction:column; gap:8px; }
-.nav-footer { margin-top:auto; padding:12px; }
-.nav-link { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--p-border-radius-md); text-decoration:none; color:var(--p-text-color); }
+.ss-app-nav { display:flex; flex-direction:column; width:200px; min-height:100%; border-right:1px solid var(--p-content-border-color); }
+.nav-list { list-style:none; padding:.5rem; margin:0; display:flex; flex-direction:column; gap:.25rem; }
+.nav-footer { margin-top:auto; padding:.5rem; }
+.nav-link { display:flex; align-items:center; gap:.5rem; padding:.5rem .625rem; border-radius:var(--p-border-radius-md); text-decoration:none; color:var(--p-text-color); font-size:.9rem; }
 .nav-link.router-link-active { background:var(--p-highlight-background); color:var(--p-highlight-color); font-weight:600; }
 </style>

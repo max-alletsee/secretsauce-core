@@ -34,5 +34,5 @@ onMounted(loadRules)
   </div>
 </template>
 <style scoped>
-.recurring-settings { display: grid; gap: 1rem; }.recurring-settings > .p-button { justify-self: start; }p { color: var(--p-text-muted-color); }ul { list-style: none; padding: 0; display: grid; gap: .75rem; }li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .75rem; border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); }
+.recurring-settings { display: grid; gap: .5rem; }.recurring-settings > .p-button { justify-self: start; }p { margin: 0; color: var(--p-text-muted-color); font-size: .875rem; }ul { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; }li { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .5rem .625rem; border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); }
 </style>

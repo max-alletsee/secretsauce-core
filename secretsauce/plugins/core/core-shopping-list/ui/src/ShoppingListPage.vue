@@ -99,16 +99,16 @@ onMounted(loadShoppingList)
   </div>
 </template>
 <style scoped>
-.shopping-list-page { max-width: 60rem; margin: 0 auto; padding: 1rem; display: grid; gap: 1rem; }
-h1 { margin: 0; } h3 { display: flex; align-items: center; gap: .5rem; }
+.shopping-list-page { max-width: 60rem; margin: 0 auto; padding: .75rem 1rem; display: grid; gap: .5rem; }
+h1 { margin: 0; font-size: 1.25rem; line-height: 1.2; } h3 { margin: 0 0 .375rem; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
 .date-controls, .checkbox-label, .staple-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
-.add-form { display: grid; grid-template-columns: minmax(8rem, 2fr) minmax(5rem, 1fr) minmax(5rem, 1fr) auto; gap: .75rem; align-items: end; margin: 1rem 0; }
-label { color: var(--p-text-muted-color); } .add-form label { display: block; margin-bottom: .5rem; }
-.category-card { border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); padding: 1rem; margin-top: 1rem; background: var(--p-content-background); }
-ul { list-style: none; padding: 0; }
-.shopping-item { display: flex; gap: .75rem; align-items: center; padding: .75rem 0; border-top: 1px solid var(--p-content-border-color); }
+.add-form { display: grid; grid-template-columns: minmax(8rem, 2fr) minmax(5rem, 1fr) minmax(5rem, 1fr) auto; gap: .5rem; align-items: end; margin: .5rem 0; }
+label { color: var(--p-text-muted-color); font-size: .85rem; } .add-form label { display: block; margin-bottom: .25rem; }
+.category-card { border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); padding: .5rem .75rem; margin-top: .5rem; background: var(--p-content-background); }
+ul { list-style: none; padding: 0; margin: 0; }
+.shopping-item { display: flex; gap: .5rem; align-items: center; padding: .375rem 0; border-top: 1px solid var(--p-content-border-color); }
 .shopping-item label { flex: 1; cursor: pointer; color: var(--p-text-color); }.shopping-item small { display: block; color: var(--p-text-muted-color); }
 .checked label span { text-decoration: line-through; color: var(--p-text-muted-color); }
-.staple-list { display: grid; gap: .75rem; }
-@media (max-width: 767px) { .add-form { grid-template-columns: 1fr 1fr; } .add-form > :first-child { grid-column: 1 / -1; } }
+.staple-list { display: grid; gap: .375rem; }
+@media (max-width: 767px) { .shopping-list-page { padding: .5rem .625rem; } .add-form { grid-template-columns: 1fr 1fr; } .add-form > :first-child { grid-column: 1 / -1; } }
 </style>

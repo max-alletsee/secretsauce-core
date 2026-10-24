@@ -46,10 +46,11 @@ onMounted(() => loadPlugins().catch((err: any) => { error.value = err.message ||
   </div>
 </template>
 <style scoped>
-.plugin-list { display: flex; flex-direction: column; gap: 1rem; }
-.plugin-card { border: 1px solid var(--p-content-border-color); border-radius: var(--p-content-border-radius); padding: 1rem; background: var(--p-content-background); }
+.plugin-list { display: flex; flex-direction: column; gap: .5rem; }
+.plugin-card { border: 1px solid var(--p-content-border-color); border-radius: var(--p-content-border-radius); padding: .625rem .75rem; background: var(--p-content-background); }
+.plugin-card p { margin: .25rem 0; font-size: .875rem; color: var(--p-text-muted-color); }
 .card-header { display: flex; justify-content: space-between; gap: .5rem; }
-.card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-top: .75rem; }
+.card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .5rem; }
 .error { color: var(--p-red-600); }
 .error pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 15rem; overflow: auto; }
 </style>

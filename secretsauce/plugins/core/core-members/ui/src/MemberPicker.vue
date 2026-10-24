@@ -20,5 +20,7 @@ const items = computed(() => [{ label: 'All members', command: () => selectMembe
   </div>
 </template>
 <style scoped>
-.ss-member-picker { display: flex; align-items: center; }.member-select { gap: .5rem; max-width: 16rem; }
+.ss-member-picker { display: flex; align-items: center; }
+.member-select { gap: .375rem; max-width: 14rem; padding: .25rem .5rem; font-size: .85rem; }
+.member-avatar { width: 1.5rem; height: 1.5rem; font-size: .75rem; }
 </style>

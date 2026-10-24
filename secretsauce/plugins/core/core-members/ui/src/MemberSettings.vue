@@ -41,6 +41,6 @@ async function remove(member: Member) {
   </div>
 </template>
 <style scoped>
-.ss-member-settings { display: grid; gap: 1rem; }.header-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }p { color: var(--p-text-muted-color); }
-.members-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); gap: 1rem; }.member-card-header, .tags { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.ss-member-settings { display: grid; gap: .625rem; }.header-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }p { margin: 0; color: var(--p-text-muted-color); font-size: .875rem; }
+.members-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: .625rem; }.member-card :deep(.p-card-body) { padding: .625rem .75rem; gap: .375rem; }.member-card-header, .tags { display: flex; gap: .375rem; align-items: center; flex-wrap: wrap; }
 </style>

@@ -15,7 +15,7 @@ const emit = defineEmits<{ select: [string] }>()
 </template>
 <style scoped>
 .recipe-card { border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); background: var(--p-content-background); overflow: hidden; cursor: pointer; display: flex; flex-direction: column; }
-.cover-image { height: 9rem; background: var(--p-surface-100); display: flex; align-items: center; justify-content: center; }.cover-image img { width: 100%; height: 100%; object-fit: cover; }.placeholder-cover { font-size: 3rem; color: var(--p-text-muted-color); }
-.card-body { padding: .75rem; display: grid; gap: .5rem; }.card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }h3 { margin: 0; }.recipe-title { padding: 0; text-align: left; }
-.meta { display: flex; gap: .5rem; flex-wrap: wrap; font-size: .85rem; color: var(--p-text-muted-color); }.tags { display: flex; flex-wrap: wrap; gap: .25rem; }
+.cover-image { height: 6rem; background: var(--p-surface-100); display: flex; align-items: center; justify-content: center; }.cover-image img { width: 100%; height: 100%; object-fit: cover; }.placeholder-cover { font-size: 2rem; color: var(--p-text-muted-color); }
+.card-body { padding: .5rem .625rem; display: grid; gap: .25rem; }.card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: .375rem; }h3 { margin: 0; }.recipe-title { padding: 0; text-align: left; font-size: .925rem; }
+.meta { display: flex; gap: .375rem; flex-wrap: wrap; font-size: .78rem; color: var(--p-text-muted-color); }.tags { display: flex; flex-wrap: wrap; gap: .25rem; }
 </style>

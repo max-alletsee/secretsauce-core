@@ -66,13 +66,14 @@ async function submitSetup() {
 <style scoped>
 .ss-setup-page {
   max-width: 450px;
-  margin: 50px auto;
-  padding: 24px;
+  margin: 24px auto;
+  padding: 16px;
   border: 1px solid var(--p-content-border-color);
   border-radius: 8px;
 }
+.ss-setup-page h2 { margin-top: 0; }
 .field {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;

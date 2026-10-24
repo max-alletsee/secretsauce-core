@@ -47,17 +47,20 @@ function scaledQuantity(quantity: number | null | undefined): string {
   </div>
 </template>
 <style scoped>
-.recipe-cover { display: block; width: 100%; max-height: 24rem; object-fit: cover; margin-bottom: 1rem; }
-.recipe-detail-page { padding: 1.5rem; max-width: 60rem; margin: 0 auto; }
-.lang-bar, .detail-actions, .scaler-card { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
-.detail-header { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 1rem 0; }
-h1 { margin: 0; } p, .notes { color: var(--p-text-muted-color); }
-.scaler-card { background: var(--p-surface-100); padding: .75rem; border-radius: var(--p-border-radius); }
+.recipe-cover { display: block; width: 100%; max-height: 15rem; object-fit: cover; margin-bottom: .625rem; border-radius: var(--p-border-radius); }
+.recipe-detail-page { padding: .75rem 1rem; max-width: 60rem; margin: 0 auto; }
+.btn-back { padding: .25rem .5rem; font-size: .85rem; }
+.lang-bar, .detail-actions, .scaler-card { display: flex; align-items: center; gap: .375rem; flex-wrap: wrap; }
+.detail-header { display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap; margin: .375rem 0; }
+h1 { margin: 0; font-size: 1.35rem; line-height: 1.2; }
+h3 { margin: 0 0 .375rem; font-size: 1rem; }
+p, .notes { color: var(--p-text-muted-color); margin: .25rem 0 0; }
+.scaler-card { background: var(--p-surface-100); padding: .375rem .625rem; border-radius: var(--p-border-radius); margin-bottom: .625rem; }
 .servings-value { font-weight: 600; min-width: 1.5rem; text-align: center; }
-.content-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; }
-.ingredient-checklist { list-style: none; padding: 0; display: grid; gap: .75rem; }
+.content-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.25rem; }
+.ingredient-checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: .375rem; }
 .ingredient-item { display: flex; gap: .5rem; align-items: center; }.ingredient-item label { cursor: pointer; }
 .struck { text-decoration: line-through; color: var(--p-text-muted-color); }
-.steps-list { display: grid; gap: 1rem; padding-left: 1.5rem; }.steps-list p { color: var(--p-text-color); }
-@media (max-width: 767px) { .content-grid { grid-template-columns: 1fr; gap: 1rem; } }
+.steps-list { display: grid; gap: .5rem; padding-left: 1.25rem; margin: 0; }.steps-list p { color: var(--p-text-color); margin: 0 0 .25rem; }
+@media (max-width: 767px) { .recipe-detail-page { padding: .5rem .625rem; } .content-grid { grid-template-columns: 1fr; gap: .75rem; } }
 </style>

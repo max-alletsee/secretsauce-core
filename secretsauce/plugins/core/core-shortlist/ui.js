@@ -132,7 +132,7 @@ const z = /* @__PURE__ */ g({
   for (const [l, o] of r)
     e[l] = o;
   return e;
-}, P = /* @__PURE__ */ O(L, [["__scopeId", "data-v-94e1d99e"]]);
+}, P = /* @__PURE__ */ O(L, [["__scopeId", "data-v-161ac079"]]);
 function G(i) {
   i.slot("recipe.card.actions", z, { order: 10 }), i.slot("recipe.list.filters", E, { order: 10 }), i.slot("timeline.sidebar", P, { order: 20 });
 }

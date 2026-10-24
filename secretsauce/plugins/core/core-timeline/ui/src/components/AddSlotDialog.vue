@@ -26,4 +26,4 @@ async function add() {
     </form>
   </Dialog>
 </template>
-<style scoped>form{display:grid;gap:.75rem}</style>
+<style scoped>form{display:grid;gap:.5rem}</style>

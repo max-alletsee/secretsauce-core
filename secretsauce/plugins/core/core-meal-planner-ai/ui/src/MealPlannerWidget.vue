@@ -111,9 +111,10 @@ async function dismissSuggestion(suggestion: any) {
   </section>
 </template>
 <style scoped>
-.meal-planner-widget { padding: 1rem; background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); display: grid; gap: 1rem; min-width: 0; }
-h3 { margin: 0; font-size: 1rem; }
-.planner-form, .suggestions-pool, .suggestion-actions { display: grid; gap: .75rem; }
-label, p { color: var(--p-text-muted-color); }
-.actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+.meal-planner-widget { padding: .625rem .75rem; background: var(--p-content-background); border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); display: grid; gap: .5rem; min-width: 0; }
+h3 { margin: 0; font-size: .9rem; }
+.planner-form, .suggestions-pool, .suggestion-actions { display: grid; gap: .5rem; }
+.sug-card :deep(.p-card-body) { padding: .5rem .625rem; gap: .25rem; }
+label, p { color: var(--p-text-muted-color); margin: 0; font-size: .85rem; }
+.actions { display: flex; gap: .375rem; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
 </style>

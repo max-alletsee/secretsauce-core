@@ -26,7 +26,7 @@ const householdStore = useHouseholdStore()
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 24px;
+  padding: .5rem 1rem;
   background-color: var(--p-surface-0);
   border-bottom: 1px solid var(--p-content-border-color);
 }
@@ -34,17 +34,17 @@ const householdStore = useHouseholdStore()
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: .5rem;
 }
 .household-title {
   font-weight: bold;
-  font-size: 1.2em;
+  font-size: 1.05rem;
   color: var(--p-text-color);
 }
 .navigation-toggle { display: none; }
 @media (max-width: 767px) {
-  .navigation-toggle { display: inline-flex; }
-  .ss-app-header { padding: 8px 12px; gap: 8px; }
-  .household-title { font-size: 1rem; }
+  .navigation-toggle { display: inline-flex; width: 2rem; height: 2rem; padding: 0; }
+  .ss-app-header { padding: .375rem .625rem; gap: .375rem; }
+  .household-title { font-size: .95rem; }
 }
 </style>

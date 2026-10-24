@@ -95,9 +95,9 @@ function removeNote(slotIndex: number, noteIndex: number) {
 .slot-item {
   display: flex;
   flex-direction: column;
-  gap: .375rem;
-  margin-bottom: .75rem;
-  padding: .5rem;
+  gap: .25rem;
+  margin-bottom: .5rem;
+  padding: .375rem .5rem;
   border: 1px solid var(--p-content-border-color);
   border-radius: var(--p-border-radius);
 }
@@ -160,7 +160,7 @@ function removeNote(slotIndex: number, noteIndex: number) {
   font-size: .8rem;
   padding: .25rem .5rem;
 }
-form { display: flex; flex-direction: column; gap: .75rem; }
+form { display: flex; flex-direction: column; gap: .5rem; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: .5rem; }
-h3 { font-size: 1rem; }
+h3 { margin: .25rem 0; font-size: .95rem; }
 </style>

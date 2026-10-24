@@ -43,23 +43,23 @@ onBeforeUnmount(()=>{disposed=true;++revision;clearTimeout(timer);stops.forEach(
 </script>
 <template>
   <div class="timeline-page">
-    <div class="timeline-toolbar"><h2>Timeline</h2><Button label="Today" icon="pi pi-calendar" outlined @click="reset" /></div><Message v-if="error" severity="error">{{error}}</Message>
+    <div class="timeline-toolbar"><h2>Timeline</h2><Button label="Today" icon="pi pi-calendar" size="small" outlined @click="reset" /></div><Message v-if="error" severity="error">{{error}}</Message>
     <div class="timeline-container">
       <aside class="timeline-sidebar-wrapper">
         <Accordion v-if="phone" v-model:value="widgetsOpen" multiple><AccordionPanel v-for="widget in widgets" :key="widget.id" :value="widget.id"><AccordionHeader>{{widget.pluginId==='core-shortlist'?'Shortlist':widget.pluginId==='core-meal-planner-ai'?'AI meal suggestions':widget.pluginId}}</AccordionHeader><AccordionContent><component :is="widget.component" :context="windowDates" /></AccordionContent></AccordionPanel></Accordion>
         <Slot v-else name="timeline.sidebar" :context="windowDates" />
       </aside>
-      <div class="timeline-feed"><Button label="Show 2 earlier days" text @click="earlier" />
-        <div class="past-days"><div v-for="day in past" :key="day.date" :data-timeline-date="expanded.has(day.date)?undefined:day.date"><Button class="past-day-line" :label="`${pastLabel(day.date)} · ${summary(day)}`" text :aria-expanded="expanded.has(day.date)" @click="toggle(day.date)" /><DayCard v-if="expanded.has(day.date)" :day="day" @add="active=$event" @changed="load" /></div></div>
+      <div class="timeline-feed"><Button label="Show 2 earlier days" size="small" text @click="earlier" />
+        <div class="past-days"><div v-for="day in past" :key="day.date" :data-timeline-date="expanded.has(day.date)?undefined:day.date"><Button class="past-day-line" :label="`${pastLabel(day.date)} · ${summary(day)}`" size="small" text :aria-expanded="expanded.has(day.date)" @click="toggle(day.date)" /><DayCard v-if="expanded.has(day.date)" :day="day" @add="active=$event" @changed="load" /></div></div>
         <DayCard v-for="day in future" :key="day.date" :day="day" @add="active=$event" @changed="load" />
-        <Button label="Show 5 more days" outlined @click="more" />
+        <Button label="Show 5 more days" size="small" outlined @click="more" />
       </div>
     </div>
     <AddEntryDialog :visible="!!active" :date="active?.date||today" :mealType="active?.mealType||''" @update:visible="value=>{if(!value)active=null}" @created="load" />
   </div>
 </template>
 <style scoped>
-.timeline-page{padding:1rem;max-width:75rem;margin:auto}.timeline-toolbar{display:flex;align-items:center;justify-content:space-between;gap:1rem}.timeline-container{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:1rem;align-items:start}.timeline-sidebar-wrapper{grid-column:2;grid-row:1;display:grid;gap:1rem;min-width:0}.timeline-feed{grid-column:1;grid-row:1;display:grid;gap:1rem;min-width:0}.past-days{padding:.5rem;border:1px solid var(--p-content-border-color);border-radius:var(--p-content-border-radius);background:var(--p-surface-50)}.past-day-line{width:100%;justify-content:flex-start;text-align:left}.past-days .day-card{margin-bottom:.5rem}
-@media(max-width:1023px){.timeline-container{display:flex;flex-direction:column}.timeline-sidebar-wrapper,.timeline-feed{width:100%}}
-@media(max-width:767px){.timeline-page{padding:.75rem}}
+.timeline-page{padding:.625rem .75rem;max-width:75rem;margin:auto;display:grid;gap:.5rem}.timeline-toolbar{display:flex;align-items:center;justify-content:space-between;gap:.5rem}.timeline-toolbar h2{margin:0;font-size:1.15rem;line-height:1.2}.timeline-toolbar :deep(.p-button){padding:.25rem .5rem;font-size:.8125rem}.timeline-container{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:.625rem;align-items:start}.timeline-sidebar-wrapper{grid-column:2;grid-row:1;display:grid;gap:.5rem;min-width:0}.timeline-sidebar-wrapper :deep(.p-accordion){display:grid;grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));gap:.375rem}.timeline-sidebar-wrapper :deep(.p-accordionpanel){border:1px solid var(--p-content-border-color);border-radius:var(--p-border-radius);overflow:hidden}.timeline-sidebar-wrapper :deep(.p-accordionpanel:has([aria-expanded="true"])){grid-column:1/-1}.timeline-sidebar-wrapper :deep(.p-accordionheader){padding:.3rem .5rem;font-size:.78rem}.timeline-sidebar-wrapper :deep(.p-accordioncontent-content){padding:.375rem .5rem}.timeline-feed{grid-column:1;grid-row:1;display:grid;gap:.5rem;min-width:0}.timeline-feed > :deep(.p-button){padding:.2rem .5rem;font-size:.8rem}.past-days{padding:.2rem .375rem;border:1px solid var(--p-content-border-color);border-radius:var(--p-content-border-radius);background:var(--p-surface-50);display:grid;gap:.125rem}.past-day-line{width:100%;justify-content:flex-start;text-align:left;padding:.15rem .375rem;font-size:.78rem;line-height:1.2;min-height:0}.past-day-line :deep(.p-button-label){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.past-days .day-card{margin:.25rem 0}
+@media(max-width:1023px){.timeline-container{display:flex;flex-direction:column;gap:.375rem}.timeline-sidebar-wrapper,.timeline-feed{width:100%}}
+@media(max-width:767px){.timeline-page{padding:.375rem .5rem;gap:.375rem}.timeline-feed{gap:.375rem}}
 </style>

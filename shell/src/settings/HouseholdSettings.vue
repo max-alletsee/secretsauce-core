@@ -45,6 +45,6 @@ async function save() {
   </form>
 </template>
 <style scoped>
-.household-settings { display: flex; flex-direction: column; gap: .75rem; }
+.household-settings { display: flex; flex-direction: column; gap: .5rem; }
 .save-household { align-self: flex-start; }
 </style>

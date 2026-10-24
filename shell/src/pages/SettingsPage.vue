@@ -34,8 +34,11 @@ watch(open, value => { try { localStorage.setItem('ss-settings-open', JSON.strin
   </div>
 </template>
 <style scoped>
-.ss-settings-page { padding: 1.5rem; max-width: 56rem; width: 100%; box-sizing: border-box; }
+.ss-settings-page { padding: .75rem 1rem; max-width: 56rem; width: 100%; box-sizing: border-box; }
+h2 { margin: 0 0 .5rem; font-size: 1.25rem; line-height: 1.2; }
 /* Accordion animation uses a grid; let its item shrink below intrinsic form width. */
 .ss-settings-page :deep(.p-accordioncontent-wrapper) { min-width: 0; }
-@media (max-width: 767px) { .ss-settings-page { padding: .75rem; } }
+.ss-settings-page :deep(.p-accordionheader) { padding: .625rem .75rem; }
+.ss-settings-page :deep(.p-accordioncontent-content) { padding: .625rem .75rem; }
+@media (max-width: 767px) { .ss-settings-page { padding: .5rem .625rem; } }
 </style>

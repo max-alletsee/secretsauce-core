@@ -311,7 +311,7 @@ const ae = { class: "meal-planner-widget" }, ne = {
   for (const [o, w] of N)
     x[o] = w;
   return x;
-}, me = /* @__PURE__ */ ve(pe, [["__scopeId", "data-v-c96c8267"]]);
+}, me = /* @__PURE__ */ ve(pe, [["__scopeId", "data-v-920c2f56"]]);
 function _e(V) {
   V.slot("timeline.sidebar", me, { order: 10 });
 }

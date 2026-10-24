@@ -37,4 +37,4 @@ async function add(recipeId?:string){if(busy.value || (!recipeId && !note.value.
     </div>
   </Dialog>
 </template>
-<style scoped>.add-entry{display:grid;gap:.75rem}.recipe-result{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.5rem 0}.quick-notes{display:flex;gap:.5rem;flex-wrap:wrap;margin:.75rem 0}</style>
+<style scoped>.add-entry{display:grid;gap:.5rem}.recipe-result{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.35rem 0}.quick-notes{display:flex;gap:.375rem;flex-wrap:wrap;margin:.5rem 0}</style>

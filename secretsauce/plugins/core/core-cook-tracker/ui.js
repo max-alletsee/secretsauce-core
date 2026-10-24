@@ -127,7 +127,7 @@ const $ = /* @__PURE__ */ h({
   for (const [r, a] of t)
     e[r] = a;
   return e;
-}, A = /* @__PURE__ */ x(P, [["__scopeId", "data-v-2b1887ed"]]);
+}, A = /* @__PURE__ */ x(P, [["__scopeId", "data-v-d418e423"]]);
 function I(o) {
   o.route({ path: "/journal", component: A, nav: { label: "Journal", icon: "history", order: 15 } }), o.slot("timeline.entry.badge", $, { order: 10 }), o.intent.provider({
     hub: "entry:interact",

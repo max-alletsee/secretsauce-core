@@ -21,6 +21,7 @@ function saveStart(value: string) {
   </div>
 </template>
 <style scoped>
-.device-settings { display: flex; flex-direction: column; gap: .75rem; }
+.device-settings { display: flex; flex-direction: column; gap: .5rem; }
+.device-settings p { margin: .25rem 0; font-size: .875rem; color: var(--p-text-muted-color); }
 .device-settings button { align-self: flex-start; }
 </style>

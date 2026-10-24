@@ -92,7 +92,7 @@ const ue = { class: "cover-image" }, re = ["src", "alt"], ce = {
   for (const [h, n] of V)
     r[h] = n;
   return r;
-}, be = /* @__PURE__ */ E(fe, [["__scopeId", "data-v-d73374e4"]]);
+}, be = /* @__PURE__ */ E(fe, [["__scopeId", "data-v-6ff66378"]]);
 async function Y(p, V) {
   var r;
   if (!V) return null;
@@ -256,7 +256,7 @@ const ye = { class: "recipe-list-page" }, ke = { class: "intent-header-bar" }, V
       ]);
     };
   }
-}), Ce = /* @__PURE__ */ E(Ie, [["__scopeId", "data-v-edfe0742"]]), we = { class: "recipe-detail-page" }, Se = {
+}), Ce = /* @__PURE__ */ E(Ie, [["__scopeId", "data-v-1480bd84"]]), we = { class: "recipe-detail-page" }, Se = {
   key: 0,
   class: "lang-bar"
 }, Ue = { class: "detail-header" }, xe = { key: 0 }, Re = { class: "detail-actions" }, Te = ["src", "alt"], Ne = { class: "scaler-card" }, Be = { class: "servings-value" }, Le = { class: "content-grid" }, Ae = { class: "ingredient-checklist" }, qe = ["for"], Me = {
@@ -527,7 +527,7 @@ const ye = { class: "recipe-list-page" }, ke = { class: "intent-header-bar" }, V
       ]);
     };
   }
-}), Pe = /* @__PURE__ */ E(De, [["__scopeId", "data-v-10a15bc6"]]), Je = { class: "ingredient-row-list" }, Fe = { class: "reorder-btns" }, ze = /* @__PURE__ */ z({
+}), Pe = /* @__PURE__ */ E(De, [["__scopeId", "data-v-405081f0"]]), Je = { class: "ingredient-row-list" }, Fe = { class: "reorder-btns" }, ze = /* @__PURE__ */ z({
   __name: "IngredientRowList",
   props: {
     modelValue: {}
@@ -635,7 +635,7 @@ const ye = { class: "recipe-list-page" }, ke = { class: "intent-header-bar" }, V
       ]);
     };
   }
-}), Ee = /* @__PURE__ */ E(ze, [["__scopeId", "data-v-2ffdf2db"]]), Qe = { class: "step-list" }, Ze = { class: "step-inputs" }, je = { class: "timer-row" }, Ge = ["for"], He = /* @__PURE__ */ z({
+}), Ee = /* @__PURE__ */ E(ze, [["__scopeId", "data-v-6a40d29c"]]), Qe = { class: "step-list" }, Ze = { class: "step-inputs" }, je = { class: "timer-row" }, Ge = ["for"], He = /* @__PURE__ */ z({
   __name: "StepList",
   props: {
     modelValue: {}
@@ -714,7 +714,7 @@ const ye = { class: "recipe-list-page" }, ke = { class: "intent-header-bar" }, V
       ]);
     };
   }
-}), Ke = /* @__PURE__ */ E(He, [["__scopeId", "data-v-5fad147a"]]), We = { class: "edit-top-bar" }, Xe = { class: "edit-top-actions" }, Ye = { class: "form-group" }, et = { class: "form-group" }, tt = { class: "form-row" }, lt = { class: "form-group" }, it = { class: "form-group" }, nt = { class: "form-group" }, at = { class: "form-group" }, ot = { class: "form-group" }, st = { class: "form-group" }, ut = ["disabled"], rt = { key: 0 }, ct = { key: 1 }, pt = ["src"], dt = { class: "actions-row" }, vt = /* @__PURE__ */ z({
+}), Ke = /* @__PURE__ */ E(He, [["__scopeId", "data-v-4c4135f0"]]), We = { class: "edit-top-bar" }, Xe = { class: "edit-top-actions" }, Ye = { class: "form-group" }, et = { class: "form-group" }, tt = { class: "form-row" }, lt = { class: "form-group" }, it = { class: "form-group" }, nt = { class: "form-group" }, at = { class: "form-group" }, ot = { class: "form-group" }, st = { class: "form-group" }, ut = ["disabled"], rt = { key: 0 }, ct = { key: 1 }, pt = ["src"], dt = { class: "actions-row" }, vt = /* @__PURE__ */ z({
   __name: "RecipeEditPage",
   props: {
     recipeId: {},
@@ -1010,7 +1010,7 @@ const ye = { class: "recipe-list-page" }, ke = { class: "intent-header-bar" }, V
       );
     };
   }
-}), ie = /* @__PURE__ */ E(vt, [["__scopeId", "data-v-1f210f5c"]]);
+}), ie = /* @__PURE__ */ E(vt, [["__scopeId", "data-v-721514f8"]]);
 function gt(p) {
   p.route({ path: "/recipes", component: Ce, nav: { label: "Recipes", icon: "book", order: 10 } }), p.route({ path: "/recipes/new", component: ie }), p.route({ path: "/recipes/:id", component: Pe }), p.route({ path: "/recipes/:id/edit", component: ie }), p.intent.hub({ id: "recipe:create", title: "Add or Import Recipe" }), p.intent.provider({
     hub: "recipe:create",

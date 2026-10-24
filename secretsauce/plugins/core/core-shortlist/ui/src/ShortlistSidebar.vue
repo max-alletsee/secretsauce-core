@@ -16,8 +16,8 @@ onMounted(async () => {
   </section>
 </template>
 <style scoped>
-.shortlist-sidebar { padding: 1rem; border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); background: var(--p-content-background); }
-h3 { margin: 0 0 .75rem; font-size: 1rem; }
-ul { list-style: none; padding: 0; display: grid; gap: .5rem; }
-a { color: var(--p-primary-color); } p { color: var(--p-text-muted-color); }
+.shortlist-sidebar { padding: .625rem .75rem; border: 1px solid var(--p-content-border-color); border-radius: var(--p-border-radius); background: var(--p-content-background); }
+h3 { margin: 0 0 .375rem; font-size: .9rem; }
+ul { list-style: none; padding: 0; margin: 0; display: grid; gap: .35rem; font-size: .875rem; }
+a { color: var(--p-primary-color); } p { margin: 0; font-size: .85rem; color: var(--p-text-muted-color); }
 </style>

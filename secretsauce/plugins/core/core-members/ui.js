@@ -73,7 +73,7 @@ const Q = { class: "ss-member-picker" }, X = /* @__PURE__ */ L({
   for (const [r, f] of t)
     u[r] = f;
   return u;
-}, Y = /* @__PURE__ */ T(X, [["__scopeId", "data-v-1d9dd551"]]), Z = ["for"], ee = { class: "actions" }, te = /* @__PURE__ */ L({
+}, Y = /* @__PURE__ */ T(X, [["__scopeId", "data-v-1a9f45d2"]]), Z = ["for"], ee = { class: "actions" }, te = /* @__PURE__ */ L({
   __name: "MemberDialog",
   props: {
     visible: { type: Boolean },
@@ -441,7 +441,7 @@ const Q = { class: "ss-member-picker" }, X = /* @__PURE__ */ L({
       ]);
     };
   }
-}), R = /* @__PURE__ */ T(oe, [["__scopeId", "data-v-7b1d0e0b"]]);
+}), R = /* @__PURE__ */ T(oe, [["__scopeId", "data-v-bd63d5fb"]]);
 function ve(p) {
   var t;
   p.slot("shell.header.right", Y, { order: 10 }), (t = p.settings) != null && t.section ? p.settings.section({

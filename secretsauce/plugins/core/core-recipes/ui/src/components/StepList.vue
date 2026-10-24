@@ -17,5 +17,5 @@ function removeStep(index: number) { steps.value.splice(index, 1); updateSteps()
   </div><Button label="Add Step" class="btn-add-step" icon="pi pi-plus" outlined @click="addStep" /></div>
 </template>
 <style scoped>
-.step-list { display: grid; gap: 1rem; }.step-row { display: flex; gap: .75rem; align-items: flex-start; }.step-inputs { flex: 1; min-width: 0; display: grid; gap: .5rem; }.timer-row { display: flex; gap: .5rem; align-items: center; color: var(--p-text-muted-color); }.timer-row :deep(input) { width: 5rem; }.btn-add-step { justify-self: start; }
+.step-list { display: grid; gap: .5rem; }.step-row { display: flex; gap: .5rem; align-items: flex-start; }.step-inputs { flex: 1; min-width: 0; display: grid; gap: .375rem; }.timer-row { display: flex; gap: .375rem; align-items: center; color: var(--p-text-muted-color); }.timer-row :deep(input) { width: 5rem; }.btn-add-step { justify-self: start; }
 </style>

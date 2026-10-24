@@ -237,13 +237,34 @@ test.describe('browser-local cache window', () => {
   })
 })
 
-test('phone sidebar precedes the feed and widgets start collapsed', async ({ page }) => {
-  await page.setViewportSize({width:390,height:844}); await login(page); await page.goto('/timeline')
-  const sidebar = page.locator('.timeline-sidebar-wrapper')
-  await expect(sidebar).toBeVisible()
-  const firstCard = page.locator('.timeline-feed > .day-card').first()
-  expect((await sidebar.boundingBox())!.y).toBeLessThan((await firstCard.boundingBox())!.y)
-  await expect(sidebar.locator('[data-pc-name=accordionheader]').first()).toHaveAttribute('aria-expanded','false')
+test('phone sidebar precedes the feed, widgets start collapsed, and two meal slots of today fit on iPhone 13', async ({ page, request }) => {
+  await page.setViewportSize({width:390,height:844})
+  await login(page)
+  expect((await request.patch('/api/household',{data:{meal_types:[{id:'breakfast',label:'Breakfast'},{id:'lunch',label:'Lunch'},{id:'dinner',label:'Dinner'}]}})).ok()).toBe(true)
+  const createdLunch = await request.post('/api/schedule',{data:{date:day(),meal_type:'lunch',entry_type:'note',title:'Quick noodle bowl',servings_override:2}})
+  const createdDinner = await request.post('/api/schedule',{data:{date:day(),meal_type:'dinner',entry_type:'note',title:'Roasted vegetables',servings_override:2}})
+  expect(createdLunch.status()).toBe(201)
+  expect(createdDinner.status()).toBe(201)
+  const lunchEntry = await createdLunch.json()
+  const dinnerEntry = await createdDinner.json()
+  try {
+    await page.goto('/timeline')
+    const sidebar = page.locator('.timeline-sidebar-wrapper')
+    await expect(sidebar).toBeVisible()
+    const firstCard = page.locator('.timeline-feed > .day-card').first()
+    expect((await sidebar.boundingBox())!.y).toBeLessThan((await firstCard.boundingBox())!.y)
+    await expect(sidebar.locator('[data-pc-name=accordionheader]').first()).toHaveAttribute('aria-expanded','false')
+    const todaySlots = page.locator('.day-card.is-today .meal-slot')
+    await expect(todaySlots).toHaveCount(3)
+    const secondSlotBox = (await todaySlots.nth(1).boundingBox())!
+    const thirdSlotBox = (await todaySlots.nth(2).boundingBox())!
+    // Even with iOS Safari toolbars reducing the 844px iPhone 13 screen to ~660px, at least two meal slots (and even the third) must be visible without scrolling.
+    expect(secondSlotBox.y + secondSlotBox.height).toBeLessThanOrEqual(600)
+    expect(thirdSlotBox.y + thirdSlotBox.height).toBeLessThanOrEqual(660)
+  } finally {
+    await request.delete(`/api/schedule/${lunchEntry.id}?revision=${lunchEntry.revision}`)
+    await request.delete(`/api/schedule/${dinnerEntry.id}?revision=${dinnerEntry.revision}`)
+  }
 })
 
 test('user can define pre-defined notes like Brotzeit and use them in recipe slots', async ({ page }) => {

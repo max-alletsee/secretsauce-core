@@ -25,7 +25,7 @@ function move(index: number, offset: number) { const target = index + offset; if
   </div>
 </template>
 <style scoped>
-.ingredient-row-list { display: grid; gap: .75rem; }.ingredient-row { display: grid; grid-template-columns: auto 5rem 6rem minmax(6rem, 2fr) minmax(5rem, 1fr) auto; gap: .5rem; align-items: center; }.reorder-btns { display: flex; flex-direction: column; }
+.ingredient-row-list { display: grid; gap: .375rem; }.ingredient-row { display: grid; grid-template-columns: auto 5rem 6rem minmax(6rem, 2fr) minmax(5rem, 1fr) auto; gap: .375rem; align-items: center; }.reorder-btns { display: flex; flex-direction: column; }
 .ingredient-row :deep(input), .ingredient-row :deep(.p-inputnumber) { width: 100%; min-width: 0; }.btn-add-ingredient { justify-self: start; }
 @media (max-width: 767px) { .ingredient-row { grid-template-columns: auto 1fr 1fr auto; }.input-name, .input-notes { grid-column: span 2; } }
 </style>

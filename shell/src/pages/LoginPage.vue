@@ -41,13 +41,14 @@ async function submitLogin() {
 <style scoped>
 .ss-login-page {
   max-width: 400px;
-  margin: 80px auto;
-  padding: 24px;
+  margin: 32px auto;
+  padding: 16px;
   border: 1px solid var(--p-content-border-color);
   border-radius: 8px;
 }
+.ss-login-page h2 { margin-top: 0; }
 .field {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;

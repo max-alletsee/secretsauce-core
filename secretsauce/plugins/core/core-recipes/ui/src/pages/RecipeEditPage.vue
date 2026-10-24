@@ -97,12 +97,13 @@ const editContext = computed(() => ({
   </form>
 </template>
 <style scoped>
-.recipe-edit-page { padding: 1.5rem; max-width: 60rem; margin: 0 auto; display: grid; gap: 1rem; }
-.edit-top-bar, .actions-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.edit-top-actions { display: flex; align-items: center; gap: .5rem; }
-h2 { margin: 0; }
-.form-group { display: grid; gap: .5rem; }label { color: var(--p-text-muted-color); }
-.form-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; }.cover-preview { max-width: 15rem; max-height: 12rem; }
+.recipe-edit-page { padding: .75rem 1rem; max-width: 60rem; margin: 0 auto; display: grid; gap: .625rem; }
+.edit-top-bar, .actions-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.edit-top-actions { display: flex; align-items: center; gap: .375rem; }
+h2 { margin: 0; font-size: 1.25rem; line-height: 1.2; }
+h3 { margin: 0 0 .375rem; font-size: 1rem; }
+.form-group { display: grid; gap: .25rem; }label { color: var(--p-text-muted-color); font-size: .875rem; }
+.form-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; }.cover-preview { max-width: 15rem; max-height: 10rem; }
 .actions-row { justify-content: flex-end; }
-@media (max-width: 767px) { .form-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 767px) { .recipe-edit-page { padding: .5rem .625rem; gap: .5rem; } .form-row { grid-template-columns: 1fr 1fr; } }
 </style>

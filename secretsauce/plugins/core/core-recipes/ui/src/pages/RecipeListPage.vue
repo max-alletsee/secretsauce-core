@@ -54,10 +54,11 @@ const filteredRecipes = computed(() => {
   </div>
 </template>
 <style scoped>
-.recipe-list-page { padding: 1.5rem; max-width: 75rem; margin: 0 auto; }
-h1 { margin-top: 0; }
-.intent-header-bar, .filter-sort-bar { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.recipe-list-page { padding: .75rem 1rem; max-width: 75rem; margin: 0 auto; }
+h1 { margin: 0 0 .5rem; font-size: 1.25rem; line-height: 1.2; }
+.intent-header-bar, .filter-sort-bar { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-bottom: .625rem; }
 .search-box { flex: 1; min-width: 12rem; }
-.recipes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); gap: 1rem; }
-.empty-state { display: grid; justify-items: center; gap: 1rem; padding: 3rem 1rem; color: var(--p-text-muted-color); }
+.recipes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: .625rem; }
+.empty-state { display: grid; justify-items: center; gap: .625rem; padding: 1.5rem 1rem; color: var(--p-text-muted-color); }
+@media (max-width: 767px) { .recipe-list-page { padding: .5rem .625rem; } }
 </style>

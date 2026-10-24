@@ -42,11 +42,12 @@ function handleResolve(result: any) {
 <style scoped>
 .ss-share-page {
   max-width: 500px;
-  margin: 40px auto;
-  padding: 24px;
+  margin: 24px auto;
+  padding: 16px;
   border: 1px solid var(--p-content-border-color);
   border-radius: 8px;
 }
+.ss-share-page h2 { margin-top: 0; }
 .share-trigger {
   margin-top: 20px;
 }
