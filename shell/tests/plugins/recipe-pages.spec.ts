@@ -61,4 +61,42 @@ describe('registered Recipe pages (API boundary double)', () => {
     wrappers.push(wrapper); await wrapper.find('.input-title').setValue('Unsaved cake'); await clickButton('Save Recipe')
     expect(wrapper.text()).toContain('Recipe write failed'); expect((wrapper.find('.input-title').element as HTMLInputElement).value).toBe('Unsaved cake'); expect(harness.router.currentRoute.value.path).toBe('/recipes/new')
   })
+  it('fetches covers and shows images by default on recipe list', async () => {
+    localStorage.clear()
+    const assetGetCalls: any[] = []
+    const { wrapper } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string, params: any) => {
+        if (path === '/api/recipes') return { items: [savedRecipe], total: 1, limit: 50, offset: 0 }
+        if (path === '/api/x/core-shortlist') return []
+        if (path === '/api/assets') {
+          assetGetCalls.push(params)
+          return [{ id: 'asset-1', slot: 'cover' }]
+        }
+        return []
+      },
+    } as any, '/recipes')
+    wrappers.push(wrapper)
+    await flushPromises()
+    expect(assetGetCalls.length).toBeGreaterThan(0)
+    expect(wrapper.find('.cover-image').exists()).toBe(true)
+  })
+  it('skips fetching covers and hides cover images on recipe list when disabled', async () => {
+    localStorage.setItem('secretsauce:show_recipe_images', 'false')
+    const assetGetCalls: any[] = []
+    const { wrapper } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string, params: any) => {
+        if (path === '/api/recipes') return { items: [savedRecipe], total: 1, limit: 50, offset: 0 }
+        if (path === '/api/x/core-shortlist') return []
+        if (path === '/api/assets') {
+          assetGetCalls.push(params)
+          return [{ id: 'asset-1', slot: 'cover' }]
+        }
+        return []
+      },
+    } as any, '/recipes')
+    wrappers.push(wrapper)
+    await flushPromises()
+    expect(assetGetCalls.length).toBe(0)
+    expect(wrapper.find('.cover-image').exists()).toBe(false)
+  })
 })

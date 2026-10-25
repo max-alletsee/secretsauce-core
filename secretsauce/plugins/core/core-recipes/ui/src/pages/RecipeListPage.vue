@@ -7,6 +7,11 @@ const emit = defineEmits<{ openRecipe: [string] }>()
 const ss = useSecretSauce()
 const recipes = ref<any[]>([]), search = ref(''), activeTag = ref<string | null>(null), sortBy = ref('title'), error = ref('')
 const shortlistOnly = ref(false), shortlistedIds = ref(new Set<string>())
+function readShowImages(): boolean {
+  try { return localStorage.getItem('secretsauce:show_recipe_images') !== 'false' }
+  catch { return true }
+}
+const showImages = ref(readShowImages())
 let request = 0
 async function loadShortlist() {
   try { const rows = await ss.api.get<any[]>('/api/x/core-shortlist'); shortlistedIds.value = new Set(rows.map(row => row.recipe_id)) }
@@ -20,6 +25,7 @@ async function loadRecipes() {
     const result = await ss.api.get<any>('/api/recipes', { q: search.value.trim() })
     if (sequence !== request) return
     recipes.value = result.items
+    if (!showImages.value) return
     const covered = await Promise.all(result.items.map(async (recipe: any) => {
       const id = await fetchCoverId(ss.api, recipe.group_id)
       return { ...recipe, cover_asset_id: id, cover_url: id ? ss.url(`/api/assets/${id}/file`) : null }
@@ -29,7 +35,7 @@ async function loadRecipes() {
   catch (failure: any) { if (sequence === request) error.value = failure?.message || 'Could not load recipes' }
 }
 function openRecipe(id: string) { emit('openRecipe', id); ss.navigate?.(`/recipes/${id}`) }
-onMounted(() => { loadRecipes(); loadShortlist() })
+onMounted(() => { showImages.value = readShowImages(); loadRecipes(); loadShortlist() })
 watch(search, loadRecipes)
 const allTags = computed(() => [...new Set<string>(recipes.value.flatMap(recipe => recipe.tags || []))])
 const filteredRecipes = computed(() => {
@@ -49,7 +55,7 @@ const filteredRecipes = computed(() => {
       <Select v-model="sortBy" aria-label="Sort recipes" :options="[{ id: 'title', label: 'Title (A–Z)' }, { id: 'prep', label: 'Prep time' }]" optionLabel="label" optionValue="id" />
     </div>
     <Message v-if="error" severity="error">{{ error }}</Message>
-    <div v-if="filteredRecipes.length" class="recipes-grid"><RecipeCard v-for="recipe in filteredRecipes" :key="recipe.id" :recipe="recipe" @select="openRecipe" /></div>
+    <div v-if="filteredRecipes.length" class="recipes-grid"><RecipeCard v-for="recipe in filteredRecipes" :key="recipe.id" :recipe="recipe" :show-cover="showImages" @select="openRecipe" /></div>
     <div v-else class="empty-state"><p>No recipes found.</p><IntentTrigger hub="recipe:create" label="Add your first recipe" /></div>
   </div>
 </template>

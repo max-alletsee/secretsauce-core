@@ -58,5 +58,32 @@ describe('Recipe Sub-Components', () => {
     expect(wrapper.text()).toContain('45m cook')
     expect(wrapper.text()).toContain('dessert')
     expect(wrapper.find('.card-actions-slot').exists()).toBe(true)
+    expect(wrapper.find('.cover-image').exists()).toBe(true)
+  })
+
+  it('RecipeCard hides cover image when showCover is false', () => {
+    const wrapper = mount(RecipeCard, {
+      props: {
+        recipe: {
+          id: 'r1_en',
+          title: 'Lemon Cake',
+          prep_time_minutes: 15,
+          cook_time_minutes: 45,
+          tags: ['dessert'],
+          cover_asset_id: 'asset_1',
+        },
+        showCover: false,
+      },
+      global: {
+        stubs: {
+          Slot: {
+            template: '<div class="card-actions-slot"><slot /></div>',
+          },
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('Lemon Cake')
+    expect(wrapper.find('.cover-image').exists()).toBe(false)
   })
 })

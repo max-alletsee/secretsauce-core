@@ -68,4 +68,31 @@ describe('Shell Core Pages', () => {
     expect(localStorage.getItem('secretsauce:default_start_page')).toBeNull()
     wrapper.unmount()
   })
+
+  it('toggles show recipe images in device settings', async () => {
+    localStorage.clear()
+    const harness = pluginHarness({ get: async () => [] } as any)
+    registerShellSettings(harness.settings)
+    harness.router.addRoute({ path: '/settings', component: SettingsPage })
+    await harness.router.push('/settings?section=device')
+    const wrapper = mountWithUi(SettingsPage, { attachTo: document.body, global: { plugins: [harness.pinia, harness.router], provide: harness.provide } })
+    await flushPromises()
+
+    const toggle = wrapper.find('#show-recipe-images')
+    expect(toggle.exists()).toBe(true)
+    // Default should be checked (true)
+    expect((toggle.element as HTMLInputElement).checked).toBe(true)
+
+    // Toggle off
+    await toggle.setValue(false)
+    await flushPromises()
+    expect(localStorage.getItem('secretsauce:show_recipe_images')).toBe('false')
+
+    // Toggle on again
+    await toggle.setValue(true)
+    await flushPromises()
+    expect(localStorage.getItem('secretsauce:show_recipe_images')).toBeNull()
+
+    wrapper.unmount()
+  })
 })
