@@ -32,5 +32,7 @@ describe('Root App Shell', () => {
 
     expect(wrapper.findComponent({ name: 'AppHeader' }).exists()).toBe(true)
     expect(wrapper.findComponent({ name: 'AppNav' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'AppBottomNav' }).exists()).toBe(true)
+    expect(wrapper.findComponent({ name: 'Drawer' }).exists()).toBe(false)
   })
 })

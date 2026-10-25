@@ -8,15 +8,16 @@ test('Settings is pinned last and Plugins is not a separate navigation item', as
   await expect(nav.getByRole('link', { name: 'Plugins', exact: true })).toHaveCount(0)
 })
 
-test('phone navigation opens and closes on navigation', async ({ page }) => {
+test('phone navigation shows always-visible bottom menu and navigates directly', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await login(page)
-  await page.getByRole('button', { name: 'Open navigation' }).click()
-  const drawer = page.getByRole('dialog')
-  await expect(drawer.locator('nav a').last()).toHaveText('Settings')
-  await drawer.getByRole('link', { name: 'Recipes', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Open navigation' })).toHaveCount(0)
+  const bottomNav = page.locator('nav.ss-bottom-nav')
+  await expect(bottomNav).toBeVisible()
+  await expect(bottomNav.locator('a').last()).toHaveText('Settings')
+  await bottomNav.getByRole('link', { name: 'Recipes', exact: true }).click()
   await expect(page).toHaveURL(/\/recipes$/)
-  await expect(drawer).not.toBeVisible()
+  await expect(bottomNav).toBeVisible()
 })
 
 test('themes apply live and survive reload', async ({ page }) => {

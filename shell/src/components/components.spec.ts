@@ -29,6 +29,7 @@ describe('Shell UI Components', () => {
 
     expect(wrapper.text()).toContain('The Baker House')
     expect(wrapper.find('select.member-select').exists()).toBe(false)
+    expect(wrapper.find('.navigation-toggle').exists()).toBe(false)
     const slot = wrapper.find('.slot-stub[data-name="shell.header.right"]')
     expect(slot.exists()).toBe(true)
   })

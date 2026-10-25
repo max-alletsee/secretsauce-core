@@ -2,15 +2,12 @@
 import { Slot } from '@secretsauce/ui'
 import { useHouseholdStore } from '../stores/household'
 
-defineProps<{ showNavigation?: boolean }>()
-const emit = defineEmits<{ navigation: [] }>()
 const householdStore = useHouseholdStore()
 </script>
 
 <template>
   <header class="ss-app-header">
     <div class="header-left">
-      <Button v-if="showNavigation" class="navigation-toggle" icon="pi pi-bars" text rounded aria-label="Open navigation" @click="emit('navigation')" />
       <Slot name="shell.header.left" />
       <span class="household-title">{{ householdStore.household.household_name }}</span>
     </div>
@@ -41,9 +38,7 @@ const householdStore = useHouseholdStore()
   font-size: 1.05rem;
   color: var(--p-text-color);
 }
-.navigation-toggle { display: none; }
 @media (max-width: 767px) {
-  .navigation-toggle { display: inline-flex; width: 2rem; height: 2rem; padding: 0; }
   .ss-app-header { padding: .375rem .625rem; gap: .375rem; }
   .household-title { font-size: .95rem; }
 }

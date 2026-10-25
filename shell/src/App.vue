@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { inject, computed, ref, watch } from 'vue'
+import { inject, computed } from 'vue'
 import { routeLocationKey } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import AppNav from './components/AppNav.vue'
+import AppBottomNav from './components/AppBottomNav.vue'
 import OfflineBar from './components/OfflineBar.vue'
 import Toast from 'primevue/toast'
 import { useAppStore } from './stores/app'
@@ -18,22 +19,18 @@ const isAuthPage = computed(() => {
 })
 
 const routes = computed(() => (routeRegistry ? routeRegistry.getRoutes() : []))
-const navigationOpen = ref(false)
-watch(() => route?.fullPath, () => { navigationOpen.value = false })
 </script>
 
 <template>
   <div class="ss-layout">
-    <AppHeader :show-navigation="!isAuthPage" @navigation="navigationOpen = true" />
-    <Drawer v-model:visible="navigationOpen" header="Navigation" position="left">
-      <AppNav :routes="routes" />
-    </Drawer>
+    <AppHeader />
     <div class="ss-main-container">
       <AppNav v-if="!isAuthPage" class="desktop-navigation" :routes="routes" />
       <main class="ss-content">
         <router-view />
       </main>
     </div>
+    <AppBottomNav v-if="!isAuthPage" class="mobile-navigation" :routes="routes" />
     <Toast />
     <ConfirmDialog />
     <OfflineBar
@@ -69,5 +66,11 @@ body {
   min-width: 0;
   overflow-y: auto;
 }
-@media (max-width: 767px) { .ss-main-container > .ss-app-nav.desktop-navigation { display: none; } }
+@media (min-width: 768px) {
+  .mobile-navigation { display: none; }
+}
+@media (max-width: 767px) {
+  .ss-main-container > .ss-app-nav.desktop-navigation { display: none; }
+  .mobile-navigation { display: flex; }
+}
 </style>

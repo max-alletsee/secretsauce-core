@@ -69,6 +69,11 @@ const showDialog = ref(false)
   z-index: 1000;
   cursor: pointer;
 }
+@media (max-width: 767px) {
+  .ss-offline-bar {
+    bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
 .ss-offline-counts .badge {
   margin-left: 8px;
   padding: 2px 6px;
