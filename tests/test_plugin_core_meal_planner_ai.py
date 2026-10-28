@@ -173,3 +173,46 @@ async def test_accept_is_atomic_and_only_once(tmp_path: Path):
         assert again.status_code == 409
         entries = await k.schedule.list_entries(from_date="2026-09-21", to_date="2026-09-22")
         assert len(entries) == 1
+
+
+@pytest.mark.asyncio
+async def test_meal_planner_generate_model_key_resolves_through_ai_provider(tmp_path: Path):
+    async with make_kernel(tmp_path, auto_setup=True) as k:
+        cfg_res = await k.client.get("/api/plugins/core-meal-planner-ai/config")
+        assert cfg_res.status_code == 200
+        assert cfg_res.json() == {"generate_model_key": "default"}
+
+        rec = (await k.client.post("/api/recipes", json={"title": "Dal", "language": "en"})).json()
+        assert (
+            await k.client.put(
+                "/api/x/core-ai-provider/settings",
+                json={
+                    "provider": "openai",
+                    "openai_api_key": "sk-test",
+                    "models": {"default": "gpt-4o-mini", "fast": "gpt-4o-nano"},
+                },
+            )
+        ).status_code == 200
+        assert (
+            await k.client.put(
+                "/api/plugins/core-meal-planner-ai/config",
+                json={"generate_model_key": "fast"},
+            )
+        ).status_code == 200
+
+        ai_svc = k.services.get("core-ai-provider")
+        seen_models: list[str] = []
+
+        async def fake_outbound(base_url, api_key, model, schema, prompt, images=None):
+            seen_models.append(model)
+            return {
+                "title": "Fast Plan",
+                "suggestions": [{"recipe_id": rec["id"], "recipe_title": "Dal"}],
+            }, 20, 10
+
+        with patch.object(ai_svc, "_complete_openai_compatible", side_effect=fake_outbound):
+            res = await k.client.post("/api/x/core-meal-planner-ai/generate", json={"days": 2})
+            assert res.status_code == 200
+
+        assert seen_models == ["gpt-4o-nano"]
+

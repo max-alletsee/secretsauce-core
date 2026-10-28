@@ -121,24 +121,57 @@ async def test_ai_provider_usage_and_settings_api(tmp_path: Path):
         settings_res = await client.get("/api/x/core-ai-provider/settings")
         assert settings_res.status_code == 200
         settings_data = settings_res.json()
+        assert settings_data["models"] == {"default": "gemini-3.8-flash"}
         assert settings_data["model"] == "gemini-3.8-flash"
         assert settings_data["provider"] == "gemini"
 
-        # 2. Update settings via PUT
+        # 2. Update settings via PUT with multiple key/value model definitions
         put_res = await client.put(
             "/api/x/core-ai-provider/settings",
             json={
-                "model": "gemini-3.8-flash",
+                "models": {
+                    "default": "gemini-2.5-flash",
+                    "smart": "gemini-2.5-pro",
+                },
                 "enforce_budget": True,
                 "monthly_budget": 15.0,
             },
         )
         assert put_res.status_code == 200
         updated = put_res.json()
+        assert updated["models"] == {
+            "default": "gemini-2.5-flash",
+            "smart": "gemini-2.5-pro",
+        }
+        assert updated["model"] == "gemini-2.5-flash"
         assert updated["enforce_budget"] is True
         assert updated["monthly_budget"] == 15.0
 
-        # 3. Usage endpoint
+        # 3. Legacy PUT with 'model' bridges into models['default'] while keeping custom keys
+        legacy_res = await client.put(
+            "/api/x/core-ai-provider/settings",
+            json={"model": "gemini-3.8-flash"},
+        )
+        assert legacy_res.status_code == 200
+        assert legacy_res.json()["models"] == {
+            "default": "gemini-3.8-flash",
+            "smart": "gemini-2.5-pro",
+        }
+
+        # 4. Validation rejects missing 'default' or blank keys/values
+        for bad_models in (
+            {"smart": "gemini-2.5-pro"},
+            {"default": "   "},
+            {"default": "gemini-3.8-flash", "": "gemini-2.5-pro"},
+            {"default": "gemini-3.8-flash", "smart": "  "},
+        ):
+            bad_res = await client.put(
+                "/api/x/core-ai-provider/settings",
+                json={"models": bad_models},
+            )
+            assert bad_res.status_code == 422
+
+        # 5. Usage endpoint
         usage_res = await client.get("/api/x/core-ai-provider/usage")
         assert usage_res.status_code == 200
         usage_data = usage_res.json()
@@ -256,4 +289,64 @@ async def test_budget_disabled_allows_overage(tmp_path: Path):
             # Should NOT raise an exception because enforce_budget is False
             res = await svc.complete(schema=None, prompt="Test", call_type="test")
             assert res == "OK"
+
+
+@pytest.mark.asyncio
+async def test_model_key_resolution_and_default_fallback(tmp_path: Path):
+    async with make_kernel(tmp_path, auto_setup=True) as k:
+        client = k.client
+        svc = k.services.get("core-ai-provider")
+
+        put_res = await client.put(
+            "/api/x/core-ai-provider/settings",
+            json={
+                "provider": "openai",
+                "openai_api_key": "sk-test-key",
+                "models": {
+                    "default": "gpt-4o-mini",
+                    "smart": "gpt-4o",
+                },
+            },
+        )
+        assert put_res.status_code == 200
+
+        seen_models: list[str] = []
+
+        async def fake_openai_compatible(base_url, api_key, model, schema, prompt, images=None):
+            seen_models.append(model)
+            return "ok", 10, 5
+
+        with patch.object(svc, "_complete_openai_compatible", side_effect=fake_openai_compatible):
+            await svc.complete(
+                schema=None,
+                prompt="Use smart",
+                call_type="smart_task",
+                calling_plugin="test-plugin",
+                model_key="smart",
+            )
+            await svc.complete(
+                schema=None,
+                prompt="Use deleted key",
+                call_type="fallback_task",
+                calling_plugin="test-plugin",
+                model_key="deleted-key",
+            )
+            await svc.complete(
+                schema=None,
+                prompt="Use omitted key",
+                call_type="default_task",
+                calling_plugin="test-plugin",
+            )
+
+        assert seen_models == ["gpt-4o", "gpt-4o-mini", "gpt-4o-mini"]
+
+        rows = await k.db.fetch_all(
+            "SELECT call_type, model FROM plugin_core_ai_provider_usage WHERE calling_plugin = 'test-plugin' ORDER BY rowid ASC"
+        )
+        assert [(r["call_type"], r["model"]) for r in rows] == [
+            ("smart_task", "gpt-4o"),
+            ("fallback_task", "gpt-4o-mini"),
+            ("default_task", "gpt-4o-mini"),
+        ]
+
 

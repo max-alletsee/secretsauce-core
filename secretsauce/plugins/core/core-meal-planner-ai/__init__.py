@@ -16,6 +16,12 @@ PLUGIN = {
     "schema": 1,
     "requires": ["core-ai-provider", "core-timeline?"],
     "ui": "ui.js",
+    "config_schema": {
+        "type": "object",
+        "properties": {
+            "generate_model_key": {"type": "string", "default": "default"},
+        },
+    },
 }
 
 router = APIRouter(prefix="/api/x/core-meal-planner-ai", tags=["core-meal-planner-ai"])
@@ -122,6 +128,7 @@ async def generate_plan_endpoint(req: GeneratePlanRequest, ctx: PluginContext = 
         prompt=ai_prompt,
         call_type="meal_plan_generate",
         calling_plugin="core-meal-planner-ai",
+        model_key=ctx.config.get("generate_model_key") or "default",
     )
     if not isinstance(result, dict):
         result = json.loads(result)

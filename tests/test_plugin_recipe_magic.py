@@ -144,3 +144,54 @@ async def test_adapt_recipe_ai_unavailable(tmp_path: Path):
         data = res.json()
         assert data["error"]["code"] == "unavailable"
 
+
+@pytest.mark.asyncio
+async def test_recipe_magic_adapt_model_key_resolves_through_ai_provider(tmp_path: Path):
+    async with make_kernel(tmp_path, auto_setup=True) as k:
+        cfg_res = await k.client.get("/api/plugins/core-recipe-magic/config")
+        assert cfg_res.status_code == 200
+        assert cfg_res.json().get("adapt_model_key") == "default"
+
+        assert (
+            await k.client.put(
+                "/api/x/core-ai-provider/settings",
+                json={
+                    "provider": "openai",
+                    "openai_api_key": "sk-test",
+                    "models": {"default": "gpt-4o-mini", "chef": "gpt-4o"},
+                },
+            )
+        ).status_code == 200
+
+        current_cfg = cfg_res.json()
+        assert (
+            await k.client.put(
+                "/api/plugins/core-recipe-magic/config",
+                json={**current_cfg, "adapt_model_key": "chef"},
+            )
+        ).status_code == 200
+
+        ai_svc = k.services.get("core-ai-provider")
+        seen_models: list[str] = []
+
+        async def fake_outbound(base_url, api_key, model, schema, prompt, images=None):
+            seen_models.append(model)
+            return dict(MOCK_ADAPTED_RECIPE), 25, 15
+
+        with patch.object(ai_svc, "_complete_openai_compatible", side_effect=fake_outbound):
+            res = await k.client.post(
+                "/api/x/core-recipe-magic/adapt",
+                json={
+                    "action_id": "vegetarian",
+                    "recipe": {
+                        "title": "Shepherd's Pie",
+                        "ingredients": [{"name": "lamb", "quantity": 500, "unit": "g"}],
+                        "steps": [{"instruction": "Brown lamb."}],
+                    },
+                },
+            )
+            assert res.status_code == 200
+
+        assert seen_models == ["gpt-4o"]
+
+

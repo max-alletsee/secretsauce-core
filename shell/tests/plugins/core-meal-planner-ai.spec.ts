@@ -41,4 +41,37 @@ describe('registered meal planner sidebar (API boundary double)', () => {
     expect(wrapper.text()).toContain('Suggestion was already accepted on another device')
     expect(wrapper.text()).not.toContain('Scheduled')
   })
+
+  it('renders inline plugin settings for meal planner generate_model_key', async () => {
+    let savedConfig: any = null
+    const { wrapper, harness } = registeredSlot(
+      activate,
+      'core-meal-planner-ai',
+      {
+        get: async (path: string) => {
+          if (path === '/api/x/core-ai-provider/settings') {
+            return { models: { default: 'gpt-4o-mini', fast: 'gpt-4o-nano' } }
+          }
+          if (path === '/api/plugins/core-meal-planner-ai/config') {
+            return { generate_model_key: 'fast' }
+          }
+          throw new Error(`Unexpected GET ${path}`)
+        },
+        put: async (path: string, body: any) => {
+          expect(path).toBe('/api/plugins/core-meal-planner-ai/config')
+          savedConfig = body
+          return body
+        },
+      } as any,
+      'plugin_manager.plugin.actions',
+      { plugin: { id: 'core-meal-planner-ai', state: 'active', enabled: true } },
+    )
+    wrappers.push(wrapper)
+
+    await clickButton('Settings', wrapper.element)
+    await flushPromises()
+    await clickButton('Save Settings', wrapper.element)
+    expect(savedConfig).toEqual({ generate_model_key: 'fast' })
+    expect(harness.notifications).toContainEqual(expect.objectContaining({ level: 'success' }))
+  })
 })

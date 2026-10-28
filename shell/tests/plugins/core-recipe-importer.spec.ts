@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { ApiError } from '@secretsauce/ui'
 import activate from '../../../secretsauce/plugins/core/core-recipe-importer/ui/src/index'
-import { registeredIntent, openProvider, clickButton, recipeDraft, savedRecipe } from '../helpers/registeredPlugin'
+import { registeredIntent, registeredSlot, openProvider, clickButton, recipeDraft, savedRecipe } from '../helpers/registeredPlugin'
 
 const wrappers: VueWrapper[] = []
 afterEach(() => { wrappers.splice(0).forEach(w => w.unmount()); document.body.innerHTML = '' })
@@ -64,5 +64,48 @@ describe('registered importer component (API boundary double)', () => {
     await clickButton('Open AI settings'); await flushPromises()
     expect(harness.router.currentRoute.value.fullPath).toBe('/settings?section=core-ai-provider')
     expect(wrapper.emitted('cancel')).toEqual([[]])
+  })
+
+  it('renders inline plugin settings with task model keys and missing-key fallback indicator', async () => {
+    let savedConfig: any = null
+    const { wrapper, harness } = registeredSlot(
+      activate,
+      'core-recipe-importer',
+      {
+        get: async (path: string) => {
+          if (path === '/api/x/core-ai-provider/settings') {
+            return { models: { default: 'gpt-4o-mini', vision: 'gpt-4o' } }
+          }
+          if (path === '/api/plugins/core-recipe-importer/config') {
+            return {
+              url_model_key: 'deleted-key',
+              text_model_key: 'default',
+              image_model_key: 'vision',
+            }
+          }
+          throw new Error(`Unexpected GET ${path}`)
+        },
+        put: async (path: string, body: any) => {
+          expect(path).toBe('/api/plugins/core-recipe-importer/config')
+          savedConfig = body
+          return body
+        },
+      } as any,
+      'plugin_manager.plugin.actions',
+      { plugin: { id: 'core-recipe-importer', state: 'active', enabled: true } },
+    )
+    wrappers.push(wrapper)
+
+    await clickButton('Settings', wrapper.element)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('deleted-key (missing — uses default)')
+    await clickButton('Save Settings', wrapper.element)
+    expect(savedConfig).toEqual({
+      url_model_key: 'deleted-key',
+      text_model_key: 'default',
+      image_model_key: 'vision',
+    })
+    expect(harness.notifications).toContainEqual(expect.objectContaining({ level: 'success' }))
   })
 })

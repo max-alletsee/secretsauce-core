@@ -1,83 +1,83 @@
-import { defineComponent as K, ref as i, computed as Q, watch as X, resolveComponent as r, openBlock as u, createElementBlock as m, createVNode as a, withCtx as n, createTextVNode as y, createElementVNode as s, createCommentVNode as b, createBlock as V, toDisplayString as f, Fragment as N, renderList as F } from "vue";
-import { useSecretSauce as Y } from "@secretsauce/ui";
-const Z = { class: "import-recipe-dialog" }, ee = ["src"], te = {
+import { defineComponent as z, ref as s, computed as K, watch as q, resolveComponent as c, openBlock as d, createElementBlock as f, createVNode as n, withCtx as v, createTextVNode as R, createElementVNode as i, createCommentVNode as x, createBlock as P, toDisplayString as b, Fragment as M, renderList as j } from "vue";
+import { useSecretSauce as W } from "@secretsauce/ui";
+const ee = { class: "import-recipe-dialog" }, te = ["src"], le = {
   key: 2,
   role: "status"
-}, le = { key: 0 }, ae = { class: "dialog-actions" }, oe = /* @__PURE__ */ K({
+}, oe = { key: 0 }, ae = { class: "dialog-actions" }, ne = /* @__PURE__ */ z({
   inheritAttrs: !1,
   __name: "ImportRecipeDialog",
   props: {
     context: {}
   },
   emits: ["resolve", "cancel"],
-  setup(x, { emit: P }) {
-    const g = P, c = Y(), v = i("url"), h = i(""), w = i(""), I = i(""), A = i("image/jpeg"), k = i(""), l = i(null), C = i(!1), _ = i(!1), p = i(""), T = i(!1), B = Q(() => v.value === "url" ? !!h.value.trim() : v.value === "text" ? !!w.value.trim() : !!I.value);
-    X(v, () => {
-      l.value = null, p.value = "", T.value = !1;
+  setup(y, { emit: V }) {
+    const p = V, g = W(), u = s("url"), C = s(""), a = s(""), I = s(""), L = s("image/jpeg"), T = s(""), e = s(null), l = s(!1), r = s(!1), m = s(""), k = s(!1), w = K(() => u.value === "url" ? !!C.value.trim() : u.value === "text" ? !!a.value.trim() : !!I.value);
+    q(u, () => {
+      e.value = null, m.value = "", k.value = !1;
     });
-    function $(t) {
-      var R;
-      I.value = "", k.value = "", l.value = null, p.value = "", T.value = !1;
-      const e = (R = t.target.files) == null ? void 0 : R[0];
-      if (!e) return;
-      if (!e.type.startsWith("image/")) {
-        p.value = "Choose an image file";
+    function U(o) {
+      var F;
+      I.value = "", T.value = "", e.value = null, m.value = "", k.value = !1;
+      const t = (F = o.target.files) == null ? void 0 : F[0];
+      if (!t) return;
+      if (!t.type.startsWith("image/")) {
+        m.value = "Choose an image file";
         return;
       }
-      A.value = e.type;
-      const d = new FileReader();
-      d.onload = () => {
-        k.value = String(d.result), I.value = k.value.split(",")[1];
-      }, d.onerror = () => {
-        p.value = "Could not read the photo";
-      }, d.readAsDataURL(e);
+      L.value = t.type;
+      const S = new FileReader();
+      S.onload = () => {
+        T.value = String(S.result), I.value = T.value.split(",")[1];
+      }, S.onerror = () => {
+        m.value = "Could not read the photo";
+      }, S.readAsDataURL(t);
     }
-    function D(t) {
-      T.value = (t == null ? void 0 : t.code) === "unavailable" || (t == null ? void 0 : t.status) === 503, p.value = (t == null ? void 0 : t.message) || "Could not import the recipe";
+    function h(o) {
+      k.value = (o == null ? void 0 : o.code) === "unavailable" || (o == null ? void 0 : o.status) === 503, m.value = (o == null ? void 0 : o.message) || "Could not import the recipe";
     }
-    async function M() {
-      if (!(!B.value || C.value)) {
-        C.value = !0, l.value = null, p.value = "", T.value = !1;
+    async function $() {
+      if (!(!w.value || l.value)) {
+        l.value = !0, e.value = null, m.value = "", k.value = !1;
         try {
-          const t = v.value === "photo" ? "image" : v.value, e = t === "url" ? { url: h.value.trim() } : t === "text" ? { text: w.value.trim() } : { image_base64: I.value, mime_type: A.value };
-          l.value = await c.api.post(`/api/x/core-recipe-importer/parse-${t}`, { ...e, auto_save: !1 });
+          const o = u.value === "photo" ? "image" : u.value, t = o === "url" ? { url: C.value.trim() } : o === "text" ? { text: a.value.trim() } : { image_base64: I.value, mime_type: L.value };
+          e.value = await g.api.post(`/api/x/core-recipe-importer/parse-${o}`, { ...t, auto_save: !1 });
+        } catch (o) {
+          h(o);
+        } finally {
+          l.value = !1;
+        }
+      }
+    }
+    async function B() {
+      var o;
+      if (!(!e.value || r.value)) {
+        r.value = !0, m.value = "";
+        try {
+          const t = await g.api.post("/api/recipes", { ...e.value, language: e.value.language || ((o = g.store.household.value) == null ? void 0 : o.languages.primary) || "en" });
+          g.notify({ level: "success", message: "Recipe imported" }), p("resolve", t), g.navigate(`/recipes/${t.id}`);
         } catch (t) {
-          D(t);
+          h(t);
         } finally {
-          C.value = !1;
+          r.value = !1;
         }
       }
     }
-    async function O() {
-      var t;
-      if (!(!l.value || _.value)) {
-        _.value = !0, p.value = "";
-        try {
-          const e = await c.api.post("/api/recipes", { ...l.value, language: l.value.language || ((t = c.store.household.value) == null ? void 0 : t.languages.primary) || "en" });
-          c.notify({ level: "success", message: "Recipe imported" }), g("resolve", e), c.navigate(`/recipes/${e.id}`);
-        } catch (e) {
-          D(e);
-        } finally {
-          _.value = !1;
-        }
-      }
+    function A() {
+      p("cancel"), g.navigate("/settings?section=core-ai-provider");
     }
-    function j() {
-      g("cancel"), c.navigate("/settings?section=core-ai-provider");
-    }
-    return (t, e) => {
-      const d = r("Tab"), R = r("TabList"), q = r("InputText"), L = r("TabPanel"), W = r("Textarea"), z = r("TabPanels"), G = r("Tabs"), S = r("Button"), E = r("Message"), H = r("ProgressSpinner"), J = r("Card");
-      return u(), m("div", Z, [
-        a(G, {
-          value: v.value,
-          "onUpdate:value": e[2] || (e[2] = (o) => v.value = o)
+    return (o, t) => {
+      const S = c("Tab"), F = c("TabList"), H = c("InputText"), D = c("TabPanel"), J = c("Textarea"), Q = c("TabPanels"), X = c("Tabs"), O = c("Button"), N = c("Message"), Y = c("ProgressSpinner"), Z = c("Card");
+      return d(), f("div", ee, [
+        n(X, {
+          value: u.value,
+          "onUpdate:value": t[2] || (t[2] = (_) => u.value = _)
         }, {
-          default: n(() => [
-            a(R, null, {
-              default: n(() => [
-                a(d, { value: "url" }, {
-                  default: n(() => [...e[4] || (e[4] = [
-                    y(
+          default: v(() => [
+            n(F, null, {
+              default: v(() => [
+                n(S, { value: "url" }, {
+                  default: v(() => [...t[4] || (t[4] = [
+                    R(
                       "URL",
                       -1
                       /* CACHED */
@@ -86,9 +86,9 @@ const Z = { class: "import-recipe-dialog" }, ee = ["src"], te = {
                   _: 1
                   /* STABLE */
                 }),
-                a(d, { value: "text" }, {
-                  default: n(() => [...e[5] || (e[5] = [
-                    y(
+                n(S, { value: "text" }, {
+                  default: v(() => [...t[5] || (t[5] = [
+                    R(
                       "Paste text",
                       -1
                       /* CACHED */
@@ -97,9 +97,9 @@ const Z = { class: "import-recipe-dialog" }, ee = ["src"], te = {
                   _: 1
                   /* STABLE */
                 }),
-                a(d, { value: "photo" }, {
-                  default: n(() => [...e[6] || (e[6] = [
-                    y(
+                n(S, { value: "photo" }, {
+                  default: v(() => [...t[6] || (t[6] = [
+                    R(
                       "Photo",
                       -1
                       /* CACHED */
@@ -112,21 +112,21 @@ const Z = { class: "import-recipe-dialog" }, ee = ["src"], te = {
               _: 1
               /* STABLE */
             }),
-            a(z, null, {
-              default: n(() => [
-                a(L, { value: "url" }, {
-                  default: n(() => [
-                    e[7] || (e[7] = s(
+            n(Q, null, {
+              default: v(() => [
+                n(D, { value: "url" }, {
+                  default: v(() => [
+                    t[7] || (t[7] = i(
                       "label",
                       { for: "import-url" },
                       "Recipe URL",
                       -1
                       /* CACHED */
                     )),
-                    a(q, {
+                    n(H, {
                       id: "import-url",
-                      modelValue: h.value,
-                      "onUpdate:modelValue": e[0] || (e[0] = (o) => h.value = o),
+                      modelValue: C.value,
+                      "onUpdate:modelValue": t[0] || (t[0] = (_) => C.value = _),
                       type: "url",
                       fluid: "",
                       placeholder: "https://…"
@@ -135,19 +135,19 @@ const Z = { class: "import-recipe-dialog" }, ee = ["src"], te = {
                   _: 1
                   /* STABLE */
                 }),
-                a(L, { value: "text" }, {
-                  default: n(() => [
-                    e[8] || (e[8] = s(
+                n(D, { value: "text" }, {
+                  default: v(() => [
+                    t[8] || (t[8] = i(
                       "label",
                       { for: "import-text" },
                       "Recipe text",
                       -1
                       /* CACHED */
                     )),
-                    a(W, {
+                    n(J, {
                       id: "import-text",
-                      modelValue: w.value,
-                      "onUpdate:modelValue": e[1] || (e[1] = (o) => w.value = o),
+                      modelValue: a.value,
+                      "onUpdate:modelValue": t[1] || (t[1] = (_) => a.value = _),
                       rows: "6",
                       fluid: ""
                     }, null, 8, ["modelValue"])
@@ -155,33 +155,33 @@ const Z = { class: "import-recipe-dialog" }, ee = ["src"], te = {
                   _: 1
                   /* STABLE */
                 }),
-                a(L, { value: "photo" }, {
-                  default: n(() => [
-                    e[9] || (e[9] = s(
+                n(D, { value: "photo" }, {
+                  default: v(() => [
+                    t[9] || (t[9] = i(
                       "label",
                       { for: "import-photo" },
                       "Recipe photo",
                       -1
                       /* CACHED */
                     )),
-                    s(
+                    i(
                       "input",
                       {
                         id: "import-photo",
                         type: "file",
                         accept: "image/*",
-                        onChange: $
+                        onChange: U
                       },
                       null,
                       32
                       /* NEED_HYDRATION */
                     ),
-                    k.value ? (u(), m("img", {
+                    T.value ? (d(), f("img", {
                       key: 0,
-                      src: k.value,
+                      src: T.value,
                       alt: "Selected recipe photo",
                       class: "photo-preview"
-                    }, null, 8, ee)) : b("v-if", !0)
+                    }, null, 8, te)) : x("v-if", !0)
                   ]),
                   _: 1
                   /* STABLE */
@@ -194,89 +194,89 @@ const Z = { class: "import-recipe-dialog" }, ee = ["src"], te = {
           _: 1
           /* STABLE */
         }, 8, ["value"]),
-        T.value ? (u(), V(E, {
+        k.value ? (d(), P(N, {
           key: 0,
           severity: "warn"
         }, {
-          default: n(() => [
-            e[10] || (e[10] = y(
+          default: v(() => [
+            t[10] || (t[10] = R(
               "AI isn’t set up yet. ",
               -1
               /* CACHED */
             )),
-            a(S, {
+            n(O, {
               label: "Open AI settings",
               severity: "secondary",
-              onClick: j
+              onClick: A
             })
           ]),
           _: 1
           /* STABLE */
-        })) : p.value ? (u(), V(E, {
+        })) : m.value ? (d(), P(N, {
           key: 1,
           severity: "error"
         }, {
-          default: n(() => [
-            y(
-              f(p.value),
+          default: v(() => [
+            R(
+              b(m.value),
               1
               /* TEXT */
             )
           ]),
           _: 1
           /* STABLE */
-        })) : b("v-if", !0),
-        a(S, {
+        })) : x("v-if", !0),
+        n(O, {
           label: "Extract recipe",
           icon: "pi pi-sparkles",
-          loading: C.value,
-          disabled: !B.value || _.value,
-          onClick: M
+          loading: l.value,
+          disabled: !w.value || r.value,
+          onClick: $
         }, null, 8, ["loading", "disabled"]),
-        C.value ? (u(), m("div", te, [
-          a(H, { "aria-label": "Extracting recipe" })
-        ])) : b("v-if", !0),
-        l.value ? (u(), V(J, {
+        l.value ? (d(), f("div", le, [
+          n(Y, { "aria-label": "Extracting recipe" })
+        ])) : x("v-if", !0),
+        e.value ? (d(), P(Z, {
           key: 3,
           class: "draft-preview"
         }, {
-          title: n(() => [
-            y(
-              f(l.value.title),
+          title: v(() => [
+            R(
+              b(e.value.title),
               1
               /* TEXT */
             )
           ]),
-          content: n(() => [
-            l.value.description ? (u(), m(
+          content: v(() => [
+            e.value.description ? (d(), f(
               "p",
-              le,
-              f(l.value.description),
+              oe,
+              b(e.value.description),
               1
               /* TEXT */
-            )) : b("v-if", !0),
-            s(
+            )) : x("v-if", !0),
+            i(
               "p",
               null,
-              "Serves " + f(l.value.servings),
+              "Serves " + b(e.value.servings),
               1
               /* TEXT */
             ),
-            e[11] || (e[11] = s(
+            t[11] || (t[11] = i(
               "h3",
               null,
               "Ingredients",
               -1
               /* CACHED */
             )),
-            s("ul", null, [
-              (u(!0), m(
-                N,
+            i("ul", null, [
+              (d(!0), f(
+                M,
                 null,
-                F(l.value.ingredients, (o, U) => (u(), m(
+                j(e.value.ingredients, (_, E) => (d(), f(
                   "li",
-                  { key: U },
-                  f(o.quantity) + " " + f(o.unit) + " " + f(o.name),
+                  { key: E },
+                  b(_.quantity) + " " + b(_.unit) + " " + b(_.name),
                   1
                   /* TEXT */
                 ))),
@@ -284,21 +284,21 @@ const Z = { class: "import-recipe-dialog" }, ee = ["src"], te = {
                 /* KEYED_FRAGMENT */
               ))
             ]),
-            e[12] || (e[12] = s(
+            t[12] || (t[12] = i(
               "h3",
               null,
               "Instructions",
               -1
               /* CACHED */
             )),
-            s("ol", null, [
-              (u(!0), m(
-                N,
+            i("ol", null, [
+              (d(!0), f(
+                M,
                 null,
-                F(l.value.steps, (o, U) => (u(), m(
+                j(e.value.steps, (_, E) => (d(), f(
                   "li",
-                  { key: U },
-                  f(o.instruction || o.text),
+                  { key: E },
+                  b(_.instruction || _.text),
                   1
                   /* TEXT */
                 ))),
@@ -309,43 +309,205 @@ const Z = { class: "import-recipe-dialog" }, ee = ["src"], te = {
           ]),
           _: 1
           /* STABLE */
-        })) : b("v-if", !0),
-        s("div", ae, [
-          a(S, {
+        })) : x("v-if", !0),
+        i("div", ae, [
+          n(O, {
             label: "Cancel",
             severity: "secondary",
-            disabled: _.value,
-            onClick: e[3] || (e[3] = (o) => g("cancel"))
+            disabled: r.value,
+            onClick: t[3] || (t[3] = (_) => p("cancel"))
           }, null, 8, ["disabled"]),
-          l.value ? (u(), V(S, {
+          e.value ? (d(), P(O, {
             key: 0,
             label: "Save recipe",
             icon: "pi pi-check",
-            loading: _.value,
-            onClick: O
-          }, null, 8, ["loading"])) : b("v-if", !0)
+            loading: r.value,
+            onClick: B
+          }, null, 8, ["loading"])) : x("v-if", !0)
         ])
       ]);
     };
   }
-}), ne = (x, P) => {
-  const g = x.__vccOpts || x;
-  for (const [c, v] of P)
-    g[c] = v;
-  return g;
-}, ue = /* @__PURE__ */ ne(oe, [["__scopeId", "data-v-e37051b4"]]);
-function se(x) {
-  x.intent.provider({
+}), G = (y, V) => {
+  const p = y.__vccOpts || y;
+  for (const [g, u] of V)
+    p[g] = u;
+  return p;
+}, ie = /* @__PURE__ */ G(ne, [["__scopeId", "data-v-e37051b4"]]), ue = {
+  key: 0,
+  class: "plugin-inline-settings"
+}, se = { class: "settings-grid" }, re = { class: "settings-actions" }, de = /* @__PURE__ */ z({
+  inheritAttrs: !1,
+  __name: "ImporterPluginSettings",
+  props: {
+    context: {}
+  },
+  setup(y) {
+    const V = W(), p = s(!1), g = s(!1), u = s(""), C = s(["default"]), a = s({
+      url_model_key: "default",
+      text_model_key: "default",
+      image_model_key: "default"
+    });
+    function I(e) {
+      const l = C.value.length ? C.value : ["default"], r = l.map((m) => ({ value: m, label: m }));
+      return e && !l.includes(e) && r.unshift({ value: e, label: `${e} (missing — uses default)` }), r;
+    }
+    async function L() {
+      u.value = "";
+      try {
+        const [e, l] = await Promise.all([
+          V.api.get("/api/x/core-ai-provider/settings").catch(() => ({ models: { default: "gemini-3.8-flash" } })),
+          V.api.get("/api/plugins/core-recipe-importer/config")
+        ]), r = e != null && e.models && typeof e.models == "object" ? Object.keys(e.models) : ["default"];
+        C.value = r.length ? r : ["default"], a.value = {
+          url_model_key: (l == null ? void 0 : l.url_model_key) || "default",
+          text_model_key: (l == null ? void 0 : l.text_model_key) || "default",
+          image_model_key: (l == null ? void 0 : l.image_model_key) || "default"
+        };
+      } catch (e) {
+        u.value = (e == null ? void 0 : e.message) || "Failed to load importer settings";
+      }
+    }
+    q(p, (e) => {
+      e && L();
+    });
+    async function T() {
+      if (!g.value) {
+        g.value = !0, u.value = "";
+        try {
+          const e = await V.api.put("/api/plugins/core-recipe-importer/config", { ...a.value });
+          a.value = {
+            url_model_key: (e == null ? void 0 : e.url_model_key) || a.value.url_model_key,
+            text_model_key: (e == null ? void 0 : e.text_model_key) || a.value.text_model_key,
+            image_model_key: (e == null ? void 0 : e.image_model_key) || a.value.image_model_key
+          }, V.notify({ level: "success", message: "Recipe importer settings updated." });
+        } catch (e) {
+          u.value = (e == null ? void 0 : e.message) || "Failed to save importer settings";
+        } finally {
+          g.value = !1;
+        }
+      }
+    }
+    return (e, l) => {
+      var w, U, h, $, B, A;
+      const r = c("Button"), m = c("Message"), k = c("Select");
+      return ((U = (w = y.context) == null ? void 0 : w.plugin) == null ? void 0 : U.id) === "core-recipe-importer" ? (d(), f(
+        M,
+        { key: 0 },
+        [
+          n(r, {
+            label: p.value ? "Close Settings" : "Settings",
+            icon: p.value ? "pi pi-chevron-up" : "pi pi-cog",
+            size: "small",
+            outlined: !p.value,
+            disabled: (($ = (h = y.context) == null ? void 0 : h.plugin) == null ? void 0 : $.state) !== "active",
+            class: "btn-importer-settings-toggle",
+            onClick: l[0] || (l[0] = (o) => p.value = !p.value)
+          }, null, 8, ["label", "icon", "outlined", "disabled"]),
+          p.value && ((A = (B = y.context) == null ? void 0 : B.plugin) == null ? void 0 : A.state) === "active" ? (d(), f("div", ue, [
+            u.value ? (d(), P(m, {
+              key: 0,
+              severity: "error"
+            }, {
+              default: v(() => [
+                R(
+                  b(u.value),
+                  1
+                  /* TEXT */
+                )
+              ]),
+              _: 1
+              /* STABLE */
+            })) : x("v-if", !0),
+            i("div", se, [
+              i("div", null, [
+                l[4] || (l[4] = i(
+                  "label",
+                  { for: "importer-url-model-key" },
+                  "URL import model key",
+                  -1
+                  /* CACHED */
+                )),
+                n(k, {
+                  inputId: "importer-url-model-key",
+                  "aria-label": "URL import model key",
+                  modelValue: a.value.url_model_key,
+                  "onUpdate:modelValue": l[1] || (l[1] = (o) => a.value.url_model_key = o),
+                  options: I(a.value.url_model_key),
+                  optionLabel: "label",
+                  optionValue: "value",
+                  fluid: ""
+                }, null, 8, ["modelValue", "options"])
+              ]),
+              i("div", null, [
+                l[5] || (l[5] = i(
+                  "label",
+                  { for: "importer-text-model-key" },
+                  "Text import model key",
+                  -1
+                  /* CACHED */
+                )),
+                n(k, {
+                  inputId: "importer-text-model-key",
+                  "aria-label": "Text import model key",
+                  modelValue: a.value.text_model_key,
+                  "onUpdate:modelValue": l[2] || (l[2] = (o) => a.value.text_model_key = o),
+                  options: I(a.value.text_model_key),
+                  optionLabel: "label",
+                  optionValue: "value",
+                  fluid: ""
+                }, null, 8, ["modelValue", "options"])
+              ]),
+              i("div", null, [
+                l[6] || (l[6] = i(
+                  "label",
+                  { for: "importer-image-model-key" },
+                  "Image / OCR import model key",
+                  -1
+                  /* CACHED */
+                )),
+                n(k, {
+                  inputId: "importer-image-model-key",
+                  "aria-label": "Image / OCR import model key",
+                  modelValue: a.value.image_model_key,
+                  "onUpdate:modelValue": l[3] || (l[3] = (o) => a.value.image_model_key = o),
+                  options: I(a.value.image_model_key),
+                  optionLabel: "label",
+                  optionValue: "value",
+                  fluid: ""
+                }, null, 8, ["modelValue", "options"])
+              ])
+            ]),
+            i("div", re, [
+              n(r, {
+                label: "Save Settings",
+                icon: "pi pi-check",
+                size: "small",
+                loading: g.value,
+                onClick: T
+              }, null, 8, ["loading"])
+            ])
+          ])) : x("v-if", !0)
+        ],
+        64
+        /* STABLE_FRAGMENT */
+      )) : x("v-if", !0);
+    };
+  }
+}), pe = /* @__PURE__ */ G(de, [["__scopeId", "data-v-3b1f8aba"]]);
+function ce(y) {
+  y.intent.provider({
     hub: "recipe:create",
     id: "ai-import",
     kind: "ui",
     title: "Import with AI…",
     icon: "sparkles",
     order: 15,
-    component: ue
-  });
+    component: ie
+  }), y.slot("plugin_manager.plugin.actions", pe, { order: 10 });
 }
 export {
-  ue as ImportRecipeDialog,
-  se as default
+  ie as ImportRecipeDialog,
+  pe as ImporterPluginSettings,
+  ce as default
 };

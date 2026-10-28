@@ -9,8 +9,10 @@ from fastapi import APIRouter, Depends
 import httpx
 from pydantic import BaseModel
 from secretsauce.plugins.context import PluginContext, current_ctx
-from secretsauce.errors import SecretSauceError
+from secretsauce.errors import SecretSauceError, ValidationError
 from secretsauce.secrets import MASK_STRING
+
+DEFAULT_MODEL = "gemini-3.8-flash"
 
 PLUGIN = {
     "id": "core-ai-provider",
@@ -28,9 +30,14 @@ PLUGIN = {
                 "enum": ["gemini", "openai", "openrouter"],
                 "default": "gemini",
             },
+            "models": {
+                "type": "object",
+                "additionalProperties": {"type": "string"},
+                "default": {"default": DEFAULT_MODEL},
+            },
             "model": {
                 "type": "string",
-                "default": "gemini-3.8-flash",
+                "default": DEFAULT_MODEL,
             },
             "gemini_api_key": {"type": "string", "secret": True},
             "openai_api_key": {"type": "string", "secret": True},
@@ -92,13 +99,50 @@ def mask_settings(settings: dict[str, Any]) -> dict[str, Any]:
     return masked
 
 
+def _validate_models(raw_models: Any) -> dict[str, str]:
+    if not isinstance(raw_models, dict):
+        raise ValidationError("models must be a key/value object")
+    cleaned: dict[str, str] = {}
+    for k, v in raw_models.items():
+        if not isinstance(k, str) or not isinstance(v, str):
+            raise ValidationError("Model keys and model names must be strings")
+        key = k.strip()
+        val = v.strip()
+        if not key or not val:
+            raise ValidationError("Model keys and model names must not be empty")
+        if key in cleaned:
+            raise ValidationError(f"Duplicate model key: '{key}'")
+        cleaned[key] = val
+    if "default" not in cleaned:
+        raise ValidationError("The 'default' fallback model key is required")
+    return cleaned
+
+
 class AIService:
     def __init__(self, ctx: PluginContext):
         self.ctx = ctx
 
     async def get_settings(self) -> dict[str, Any]:
         """Stored settings (secrets decrypted by the kernel), schema defaults applied."""
-        settings = self.ctx.config
+        settings = dict(self.ctx.config)
+        raw_models = settings.get("models")
+        models: dict[str, str] = {}
+        if isinstance(raw_models, dict):
+            models = {
+                str(k).strip(): str(v).strip()
+                for k, v in raw_models.items()
+                if str(k).strip() and str(v).strip()
+            }
+        legacy_model = settings.get("model")
+        if isinstance(legacy_model, str) and legacy_model.strip():
+            trimmed_legacy = legacy_model.strip()
+            if "default" not in models or (
+                models == {"default": DEFAULT_MODEL} and trimmed_legacy != DEFAULT_MODEL
+            ):
+                models["default"] = trimmed_legacy
+        models.setdefault("default", DEFAULT_MODEL)
+        settings["models"] = models
+        settings["model"] = models["default"]
         settings["monthly_budget"] = float(settings.get("monthly_budget", 10.0))
         return settings
 
@@ -108,6 +152,19 @@ class AIService:
             k: v for k, v in updates.items()
             if not (k in SECRET_KEYS and v == MASK_STRING)
         }
+        if "models" in cleaned:
+            models = _validate_models(cleaned["models"])
+            cleaned["models"] = models
+            cleaned["model"] = models["default"]
+        elif "model" in cleaned:
+            raw_model = cleaned["model"]
+            if not isinstance(raw_model, str) or not raw_model.strip():
+                raise ValidationError("Model name must not be empty")
+            current = await self.get_settings()
+            models = dict(current.get("models") or {"default": DEFAULT_MODEL})
+            models["default"] = raw_model.strip()
+            cleaned["models"] = models
+            cleaned["model"] = models["default"]
         await self.ctx.save_config(cleaned)
         return await self.get_settings()
 
@@ -139,10 +196,13 @@ class AIService:
         images: list[dict[str, Any]] | None = None,
         call_type: str = "generic",
         calling_plugin: str = "core-ai-provider",
+        model_key: str = "default",
     ) -> dict[str, Any] | str:
         settings = await self.get_settings()
         provider = settings.get("provider", "gemini")
-        model = settings.get("model", "gemini-3.8-flash")
+        models = settings.get("models") or {}
+        default_model = models.get("default") or settings.get("model") or DEFAULT_MODEL
+        model = models.get(model_key) or default_model
         key_name = {"gemini": "gemini_api_key", "openai": "openai_api_key", "openrouter": "openrouter_api_key"}.get(provider)
         if key_name and not self._api_key(settings, key_name):
             raise AIUnavailableError(f"AI isn’t set up yet: configure a key for {provider}")

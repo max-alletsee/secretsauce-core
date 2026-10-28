@@ -19,6 +19,14 @@ PLUGIN = {
     "schema": 1,
     "requires": ["core-ai-provider"],
     "ui": "ui.js",
+    "config_schema": {
+        "type": "object",
+        "properties": {
+            "url_model_key": {"type": "string", "default": "default"},
+            "text_model_key": {"type": "string", "default": "default"},
+            "image_model_key": {"type": "string", "default": "default"},
+        },
+    },
 }
 
 router = APIRouter(prefix="/api/x/core-recipe-importer", tags=["core-recipe-importer"])
@@ -98,6 +106,7 @@ async def _extract_recipe_with_ai(
     content_prompt: str,
     images: list[dict[str, Any]] | None = None,
     call_type: str = "recipe_import",
+    model_key: str = "default",
 ) -> dict[str, Any]:
     ai_svc = ctx.services.get("core-ai-provider") or ctx.services.get("ai")
     if not ai_svc:
@@ -116,6 +125,7 @@ async def _extract_recipe_with_ai(
         images=images,
         call_type=call_type,
         calling_plugin="core-recipe-importer",
+        model_key=model_key,
     )
     if isinstance(result, dict):
         return dict(result)
@@ -164,9 +174,19 @@ class RecipeImporterService:
         source_url: str | None = None,
         images: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
+        source_Model_key = {
+            "url": "url_model_key",
+            "text": "text_model_key",
+            "image": "image_model_key",
+        }.get(source_type, "url_model_key")
+        model_key = self.ctx.config.get(source_Model_key) or "default"
         try:
             draft = await _extract_recipe_with_ai(
-                self.ctx, content_prompt=prompt, images=images, call_type=call_type
+                self.ctx,
+                content_prompt=prompt,
+                images=images,
+                call_type=call_type,
+                model_key=model_key,
             )
             recipe_id = await _save_recipe_draft(self.ctx, draft) if auto_save else None
             if recipe_id:

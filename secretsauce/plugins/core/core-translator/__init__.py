@@ -18,9 +18,12 @@ PLUGIN = {
     "requires": ["core-ai-provider"],
     "ui": "ui.js",
     "config_schema": {
+        "type": "object",
         "properties": {
             "auto_translate_members": {"type": "boolean", "default": False},
-        }
+            "translate_model_key": {"type": "string", "default": "default"},
+            "translate_all_model_key": {"type": "string", "default": "default"},
+        },
     },
 }
 
@@ -60,6 +63,7 @@ async def translate_recipe(
     ctx: PluginContext,
     recipe_id: str,
     target_lang: str,
+    model_key: str | None = None,
 ) -> dict[str, Any]:
     source_recipe = await ctx.recipes.get_recipe(recipe_id)
     if not source_recipe:
@@ -89,11 +93,13 @@ async def translate_recipe(
         f"Tags: {json.dumps(source_recipe.get('tags', []))}\n"
     )
 
+    resolved_key = model_key or ctx.config.get("translate_model_key") or "default"
     translated = await ai_svc.complete(
         schema=RecipeTranslationSchema,
         prompt=prompt,
         call_type="recipe_translate",
         calling_plugin="core-translator",
+        model_key=resolved_key,
     )
     if not isinstance(translated, dict):
         translated = json.loads(translated)
@@ -197,10 +203,11 @@ async def setup(ctx: PluginContext):
         recipes = recipes_res.get("items", []) if isinstance(recipes_res, dict) else recipes_res
         total = len(recipes)
         translated_count = 0
+        bulk_key = ctx.config.get("translate_all_model_key") or "default"
         for idx, r in enumerate(recipes):
             rows = await ctx.db.read_all("SELECT language FROM recipes WHERE group_id = ?", (r["group_id"],))
             if not any(item["language"] == target_lang for item in rows):
-                await translate_recipe(ctx, r["id"], target_lang)
+                await translate_recipe(ctx, r["id"], target_lang, model_key=bulk_key)
                 translated_count += 1
             if handle:
                 await handle.set_progress(int(((idx + 1) / max(total, 1)) * 100))

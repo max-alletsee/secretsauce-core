@@ -122,3 +122,38 @@ test('recipe magic settings are inline in the plugin card and not a top-level se
   await expect(pluginCard.locator('.magic-inline-settings')).toHaveCount(0)
 })
 
+test('custom model key/value pairs defined in AI settings can be assigned to plugin tasks', async ({ page }) => {
+  await login(page)
+  const originalAi = await (await page.request.get('/api/x/core-ai-provider/settings')).json()
+  const originalPlanner = await (await page.request.get('/api/plugins/core-meal-planner-ai/config')).json()
+
+  try {
+    await page.goto('/settings?section=core-ai-provider')
+    const aiPanel = page.locator('#settings-core-ai-provider')
+    await expect(aiPanel.getByLabel('Fallback model key', { exact: true })).toBeDisabled()
+    await expect(aiPanel.getByLabel('Fallback model key', { exact: true })).toHaveValue('default')
+
+    await aiPanel.getByRole('button', { name: 'Add model', exact: true }).click()
+    await aiPanel.getByLabel('Model key 1', { exact: true }).fill('fast')
+    await aiPanel.getByLabel('Model name 1', { exact: true }).fill('gpt-4o-mini')
+    await aiPanel.getByRole('button', { name: 'Save Settings', exact: true }).click()
+
+    await expect.poll(async () => (await (await page.request.get('/api/x/core-ai-provider/settings')).json()).models).toEqual(
+      expect.objectContaining({ fast: 'gpt-4o-mini' }),
+    )
+
+    await page.goto('/settings?section=plugins')
+    const plannerCard = page.locator('.plugin-card[data-plugin-id="core-meal-planner-ai"]')
+    await plannerCard.getByRole('button', { name: 'Settings', exact: true }).click()
+    await plannerCard.getByRole('combobox', { name: 'Meal plan generation model key', exact: true }).click()
+    await page.getByRole('option', { name: 'fast', exact: true }).click()
+    await plannerCard.getByRole('button', { name: 'Save Settings', exact: true }).click()
+
+    await expect.poll(async () => (await (await page.request.get('/api/plugins/core-meal-planner-ai/config')).json()).generate_model_key).toBe('fast')
+  } finally {
+    await page.request.put('/api/x/core-ai-provider/settings', { data: originalAi })
+    await page.request.put('/api/plugins/core-meal-planner-ai/config', { data: originalPlanner })
+  }
+})
+
+

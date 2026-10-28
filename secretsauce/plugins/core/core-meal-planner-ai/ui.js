@@ -1,294 +1,294 @@
-import { defineComponent as X, ref as s, computed as R, watch as E, onBeforeUnmount as Z, resolveComponent as y, openBlock as n, createElementBlock as b, createElementVNode as u, createTextVNode as z, createVNode as r, createBlock as k, createCommentVNode as S, withCtx as G, toDisplayString as U, Fragment as ee, renderList as le } from "vue";
-import { useSecretSauce as te } from "@secretsauce/ui";
-const ae = { class: "meal-planner-widget" }, ne = {
+import { defineComponent as Y, ref as i, computed as R, watch as z, onBeforeUnmount as te, resolveComponent as b, openBlock as u, createElementBlock as x, createElementVNode as r, createTextVNode as A, createVNode as f, createBlock as D, createCommentVNode as k, withCtx as E, toDisplayString as L, Fragment as H, renderList as ae } from "vue";
+import { useSecretSauce as J } from "@secretsauce/ui";
+const ne = { class: "meal-planner-widget" }, oe = {
   key: 0,
   class: "planner-form"
-}, oe = { class: "actions" }, se = {
+}, se = { class: "actions" }, ie = {
   key: 2,
   class: "suggestions-pool"
-}, ie = { class: "actions" }, ue = { key: 0 }, de = {
+}, ue = { class: "actions" }, de = { key: 0 }, re = {
   key: 3,
   class: "suggestion-actions"
-}, re = ["for"], ce = { class: "actions" }, pe = /* @__PURE__ */ X({
+}, ce = ["for"], pe = { class: "actions" }, ve = /* @__PURE__ */ Y({
   __name: "MealPlannerWidget",
   emits: ["scheduled"],
-  setup(V, { emit: N }) {
-    const x = N, o = te(), w = s(5), i = s(""), B = s(""), _ = s(!0), D = s(!1), d = s(null), c = s(""), h = s([]), f = s({}), p = s({}), M = s({});
-    function O(l) {
+  setup(_, { emit: h }) {
+    const v = h, o = J(), m = i(5), d = i(""), g = i(""), S = i(!0), I = i(!1), y = i(null), t = i(""), n = i([]), s = i({}), c = i({}), F = i({});
+    function T(l) {
       var e;
-      return (p.value[l] || ((e = o.store.household.value) == null ? void 0 : e.meal_types) || []).filter((a) => !a.skipped);
+      return (c.value[l] || ((e = o.store.household.value) == null ? void 0 : e.meal_types) || []).filter((p) => !p.skipped);
     }
-    const P = R(() => O(g()));
-    let I = 0, T = !1;
-    async function W() {
-      const l = ++I, e = /* @__PURE__ */ new Date(`${g()}T12:00:00`);
+    const N = R(() => T(B()));
+    let w = 0, C = !1;
+    async function P() {
+      const l = ++w, e = /* @__PURE__ */ new Date(`${B()}T12:00:00`);
       e.setDate(e.getDate() + 31);
       try {
-        const a = await o.api.get("/api/x/core-timeline/slots", { from: g(), to: e.toLocaleDateString("en-CA") });
-        l === I && !T && (p.value = { ...p.value, ...a.days });
+        const p = await o.api.get("/api/x/core-timeline/slots", { from: B(), to: e.toLocaleDateString("en-CA") });
+        l === w && !C && (c.value = { ...c.value, ...p.days });
       } catch {
-        l === I && !T && (p.value = {});
+        l === w && !C && (c.value = {});
       }
     }
-    const F = /* @__PURE__ */ new Map();
-    async function j(l) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(l) || p.value[l]) return;
-      if (F.has(l)) return F.get(l);
+    const M = /* @__PURE__ */ new Map();
+    async function U(l) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(l) || c.value[l]) return;
+      if (M.has(l)) return M.get(l);
       const e = (async () => {
         try {
-          const a = await o.api.get("/api/x/core-timeline/slots", { from: l, to: l });
-          T || (p.value = { ...p.value, ...a.days });
+          const p = await o.api.get("/api/x/core-timeline/slots", { from: l, to: l });
+          C || (c.value = { ...c.value, ...p.days });
         } catch {
         } finally {
-          F.delete(l);
+          M.delete(l);
         }
       })();
-      return F.set(l, e), e;
+      return M.set(l, e), e;
     }
-    E(f, (l) => {
-      for (const e of new Set(Object.values(l))) j(e);
-    }, { deep: !0 }), E(() => o.store.household.value.meal_types, W, { immediate: !0 });
+    z(s, (l) => {
+      for (const e of new Set(Object.values(l))) U(e);
+    }, { deep: !0 }), z(() => o.store.household.value.meal_types, P, { immediate: !0 });
     const q = o.on("core-timeline:slots-changed", () => {
-      p.value = {}, W();
-      for (const l of new Set(Object.values(f.value))) j(l);
+      c.value = {}, P();
+      for (const l of new Set(Object.values(s.value))) U(l);
     });
-    Z(() => {
-      T = !0, ++I, typeof q == "function" && q();
-    }), E(P, (l) => {
-      var e, a;
-      l.some((v) => v.id === i.value) || (i.value = ((e = l.find((v) => v.id === "dinner")) == null ? void 0 : e.id) || ((a = l[0]) == null ? void 0 : a.id) || "");
+    te(() => {
+      C = !0, ++w, typeof q == "function" && q();
+    }), z(N, (l) => {
+      var e, p;
+      l.some((V) => V.id === d.value) || (d.value = ((e = l.find((V) => V.id === "dinner")) == null ? void 0 : e.id) || ((p = l[0]) == null ? void 0 : p.id) || "");
     }, { immediate: !0 });
-    const Y = R(() => h.value.filter((l) => l.status === "suggested"));
-    function g() {
+    const X = R(() => n.value.filter((l) => l.status === "suggested"));
+    function B() {
       const l = /* @__PURE__ */ new Date();
       return `${l.getFullYear()}-${String(l.getMonth() + 1).padStart(2, "0")}-${String(l.getDate()).padStart(2, "0")}`;
     }
-    async function H() {
-      if (!(D.value || !i.value)) {
-        D.value = !0, c.value = "";
+    async function Z() {
+      if (!(I.value || !d.value)) {
+        I.value = !0, t.value = "";
         try {
-          const l = await o.api.post("/api/x/core-meal-planner-ai/generate", { days: w.value, prompt: B.value.trim() || void 0, meal_types: [i.value] });
-          h.value = l.suggestions, _.value = !1;
+          const l = await o.api.post("/api/x/core-meal-planner-ai/generate", { days: m.value, prompt: g.value.trim() || void 0, meal_types: [d.value] });
+          n.value = l.suggestions, S.value = !1;
           for (const e of l.suggestions)
-            f.value[e.id] = e.suggested_date || g(), M.value[e.id] = i.value;
+            s.value[e.id] = e.suggested_date || B(), F.value[e.id] = d.value;
         } catch (l) {
-          c.value = (l == null ? void 0 : l.message) || "Failed to generate meal suggestions";
+          t.value = (l == null ? void 0 : l.message) || "Failed to generate meal suggestions";
         } finally {
-          D.value = !1;
-        }
-      }
-    }
-    async function J(l) {
-      if (!d.value) {
-        d.value = l.id, c.value = "";
-        try {
-          const e = f.value[l.id] || g();
-          await j(e);
-          const a = O(e), v = M.value[l.id] || i.value, C = a.find((L) => L.id === v) || a[0];
-          if (!C) throw new Error("No available meal slots on this day");
-          const m = await o.api.post(`/api/x/core-meal-planner-ai/suggestions/${l.id}/accept`, { date: e, meal_type: C.id });
-          Object.assign(l, m), o.notify({ level: "success", message: `Scheduled ${l.recipe_title} for ${e}` }), x("scheduled", m);
-        } catch (e) {
-          c.value = (e == null ? void 0 : e.message) || "Failed to schedule meal";
-        } finally {
-          d.value = null;
+          I.value = !1;
         }
       }
     }
     async function K(l) {
-      if (!d.value) {
-        d.value = l.id, c.value = "";
+      if (!y.value) {
+        y.value = l.id, t.value = "";
+        try {
+          const e = s.value[l.id] || B();
+          await U(e);
+          const p = T(e), V = F.value[l.id] || d.value, j = p.find((G) => G.id === V) || p[0];
+          if (!j) throw new Error("No available meal slots on this day");
+          const $ = await o.api.post(`/api/x/core-meal-planner-ai/suggestions/${l.id}/accept`, { date: e, meal_type: j.id });
+          Object.assign(l, $), o.notify({ level: "success", message: `Scheduled ${l.recipe_title} for ${e}` }), v("scheduled", $);
+        } catch (e) {
+          t.value = (e == null ? void 0 : e.message) || "Failed to schedule meal";
+        } finally {
+          y.value = null;
+        }
+      }
+    }
+    async function ee(l) {
+      if (!y.value) {
+        y.value = l.id, t.value = "";
         try {
           Object.assign(l, await o.api.post(`/api/x/core-meal-planner-ai/suggestions/${l.id}/dismiss`));
         } catch (e) {
-          c.value = (e == null ? void 0 : e.message) || "Failed to dismiss suggestion";
+          t.value = (e == null ? void 0 : e.message) || "Failed to dismiss suggestion";
         } finally {
-          d.value = null;
+          y.value = null;
         }
       }
     }
     return (l, e) => {
-      const a = y("InputNumber"), v = y("Select"), C = y("InputText"), m = y("Button"), L = y("Message"), A = y("Tag"), Q = y("Card");
-      return n(), b("section", ae, [
-        e[8] || (e[8] = u(
+      const p = b("InputNumber"), V = b("Select"), j = b("InputText"), $ = b("Button"), G = b("Message"), W = b("Tag"), le = b("Card");
+      return u(), x("section", ne, [
+        e[8] || (e[8] = r(
           "h3",
           null,
           [
-            u("i", {
+            r("i", {
               class: "pi pi-sparkles",
               "aria-hidden": "true"
             }),
-            z(" AI meal suggestions")
+            A(" AI meal suggestions")
           ],
           -1
           /* CACHED */
         )),
-        _.value || !h.value.length ? (n(), b("div", ne, [
-          e[5] || (e[5] = u(
+        S.value || !n.value.length ? (u(), x("div", oe, [
+          e[5] || (e[5] = r(
             "label",
             { for: "planner-days" },
             "Days to plan",
             -1
             /* CACHED */
           )),
-          r(a, {
+          f(p, {
             inputId: "planner-days",
-            modelValue: w.value,
-            "onUpdate:modelValue": e[0] || (e[0] = (t) => w.value = t),
+            modelValue: m.value,
+            "onUpdate:modelValue": e[0] || (e[0] = (a) => m.value = a),
             min: 1,
             max: 14,
             fluid: ""
           }, null, 8, ["modelValue"]),
-          e[6] || (e[6] = u(
+          e[6] || (e[6] = r(
             "label",
             { for: "planner-slot" },
             "Meal slot",
             -1
             /* CACHED */
           )),
-          r(v, {
+          f(V, {
             inputId: "planner-slot",
             "aria-label": "Meal slot",
-            modelValue: i.value,
-            "onUpdate:modelValue": e[1] || (e[1] = (t) => i.value = t),
-            options: P.value,
+            modelValue: d.value,
+            "onUpdate:modelValue": e[1] || (e[1] = (a) => d.value = a),
+            options: N.value,
             optionLabel: "label",
             optionValue: "id",
             fluid: ""
           }, null, 8, ["modelValue", "options"]),
-          e[7] || (e[7] = u(
+          e[7] || (e[7] = r(
             "label",
             { for: "planner-prompt" },
             "Dietary focus / notes",
             -1
             /* CACHED */
           )),
-          r(C, {
+          f(j, {
             id: "planner-prompt",
-            modelValue: B.value,
-            "onUpdate:modelValue": e[2] || (e[2] = (t) => B.value = t),
+            modelValue: g.value,
+            "onUpdate:modelValue": e[2] || (e[2] = (a) => g.value = a),
             placeholder: "Fast weeknight meals…",
             fluid: ""
           }, null, 8, ["modelValue"]),
-          u("div", oe, [
-            h.value.length ? (n(), k(m, {
+          r("div", se, [
+            n.value.length ? (u(), D($, {
               key: 0,
               label: "Cancel",
               severity: "secondary",
-              onClick: e[3] || (e[3] = (t) => _.value = !1)
-            })) : S("v-if", !0),
-            r(m, {
+              onClick: e[3] || (e[3] = (a) => S.value = !1)
+            })) : k("v-if", !0),
+            f($, {
               label: "Generate suggestions",
               icon: "pi pi-sparkles",
-              loading: D.value,
-              disabled: !i.value,
-              onClick: H
+              loading: I.value,
+              disabled: !d.value,
+              onClick: Z
             }, null, 8, ["loading", "disabled"])
           ])
-        ])) : S("v-if", !0),
-        c.value ? (n(), k(L, {
+        ])) : k("v-if", !0),
+        t.value ? (u(), D(G, {
           key: 1,
           severity: "error"
         }, {
-          default: G(() => [
-            z(
-              U(c.value),
+          default: E(() => [
+            A(
+              L(t.value),
               1
               /* TEXT */
             )
           ]),
           _: 1
           /* STABLE */
-        })) : S("v-if", !0),
-        h.value.length ? (n(), b("div", se, [
-          u("div", ie, [
-            u(
+        })) : k("v-if", !0),
+        n.value.length ? (u(), x("div", ie, [
+          r("div", ue, [
+            r(
               "span",
               null,
-              U(Y.value.length) + " suggestions",
+              L(X.value.length) + " suggestions",
               1
               /* TEXT */
             ),
-            r(m, {
-              label: _.value ? "Close form" : "Generate more",
+            f($, {
+              label: S.value ? "Close form" : "Generate more",
               text: "",
-              onClick: e[4] || (e[4] = (t) => _.value = !_.value)
+              onClick: e[4] || (e[4] = (a) => S.value = !S.value)
             }, null, 8, ["label"])
           ]),
-          (n(!0), b(
-            ee,
+          (u(!0), x(
+            H,
             null,
-            le(h.value, (t) => (n(), k(
-              Q,
+            ae(n.value, (a) => (u(), D(
+              le,
               {
-                key: t.id,
+                key: a.id,
                 class: "sug-card"
               },
               {
-                title: G(() => [
-                  z(
-                    U(t.recipe_title),
+                title: E(() => [
+                  A(
+                    L(a.recipe_title),
                     1
                     /* TEXT */
                   )
                 ]),
-                content: G(() => [
-                  t.reasoning ? (n(), b(
+                content: E(() => [
+                  a.reasoning ? (u(), x(
                     "p",
-                    ue,
-                    U(t.reasoning),
+                    de,
+                    L(a.reasoning),
                     1
                     /* TEXT */
-                  )) : S("v-if", !0),
-                  t.status === "accepted" ? (n(), k(A, {
+                  )) : k("v-if", !0),
+                  a.status === "accepted" ? (u(), D(W, {
                     key: 1,
                     value: "Scheduled",
                     severity: "success",
                     icon: "pi pi-check"
-                  })) : t.status === "dismissed" ? (n(), k(A, {
+                  })) : a.status === "dismissed" ? (u(), D(W, {
                     key: 2,
                     value: "Dismissed",
                     severity: "secondary"
-                  })) : (n(), b("div", de, [
-                    t.confidence ? (n(), k(A, {
+                  })) : (u(), x("div", re, [
+                    a.confidence ? (u(), D(W, {
                       key: 0,
-                      value: `${Math.round(t.confidence * 100)}% match`,
+                      value: `${Math.round(a.confidence * 100)}% match`,
                       severity: "secondary"
-                    }, null, 8, ["value"])) : S("v-if", !0),
-                    u("label", {
-                      for: `schedule-${t.id}`
-                    }, "Schedule date", 8, re),
-                    r(C, {
-                      id: `schedule-${t.id}`,
-                      modelValue: f.value[t.id],
-                      "onUpdate:modelValue": ($) => f.value[t.id] = $,
+                    }, null, 8, ["value"])) : k("v-if", !0),
+                    r("label", {
+                      for: `schedule-${a.id}`
+                    }, "Schedule date", 8, ce),
+                    f(j, {
+                      id: `schedule-${a.id}`,
+                      modelValue: s.value[a.id],
+                      "onUpdate:modelValue": (O) => s.value[a.id] = O,
                       type: "date",
                       fluid: ""
                     }, null, 8, ["id", "modelValue", "onUpdate:modelValue"]),
-                    r(v, {
-                      inputId: `schedule-slot-${t.id}`,
+                    f(V, {
+                      inputId: `schedule-slot-${a.id}`,
                       "aria-label": "Schedule meal slot",
-                      modelValue: M.value[t.id],
-                      "onUpdate:modelValue": ($) => M.value[t.id] = $,
-                      options: O(f.value[t.id] || g()),
+                      modelValue: F.value[a.id],
+                      "onUpdate:modelValue": (O) => F.value[a.id] = O,
+                      options: T(s.value[a.id] || B()),
                       optionLabel: "label",
                       optionValue: "id",
                       fluid: ""
                     }, null, 8, ["inputId", "modelValue", "onUpdate:modelValue", "options"]),
-                    u("div", ce, [
-                      r(m, {
+                    r("div", pe, [
+                      f($, {
                         label: "Dismiss",
                         size: "small",
                         severity: "secondary",
-                        disabled: !!d.value,
-                        onClick: ($) => K(t)
+                        disabled: !!y.value,
+                        onClick: (O) => ee(a)
                       }, null, 8, ["disabled", "onClick"]),
-                      r(m, {
+                      f($, {
                         label: "Add to schedule",
                         size: "small",
-                        loading: d.value === t.id,
-                        disabled: !!d.value || !i.value,
-                        onClick: ($) => J(t)
+                        loading: y.value === a.id,
+                        disabled: !!y.value || !d.value,
+                        onClick: (O) => K(a)
                       }, null, 8, ["loading", "disabled", "onClick"])
                     ])
                   ]))
@@ -302,20 +302,138 @@ const ae = { class: "meal-planner-widget" }, ne = {
             128
             /* KEYED_FRAGMENT */
           ))
-        ])) : S("v-if", !0)
+        ])) : k("v-if", !0)
       ]);
     };
   }
-}), ve = (V, N) => {
-  const x = V.__vccOpts || V;
-  for (const [o, w] of N)
-    x[o] = w;
-  return x;
-}, me = /* @__PURE__ */ ve(pe, [["__scopeId", "data-v-920c2f56"]]);
-function _e(V) {
-  V.slot("timeline.sidebar", me, { order: 10 });
+}), Q = (_, h) => {
+  const v = _.__vccOpts || _;
+  for (const [o, m] of h)
+    v[o] = m;
+  return v;
+}, me = /* @__PURE__ */ Q(ve, [["__scopeId", "data-v-920c2f56"]]), fe = {
+  key: 0,
+  class: "plugin-inline-settings"
+}, ge = { class: "settings-grid" }, ye = { class: "settings-actions" }, _e = /* @__PURE__ */ Y({
+  inheritAttrs: !1,
+  __name: "MealPlannerPluginSettings",
+  props: {
+    context: {}
+  },
+  setup(_) {
+    const h = J(), v = i(!1), o = i(!1), m = i(""), d = i(["default"]), g = i({
+      generate_model_key: "default"
+    });
+    function S(t) {
+      const n = d.value.length ? d.value : ["default"], s = n.map((c) => ({ value: c, label: c }));
+      return t && !n.includes(t) && s.unshift({ value: t, label: `${t} (missing — uses default)` }), s;
+    }
+    async function I() {
+      m.value = "";
+      try {
+        const [t, n] = await Promise.all([
+          h.api.get("/api/x/core-ai-provider/settings").catch(() => ({ models: { default: "gemini-3.8-flash" } })),
+          h.api.get("/api/plugins/core-meal-planner-ai/config")
+        ]), s = t != null && t.models && typeof t.models == "object" ? Object.keys(t.models) : ["default"];
+        d.value = s.length ? s : ["default"], g.value = {
+          generate_model_key: (n == null ? void 0 : n.generate_model_key) || "default"
+        };
+      } catch (t) {
+        m.value = (t == null ? void 0 : t.message) || "Failed to load meal planner settings";
+      }
+    }
+    z(v, (t) => {
+      t && I();
+    });
+    async function y() {
+      if (!o.value) {
+        o.value = !0, m.value = "";
+        try {
+          const t = await h.api.put("/api/plugins/core-meal-planner-ai/config", { ...g.value });
+          g.value = {
+            generate_model_key: (t == null ? void 0 : t.generate_model_key) || g.value.generate_model_key
+          }, h.notify({ level: "success", message: "Meal planner settings updated." });
+        } catch (t) {
+          m.value = (t == null ? void 0 : t.message) || "Failed to save meal planner settings";
+        } finally {
+          o.value = !1;
+        }
+      }
+    }
+    return (t, n) => {
+      var T, N, w, C, P, M;
+      const s = b("Button"), c = b("Message"), F = b("Select");
+      return ((N = (T = _.context) == null ? void 0 : T.plugin) == null ? void 0 : N.id) === "core-meal-planner-ai" ? (u(), x(
+        H,
+        { key: 0 },
+        [
+          f(s, {
+            label: v.value ? "Close Settings" : "Settings",
+            icon: v.value ? "pi pi-chevron-up" : "pi pi-cog",
+            size: "small",
+            outlined: !v.value,
+            disabled: ((C = (w = _.context) == null ? void 0 : w.plugin) == null ? void 0 : C.state) !== "active",
+            class: "btn-planner-settings-toggle",
+            onClick: n[0] || (n[0] = (U) => v.value = !v.value)
+          }, null, 8, ["label", "icon", "outlined", "disabled"]),
+          v.value && ((M = (P = _.context) == null ? void 0 : P.plugin) == null ? void 0 : M.state) === "active" ? (u(), x("div", fe, [
+            m.value ? (u(), D(c, {
+              key: 0,
+              severity: "error"
+            }, {
+              default: E(() => [
+                A(
+                  L(m.value),
+                  1
+                  /* TEXT */
+                )
+              ]),
+              _: 1
+              /* STABLE */
+            })) : k("v-if", !0),
+            r("div", ge, [
+              r("div", null, [
+                n[2] || (n[2] = r(
+                  "label",
+                  { for: "planner-generate-model-key" },
+                  "Meal plan generation model key",
+                  -1
+                  /* CACHED */
+                )),
+                f(F, {
+                  inputId: "planner-generate-model-key",
+                  "aria-label": "Meal plan generation model key",
+                  modelValue: g.value.generate_model_key,
+                  "onUpdate:modelValue": n[1] || (n[1] = (U) => g.value.generate_model_key = U),
+                  options: S(g.value.generate_model_key),
+                  optionLabel: "label",
+                  optionValue: "value",
+                  fluid: ""
+                }, null, 8, ["modelValue", "options"])
+              ])
+            ]),
+            r("div", ye, [
+              f(s, {
+                label: "Save Settings",
+                icon: "pi pi-check",
+                size: "small",
+                loading: o.value,
+                onClick: y
+              }, null, 8, ["loading"])
+            ])
+          ])) : k("v-if", !0)
+        ],
+        64
+        /* STABLE_FRAGMENT */
+      )) : k("v-if", !0);
+    };
+  }
+}), be = /* @__PURE__ */ Q(_e, [["__scopeId", "data-v-87aeed6a"]]);
+function Se(_) {
+  _.slot("timeline.sidebar", me, { order: 10 }), _.slot("plugin_manager.plugin.actions", be, { order: 10 });
 }
 export {
+  be as MealPlannerPluginSettings,
   me as MealPlannerWidget,
-  _e as default
+  Se as default
 };

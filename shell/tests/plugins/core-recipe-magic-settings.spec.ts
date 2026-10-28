@@ -150,5 +150,49 @@ describe('MagicSettings Component', () => {
     expect(wrapper.find('.magic-inline-settings').exists()).toBe(false)
     expect(toggleBtn.text()).toContain('Settings')
   })
+
+  it('loads and saves adapt_model_key alongside actions in MagicSettings', async () => {
+    let savedConfig: any = null
+    const mockApi = {
+      get: async (path: string) => {
+        if (path === '/api/x/core-recipe-magic/actions') {
+          return [{ id: 'a1', title: 'Act 1', description: 'Desc 1', prompt: 'Prompt 1' }]
+        }
+        if (path === '/api/x/core-ai-provider/settings') {
+          return { models: { default: 'gpt-4o-mini', chef: 'gpt-4o' } }
+        }
+        if (path === '/api/plugins/core-recipe-magic/config') {
+          return { adapt_model_key: 'chef' }
+        }
+        return {}
+      },
+      put: async (path: string, body: any) => {
+        if (path === '/api/plugins/core-recipe-magic/config') {
+          savedConfig = body
+          return body
+        }
+        return body
+      },
+    } as any
+
+    const harness = pluginHarness(mockApi)
+    const wrapper = mountWithUi(MagicSettings, {
+      global: {
+        plugins: [harness.pinia],
+        provide: {
+          ...harness.provide,
+          __SS_UI__: harness.ss('core-recipe-magic'),
+        },
+      },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('#magic-adapt-model-key').exists()).toBe(true)
+    await wrapper.find('.btn-save-settings').trigger('click')
+    await flushPromises()
+
+    expect(savedConfig).toEqual(expect.objectContaining({ adapt_model_key: 'chef' }))
+  })
 })
+
 

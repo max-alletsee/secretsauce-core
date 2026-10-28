@@ -123,3 +123,78 @@ async def test_translator_job_and_history(tmp_path: Path):
         assert len(history) >= 1
         assert history[0]["target_lang"] == "fr"
 
+
+@pytest.mark.asyncio
+async def test_translator_single_and_bulk_task_model_keys(tmp_path: Path):
+    async with make_kernel(tmp_path, auto_setup=True) as k:
+        cfg_res = await k.client.get("/api/plugins/core-translator/config")
+        assert cfg_res.status_code == 200
+        assert cfg_res.json() == {
+            "auto_translate_members": False,
+            "translate_model_key": "default",
+            "translate_all_model_key": "default",
+        }
+
+        rec = (
+            await k.client.post(
+                "/api/recipes",
+                json={
+                    "title": "Classic Banana Bread",
+                    "language": "en",
+                    "ingredients": [{"name": "flour", "quantity": 250, "unit": "g"}],
+                    "steps": [{"instruction": "Bake."}],
+                },
+            )
+        ).json()
+
+        assert (
+            await k.client.put(
+                "/api/x/core-ai-provider/settings",
+                json={
+                    "provider": "openai",
+                    "openai_api_key": "sk-test",
+                    "models": {
+                        "default": "gpt-4o-mini",
+                        "single": "gpt-4o",
+                        "bulk": "gpt-4o-nano",
+                    },
+                },
+            )
+        ).status_code == 200
+
+        assert (
+            await k.client.put(
+                "/api/plugins/core-translator/config",
+                json={
+                    "auto_translate_members": False,
+                    "translate_model_key": "single",
+                    "translate_all_model_key": "bulk",
+                },
+            )
+        ).status_code == 200
+
+        ai_svc = k.services.get("core-ai-provider")
+        seen_models: list[str] = []
+
+        async def fake_outbound(base_url, api_key, model, schema, prompt, images=None):
+            seen_models.append(model)
+            return dict(MOCK_SPANISH_TRANSLATION), 20, 10
+
+        with patch.object(ai_svc, "_complete_openai_compatible", side_effect=fake_outbound):
+            res_single = await k.client.post(
+                "/api/x/core-translator/translate",
+                json={"recipe_id": rec["id"], "target_language": "es"},
+            )
+            assert res_single.status_code == 200
+
+            res_bulk = await k.client.post(
+                "/api/x/core-translator/translate-all",
+                json={"target_language": "de"},
+            )
+            assert res_bulk.status_code == 200
+            job = await k.jobs.run_job(res_bulk.json()["job_id"])
+            assert job["status"] == "done"
+
+        assert seen_models == ["gpt-4o", "gpt-4o-nano"]
+
+

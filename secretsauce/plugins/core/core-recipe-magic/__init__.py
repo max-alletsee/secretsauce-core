@@ -50,6 +50,7 @@ PLUGIN = {
     "config_schema": {
         "type": "object",
         "properties": {
+            "adapt_model_key": {"type": "string", "default": "default"},
             "actions": {
                 "type": "array",
                 "items": {
@@ -63,7 +64,7 @@ PLUGIN = {
                     "required": ["id", "title", "prompt"],
                 },
                 "default": DEFAULT_ACTIONS,
-            }
+            },
         },
     },
 }
@@ -176,6 +177,7 @@ async def adapt_recipe(
             prompt=prompt,
             call_type="recipe_magic",
             calling_plugin="core-recipe-magic",
+            model_key=ctx.config.get("adapt_model_key") or "default",
         )
     except SecretSauceError:
         raise

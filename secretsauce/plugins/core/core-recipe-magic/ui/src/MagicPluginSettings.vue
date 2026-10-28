@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 import MagicSettings from './MagicSettings.vue'
 
+defineOptions({ inheritAttrs: false })
+
 defineProps<{
   context?: {
     plugin?: {

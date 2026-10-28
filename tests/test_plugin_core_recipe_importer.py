@@ -140,3 +140,72 @@ async def test_parse_url_refuses_internal_addresses(tmp_path: Path):
         assert res.status_code == 422
         history = (await k.client.get("/api/x/core-recipe-importer/history")).json()
         assert history[0]["status"] == "failed"
+
+
+@pytest.mark.asyncio
+async def test_recipe_importer_task_model_keys_resolve_through_ai_provider(tmp_path: Path):
+    async with make_kernel(tmp_path, auto_setup=True) as k:
+        cfg_res = await k.client.get("/api/plugins/core-recipe-importer/config")
+        assert cfg_res.status_code == 200
+        assert cfg_res.json() == {
+            "url_model_key": "default",
+            "text_model_key": "default",
+            "image_model_key": "default",
+        }
+
+        assert (
+            await k.client.put(
+                "/api/x/core-ai-provider/settings",
+                json={
+                    "provider": "openai",
+                    "openai_api_key": "sk-test",
+                    "models": {
+                        "default": "gpt-4o-mini",
+                        "web": "gpt-4.1-mini",
+                        "vision": "gpt-4o",
+                    },
+                },
+            )
+        ).status_code == 200
+
+        assert (
+            await k.client.put(
+                "/api/plugins/core-recipe-importer/config",
+                json={
+                    "url_model_key": "web",
+                    "text_model_key": "missing-key",
+                    "image_model_key": "vision",
+                },
+            )
+        ).status_code == 200
+
+        ai_svc = k.services.get("core-ai-provider")
+        seen_models: list[str] = []
+
+        async def fake_outbound(base_url, api_key, model, schema, prompt, images=None):
+            seen_models.append(model)
+            return get_mock_recipe(), 25, 15
+
+        mock_html = "<html><body><h1>Banana Bread</h1></body></html>"
+        with patch("secretsauce.net.fetch_public_text", AsyncMock(return_value=mock_html)), \
+             patch.object(ai_svc, "_complete_openai_compatible", side_effect=fake_outbound):
+            r_url = await k.client.post(
+                "/api/x/core-recipe-importer/parse-url",
+                json={"url": "https://example.com/recipe", "auto_save": False},
+            )
+            assert r_url.status_code == 200
+
+            r_text = await k.client.post(
+                "/api/x/core-recipe-importer/parse-text",
+                json={"text": "3 bananas, 250g flour", "auto_save": False},
+            )
+            assert r_text.status_code == 200
+
+            r_img = await k.client.post(
+                "/api/x/core-recipe-importer/parse-image",
+                json={"image_base64": "YWJj", "mime_type": "image/jpeg", "auto_save": False},
+            )
+            assert r_img.status_code == 200
+
+        assert seen_models == ["gpt-4.1-mini", "gpt-4o-mini", "gpt-4o"]
+

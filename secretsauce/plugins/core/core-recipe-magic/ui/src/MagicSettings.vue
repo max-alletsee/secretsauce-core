@@ -4,15 +4,34 @@ import { useSecretSauce } from '@secretsauce/ui'
 
 const ss = useSecretSauce()
 const actions = ref<any[]>([])
+const adaptModelKey = ref('default')
+const availableKeys = ref<string[]>(['default'])
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
+
+function optionsFor(currentKey: string) {
+  const keys = availableKeys.value.length ? availableKeys.value : ['default']
+  const opts = keys.map(k => ({ value: k, label: k }))
+  if (currentKey && !keys.includes(currentKey)) {
+    opts.unshift({ value: currentKey, label: `${currentKey} (missing — uses default)` })
+  }
+  return opts
+}
 
 async function loadActions() {
   loading.value = true
   error.value = ''
   try {
-    actions.value = await ss.api.get<any[]>('/api/x/core-recipe-magic/actions')
+    const [loadedActions, aiSettings, cfg] = await Promise.all([
+      ss.api.get<any[]>('/api/x/core-recipe-magic/actions'),
+      ss.api.get<any>('/api/x/core-ai-provider/settings').catch(() => ({ models: { default: 'gemini-3.8-flash' } })),
+      ss.api.get<any>('/api/plugins/core-recipe-magic/config').catch(() => ({ adapt_model_key: 'default' })),
+    ])
+    actions.value = Array.isArray(loadedActions) ? loadedActions : []
+    const models = aiSettings?.models && typeof aiSettings.models === 'object' ? Object.keys(aiSettings.models) : ['default']
+    availableKeys.value = models.length ? models : ['default']
+    adaptModelKey.value = cfg?.adapt_model_key || 'default'
   } catch (failure: any) {
     error.value = failure?.message || 'Failed to load actions'
   } finally {
@@ -45,7 +64,14 @@ async function saveSettings() {
   saving.value = true
   error.value = ''
   try {
-    actions.value = await ss.api.put<any[]>('/api/x/core-recipe-magic/actions', actions.value)
+    const [savedActions] = await Promise.all([
+      ss.api.put<any[]>('/api/x/core-recipe-magic/actions', actions.value),
+      ss.api.put<any>('/api/plugins/core-recipe-magic/config', {
+        actions: actions.value,
+        adapt_model_key: adaptModelKey.value,
+      }),
+    ])
+    if (Array.isArray(savedActions)) actions.value = savedActions
     ss.notify({ level: 'success', message: 'Magic actions saved' })
   } catch (failure: any) {
     error.value = failure?.message || 'Failed to save actions'
@@ -102,6 +128,20 @@ onMounted(() => {
     </div>
 
     <Message v-if="error" severity="error">{{ error }}</Message>
+
+    <div class="model-key-row">
+      <label for="magic-adapt-model-key">Recipe adaptation model key</label>
+      <Select
+        id="magic-adapt-model-key"
+        inputId="magic-adapt-model-key"
+        aria-label="Recipe adaptation model key"
+        v-model="adaptModelKey"
+        :options="optionsFor(adaptModelKey)"
+        optionLabel="label"
+        optionValue="value"
+        fluid
+      />
+    </div>
 
     <div v-if="loading" class="loading-state">
       <ProgressSpinner style="width: 2rem; height: 2rem;" />

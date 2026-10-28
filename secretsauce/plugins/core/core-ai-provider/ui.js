@@ -1,111 +1,146 @@
-import { defineComponent as O, ref as m, computed as L, onMounted as D, resolveComponent as u, openBlock as v, createElementBlock as c, createBlock as E, withCtx as P, createTextVNode as j, toDisplayString as g, createCommentVNode as A, createElementVNode as t, createVNode as i, Fragment as G, renderList as R } from "vue";
-import { useSecretSauce as h } from "@secretsauce/ui";
-const q = { class: "ai-settings" }, z = { class: "fields" }, H = { class: "api-key" }, J = { class: "budget-toggle" }, K = { class: "actions" }, Q = { class: "usage-header" }, W = { class: "stats" }, X = {
+import { defineComponent as K, ref as _, computed as q, onMounted as H, resolveComponent as m, openBlock as c, createElementBlock as y, createBlock as J, withCtx as Q, createTextVNode as W, toDisplayString as b, createCommentVNode as T, createElementVNode as l, createVNode as s, Fragment as N, renderList as O } from "vue";
+import { useSecretSauce as X } from "@secretsauce/ui";
+const Y = { class: "ai-settings" }, Z = { class: "fields" }, ee = { class: "api-key" }, le = { class: "models-section" }, oe = { class: "models-header" }, te = { class: "model-rows" }, ne = { class: "model-row default-row" }, ae = { class: "budget-toggle" }, se = { class: "actions" }, ie = { class: "usage-header" }, de = { class: "stats" }, ue = {
   key: 1,
   class: "usage-list"
-}, Y = /* @__PURE__ */ O({
+}, re = /* @__PURE__ */ K({
   __name: "AiSettings",
-  setup(p) {
-    const a = h(), d = m(!1), s = m(""), l = m({ provider: "gemini", model: "gemini-3.8-flash", gemini_api_key: "", openai_api_key: "", openrouter_api_key: "", enforce_budget: !1, monthly_budget: 10 }), w = [{ id: "gemini", label: "Google Gemini" }, { id: "openai", label: "OpenAI" }, { id: "openrouter", label: "OpenRouter" }], _ = L(() => `${l.value.provider}_api_key`), r = m({ total_cost_usd: 0, month_cost_usd: 0, total_input_tokens: 0, total_output_tokens: 0, breakdown_by_plugin: [] });
-    async function F() {
+  setup(g) {
+    const u = X(), p = _(!1), i = _(""), n = _({
+      provider: "gemini",
+      model: "gemini-3.8-flash",
+      models: { default: "gemini-3.8-flash" },
+      gemini_api_key: "",
+      openai_api_key: "",
+      openrouter_api_key: "",
+      enforce_budget: !1,
+      monthly_budget: 10
+    }), V = _("gemini-3.8-flash"), k = _([]);
+    let h = 1;
+    const R = [
+      { id: "gemini", label: "Google Gemini" },
+      { id: "openai", label: "OpenAI" },
+      { id: "openrouter", label: "OpenRouter" }
+    ], w = q(() => `${n.value.provider}_api_key`), v = _({
+      total_cost_usd: 0,
+      month_cost_usd: 0,
+      total_input_tokens: 0,
+      total_output_tokens: 0,
+      breakdown_by_plugin: []
+    });
+    function $(o) {
+      const e = o != null && o.models && typeof o.models == "object" ? o.models : { default: (o == null ? void 0 : o.model) || "gemini-3.8-flash" };
+      V.value = e.default || (o == null ? void 0 : o.model) || "gemini-3.8-flash", k.value = Object.entries(e).filter(([a]) => a !== "default").map(([a, d]) => ({ id: h++, key: a, value: String(d) }));
+    }
+    function B() {
+      k.value.push({ id: h++, key: "", value: "" });
+    }
+    function D(o) {
+      k.value.splice(o, 1);
+    }
+    async function L() {
       try {
-        Object.assign(l.value, await a.api.get("/api/x/core-ai-provider/settings"));
-      } catch (n) {
-        s.value = (n == null ? void 0 : n.message) || "Failed to load AI settings";
+        const o = await u.api.get("/api/x/core-ai-provider/settings");
+        Object.assign(n.value, o), $(o);
+      } catch (o) {
+        i.value = (o == null ? void 0 : o.message) || "Failed to load AI settings";
       }
     }
-    async function f() {
+    async function M() {
       try {
-        r.value = await a.api.get("/api/x/core-ai-provider/usage");
-      } catch (n) {
-        s.value = (n == null ? void 0 : n.message) || "Failed to load AI usage";
+        v.value = await u.api.get("/api/x/core-ai-provider/usage");
+      } catch (o) {
+        i.value = (o == null ? void 0 : o.message) || "Failed to load AI usage";
       }
     }
-    async function N() {
-      if (!d.value) {
-        d.value = !0, s.value = "";
-        try {
-          Object.assign(l.value, await a.api.put("/api/x/core-ai-provider/settings", l.value)), a.notify({ level: "success", message: "AI settings updated successfully." });
-        } catch (n) {
-          s.value = (n == null ? void 0 : n.message) || "Failed to update AI settings";
-        } finally {
-          d.value = !1;
+    async function j() {
+      if (p.value) return;
+      i.value = "";
+      const o = V.value.trim();
+      if (!o) {
+        i.value = "The default fallback model name must not be empty";
+        return;
+      }
+      const e = { default: o };
+      for (const a of k.value) {
+        const d = a.key.trim(), r = a.value.trim();
+        if (!d || !r) {
+          i.value = "All model keys and model names must be non-empty";
+          return;
         }
+        if (d in e) {
+          i.value = `Duplicate model key: ${d}`;
+          return;
+        }
+        e[d] = r;
+      }
+      p.value = !0;
+      try {
+        const a = { ...n.value, model: e.default, models: e }, d = await u.api.put("/api/x/core-ai-provider/settings", a);
+        Object.assign(n.value, d), $(d), u.notify({ level: "success", message: "AI settings updated successfully." });
+      } catch (a) {
+        i.value = (a == null ? void 0 : a.message) || "Failed to update AI settings";
+      } finally {
+        p.value = !1;
       }
     }
-    return D(() => {
-      F(), f();
-    }), (n, e) => {
-      var k, V, I, S, x;
-      const T = u("Message"), U = u("Select"), b = u("InputText"), $ = u("ToggleSwitch"), B = u("InputNumber"), y = u("Button"), C = u("Divider"), M = u("Tag");
-      return v(), c("div", q, [
-        s.value ? (v(), E(T, {
+    return H(() => {
+      L(), M();
+    }), (o, e) => {
+      var x, A, U, F, C;
+      const a = m("Message"), d = m("Select"), r = m("InputText"), S = m("Button"), P = m("ToggleSwitch"), E = m("InputNumber"), G = m("Divider"), z = m("Tag");
+      return c(), y("div", Y, [
+        i.value ? (c(), J(a, {
           key: 0,
           severity: "error"
         }, {
-          default: P(() => [
-            j(
-              g(s.value),
+          default: Q(() => [
+            W(
+              b(i.value),
               1
               /* TEXT */
             )
           ]),
           _: 1
           /* STABLE */
-        })) : A("v-if", !0),
-        t("div", z, [
-          t("div", null, [
-            e[5] || (e[5] = t(
+        })) : T("v-if", !0),
+        l("div", Z, [
+          l("div", null, [
+            e[5] || (e[5] = l(
               "label",
               { for: "ai-provider" },
               "Provider engine",
               -1
               /* CACHED */
             )),
-            i(U, {
+            s(d, {
               inputId: "ai-provider",
               "aria-label": "Provider engine",
-              modelValue: l.value.provider,
-              "onUpdate:modelValue": e[0] || (e[0] = (o) => l.value.provider = o),
-              options: w,
+              modelValue: n.value.provider,
+              "onUpdate:modelValue": e[0] || (e[0] = (t) => n.value.provider = t),
+              options: R,
               optionLabel: "label",
               optionValue: "id",
               fluid: ""
             }, null, 8, ["modelValue"])
           ]),
-          t("div", null, [
-            e[6] || (e[6] = t(
-              "label",
-              { for: "ai-model" },
-              "Model name",
-              -1
-              /* CACHED */
-            )),
-            i(b, {
-              id: "ai-model",
-              modelValue: l.value.model,
-              "onUpdate:modelValue": e[1] || (e[1] = (o) => l.value.model = o),
-              class: "model-input",
-              fluid: ""
-            }, null, 8, ["modelValue"])
-          ]),
-          t("div", H, [
-            e[7] || (e[7] = t(
+          l("div", ee, [
+            e[6] || (e[6] = l(
               "label",
               { for: "ai-key" },
               "API key",
               -1
               /* CACHED */
             )),
-            i(b, {
+            s(r, {
               id: "ai-key",
-              modelValue: l.value[_.value],
-              "onUpdate:modelValue": e[2] || (e[2] = (o) => l.value[_.value] = o),
+              modelValue: n.value[w.value],
+              "onUpdate:modelValue": e[1] || (e[1] = (t) => n.value[w.value] = t),
               type: "password",
               autocomplete: "new-password",
               fluid: ""
             }, null, 8, ["modelValue"]),
-            e[8] || (e[8] = t(
+            e[7] || (e[7] = l(
               "small",
               null,
               "Stored keys are masked. Leave the mask unchanged to keep the saved key.",
@@ -113,13 +148,100 @@ const q = { class: "ai-settings" }, z = { class: "fields" }, H = { class: "api-k
               /* CACHED */
             ))
           ]),
-          t("div", J, [
-            i($, {
+          l("div", le, [
+            l("div", oe, [
+              e[8] || (e[8] = l(
+                "span",
+                { class: "models-title" },
+                "Model definitions (key / provider model)",
+                -1
+                /* CACHED */
+              )),
+              s(S, {
+                label: "Add model",
+                icon: "pi pi-plus",
+                size: "small",
+                outlined: "",
+                class: "btn-add-model",
+                onClick: B
+              })
+            ]),
+            l("div", te, [
+              l("div", ne, [
+                s(r, {
+                  id: "ai-model-key-default",
+                  modelValue: "default",
+                  "aria-label": "Fallback model key",
+                  disabled: "",
+                  readonly: "",
+                  fluid: ""
+                }),
+                s(r, {
+                  id: "ai-model",
+                  "aria-label": "Model name",
+                  modelValue: V.value,
+                  "onUpdate:modelValue": e[2] || (e[2] = (t) => V.value = t),
+                  class: "model-input",
+                  fluid: ""
+                }, null, 8, ["modelValue"]),
+                e[9] || (e[9] = l(
+                  "span",
+                  {
+                    class: "row-spacer",
+                    "aria-hidden": "true"
+                  },
+                  null,
+                  -1
+                  /* CACHED */
+                ))
+              ]),
+              (c(!0), y(
+                N,
+                null,
+                O(k.value, (t, f) => (c(), y("div", {
+                  key: t.id,
+                  class: "model-row"
+                }, [
+                  s(r, {
+                    id: `ai-model-key-${f}`,
+                    "aria-label": `Model key ${f + 1}`,
+                    modelValue: t.key,
+                    "onUpdate:modelValue": (I) => t.key = I,
+                    class: "model-key-input",
+                    placeholder: "Key (e.g. fast)",
+                    fluid: ""
+                  }, null, 8, ["id", "aria-label", "modelValue", "onUpdate:modelValue"]),
+                  s(r, {
+                    id: `ai-model-value-${f}`,
+                    "aria-label": `Model name ${f + 1}`,
+                    modelValue: t.value,
+                    "onUpdate:modelValue": (I) => t.value = I,
+                    class: "model-value-input",
+                    placeholder: "Provider model name",
+                    fluid: ""
+                  }, null, 8, ["id", "aria-label", "modelValue", "onUpdate:modelValue"]),
+                  s(S, {
+                    icon: "pi pi-trash",
+                    severity: "danger",
+                    text: "",
+                    rounded: "",
+                    "aria-label": `Remove model ${t.key || f + 1}`,
+                    class: "btn-remove-model",
+                    onClick: (I) => D(f)
+                  }, null, 8, ["aria-label", "onClick"])
+                ]))),
+                128
+                /* KEYED_FRAGMENT */
+              ))
+            ])
+          ]),
+          l("div", ae, [
+            s(P, {
               inputId: "enforce-budget",
-              modelValue: l.value.enforce_budget,
-              "onUpdate:modelValue": e[3] || (e[3] = (o) => l.value.enforce_budget = o)
+              modelValue: n.value.enforce_budget,
+              "onUpdate:modelValue": e[3] || (e[3] = (t) => n.value.enforce_budget = t)
             }, null, 8, ["modelValue"]),
-            e[9] || (e[9] = t(
+            e[10] || (e[10] = l(
               "label",
               { for: "enforce-budget" },
               "Enforce monthly budget limit",
@@ -127,18 +249,18 @@ const q = { class: "ai-settings" }, z = { class: "fields" }, H = { class: "api-k
               /* CACHED */
             ))
           ]),
-          t("div", null, [
-            e[10] || (e[10] = t(
+          l("div", null, [
+            e[11] || (e[11] = l(
               "label",
               { for: "ai-budget" },
               "Monthly budget limit ($)",
               -1
               /* CACHED */
             )),
-            i(B, {
+            s(E, {
               inputId: "ai-budget",
-              modelValue: l.value.monthly_budget,
-              "onUpdate:modelValue": e[4] || (e[4] = (o) => l.value.monthly_budget = o),
+              modelValue: n.value.monthly_budget,
+              "onUpdate:modelValue": e[4] || (e[4] = (t) => n.value.monthly_budget = t),
               min: 0,
               step: 0.5,
               maxFractionDigits: 2,
@@ -146,138 +268,138 @@ const q = { class: "ai-settings" }, z = { class: "fields" }, H = { class: "api-k
             }, null, 8, ["modelValue"])
           ])
         ]),
-        t("div", K, [
-          i(y, {
+        l("div", se, [
+          s(S, {
             label: "Save Settings",
             class: "save-btn",
             icon: "pi pi-check",
-            loading: d.value,
-            onClick: N
+            loading: p.value,
+            onClick: j
           }, null, 8, ["loading"])
         ]),
-        i(C),
-        t("div", Q, [
-          e[11] || (e[11] = t(
+        s(G),
+        l("div", ie, [
+          e[12] || (e[12] = l(
             "h4",
             null,
             "Usage & cost",
             -1
             /* CACHED */
           )),
-          i(y, {
+          s(S, {
             label: "Refresh",
             icon: "pi pi-refresh",
             text: "",
-            onClick: f
+            onClick: M
           })
         ]),
-        t("div", W, [
-          t("div", null, [
-            e[12] || (e[12] = t(
+        l("div", de, [
+          l("div", null, [
+            e[13] || (e[13] = l(
               "span",
               null,
               "Month spend",
               -1
               /* CACHED */
             )),
-            t(
+            l(
               "strong",
               null,
-              "$" + g(((k = r.value.month_cost_usd) == null ? void 0 : k.toFixed(4)) || "0.0000"),
+              "$" + b(((x = v.value.month_cost_usd) == null ? void 0 : x.toFixed(4)) || "0.0000"),
               1
               /* TEXT */
             )
           ]),
-          t("div", null, [
-            e[13] || (e[13] = t(
+          l("div", null, [
+            e[14] || (e[14] = l(
               "span",
               null,
               "All-time spend",
               -1
               /* CACHED */
             )),
-            t(
+            l(
               "strong",
               null,
-              "$" + g(((V = r.value.total_cost_usd) == null ? void 0 : V.toFixed(4)) || "0.0000"),
+              "$" + b(((A = v.value.total_cost_usd) == null ? void 0 : A.toFixed(4)) || "0.0000"),
               1
               /* TEXT */
             )
           ]),
-          t("div", null, [
-            e[14] || (e[14] = t(
+          l("div", null, [
+            e[15] || (e[15] = l(
               "span",
               null,
               "Input tokens",
               -1
               /* CACHED */
             )),
-            t(
+            l(
               "strong",
               null,
-              g(((I = r.value.total_input_tokens) == null ? void 0 : I.toLocaleString()) || "0"),
+              b(((U = v.value.total_input_tokens) == null ? void 0 : U.toLocaleString()) || "0"),
               1
               /* TEXT */
             )
           ]),
-          t("div", null, [
-            e[15] || (e[15] = t(
+          l("div", null, [
+            e[16] || (e[16] = l(
               "span",
               null,
               "Output tokens",
               -1
               /* CACHED */
             )),
-            t(
+            l(
               "strong",
               null,
-              g(((S = r.value.total_output_tokens) == null ? void 0 : S.toLocaleString()) || "0"),
+              b(((F = v.value.total_output_tokens) == null ? void 0 : F.toLocaleString()) || "0"),
               1
               /* TEXT */
             )
           ])
         ]),
-        (x = r.value.breakdown_by_plugin) != null && x.length ? (v(), c("ul", X, [
-          (v(!0), c(
-            G,
+        (C = v.value.breakdown_by_plugin) != null && C.length ? (c(), y("ul", ue, [
+          (c(!0), y(
+            N,
             null,
-            R(r.value.breakdown_by_plugin, (o) => (v(), c("li", {
-              key: o.calling_plugin
+            O(v.value.breakdown_by_plugin, (t) => (c(), y("li", {
+              key: t.calling_plugin
             }, [
-              t(
+              l(
                 "span",
                 null,
-                g(o.calling_plugin),
+                b(t.calling_plugin),
                 1
                 /* TEXT */
               ),
-              i(M, {
-                value: `$${o.cost.toFixed(4)} (${o.call_count} calls)`,
+              s(z, {
+                value: `$${t.cost.toFixed(4)} (${t.call_count} calls)`,
                 severity: "secondary"
               }, null, 8, ["value"])
             ]))),
             128
             /* KEYED_FRAGMENT */
           ))
-        ])) : A("v-if", !0)
+        ])) : T("v-if", !0)
       ]);
     };
   }
-}), Z = (p, a) => {
-  const d = p.__vccOpts || p;
-  for (const [s, l] of a)
-    d[s] = l;
-  return d;
-}, ee = /* @__PURE__ */ Z(Y, [["__scopeId", "data-v-984332b5"]]);
-function oe(p) {
-  var a;
-  (a = p.settings) != null && a.section && p.settings.section({
+}), me = (g, u) => {
+  const p = g.__vccOpts || g;
+  for (const [i, n] of u)
+    p[i] = n;
+  return p;
+}, pe = /* @__PURE__ */ me(re, [["__scopeId", "data-v-56d5ced1"]]);
+function ge(g) {
+  var u;
+  (u = g.settings) != null && u.section && g.settings.section({
     id: "core-ai-provider",
     title: "AI & Budget",
-    component: ee,
+    component: pe,
     order: 80
   });
 }
 export {
-  oe as default
+  ge as default
 };

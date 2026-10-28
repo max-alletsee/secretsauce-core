@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import type { VueWrapper } from '@vue/test-utils'
+import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { ApiError } from '@secretsauce/ui'
 import activate from '../../../secretsauce/plugins/core/core-translator/ui/src/index'
-import { registeredIntent, openProvider, clickButton, savedRecipe } from '../helpers/registeredPlugin'
+import { registeredIntent, registeredSlot, openProvider, clickButton, savedRecipe } from '../helpers/registeredPlugin'
 
 const wrappers: VueWrapper[] = []
 afterEach(() => { wrappers.splice(0).forEach(w => w.unmount()); document.body.innerHTML = '' })
@@ -34,5 +34,46 @@ describe('registered translator component (API boundary double)', () => {
     expect(wrapper.emitted('resolve')).toBeUndefined()
     await clickButton('Cancel')
     expect(wrapper.emitted('cancel')).toEqual([[]])
+  })
+
+  it('renders inline plugin settings for single and bulk translation model keys', async () => {
+    let savedConfig: any = null
+    const { wrapper, harness } = registeredSlot(
+      activate,
+      'core-translator',
+      {
+        get: async (path: string) => {
+          if (path === '/api/x/core-ai-provider/settings') {
+            return { models: { default: 'gpt-4o-mini', bulk: 'gpt-4o-nano' } }
+          }
+          if (path === '/api/plugins/core-translator/config') {
+            return {
+              auto_translate_members: true,
+              translate_model_key: 'default',
+              translate_all_model_key: 'bulk',
+            }
+          }
+          throw new Error(`Unexpected GET ${path}`)
+        },
+        put: async (path: string, body: any) => {
+          expect(path).toBe('/api/plugins/core-translator/config')
+          savedConfig = body
+          return body
+        },
+      } as any,
+      'plugin_manager.plugin.actions',
+      { plugin: { id: 'core-translator', state: 'active', enabled: true } },
+    )
+    wrappers.push(wrapper)
+
+    await clickButton('Settings', wrapper.element)
+    await flushPromises()
+    await clickButton('Save Settings', wrapper.element)
+    expect(savedConfig).toEqual({
+      auto_translate_members: true,
+      translate_model_key: 'default',
+      translate_all_model_key: 'bulk',
+    })
+    expect(harness.notifications).toContainEqual(expect.objectContaining({ level: 'success' }))
   })
 })
