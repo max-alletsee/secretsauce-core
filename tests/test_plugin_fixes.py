@@ -30,7 +30,7 @@ async def test_units_reconvert_covers_every_language_row(tmp_path):
             assert (await k.recipes.get_recipe(row_id))["revision"] == 2
 
 
-async def test_recurring_rules_are_validated_and_materializing_is_idempotent(tmp_path):
+async def test_recurring_rules_are_validated_and_explicitly_approved(tmp_path):
     async with make_kernel(tmp_path) as k:
         bad = await k.client.post(
             "/api/x/core-recurring/rules", json={"weekday": 9, "meal_type": "dinner", "recipe_id": "x"}
@@ -40,16 +40,29 @@ async def test_recurring_rules_are_validated_and_materializing_is_idempotent(tmp
             "/api/x/core-recurring/rules", json={"weekday": 1, "meal_type": "dinner", "recipe_id": "nope_en"}
         )
         assert missing.status_code == 404
+        blank_note = await k.client.post(
+            "/api/x/core-recurring/rules", json={"weekday": 1, "meal_type": "dinner", "entry_type": "note", "title": "   "}
+        )
+        assert blank_note.status_code == 422
 
         recipe = (await k.client.post("/api/recipes", json={"title": "Pie", "language": "en"})).json()
-        payload = {"weekday": date.today().weekday(), "meal_type": "dinner", "recipe_id": recipe["id"]}
-        first = (await k.client.post('/api/x/core-recurring/rules', json=payload)).json()
-        second = (await k.client.post('/api/x/core-recurring/rules', json=payload)).json()
-        assert first['created'] == 2 and second['created'] == 0
-        entries = await k.schedule.list_entries(
-            from_date=date.today().isoformat(), to_date=(date.today() + timedelta(days=13)).isoformat()
+        today = date.today()
+        payload = {"weekday": today.weekday(), "meal_type": "dinner", "recipe_id": recipe["id"], "servings": 3}
+        rule = (await k.client.post('/api/x/core-recurring/rules', json=payload)).json()
+        # No automatic materialization on rule creation
+        assert await k.schedule.list_entries(
+            from_date=today.isoformat(), to_date=(today + timedelta(days=13)).isoformat()
+        ) == []
+        approved = await k.client.post(
+            f"/api/x/core-recurring/rules/{rule['id']}/approve", json={"date": today.isoformat()}
         )
-        assert all(e["origin"] == "plugin:core-recurring" for e in entries)
+        assert approved.status_code == 200
+        entries = await k.schedule.list_entries(
+            from_date=today.isoformat(), to_date=(today + timedelta(days=13)).isoformat()
+        )
+        assert len(entries) == 1
+        assert entries[0]["origin"] == "plugin:core-recurring"
+        assert entries[0]["servings_override"] == 3.0
 
 
 async def test_shortlist_ignores_unknown_actor_headers(tmp_path):

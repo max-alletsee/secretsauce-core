@@ -46,7 +46,7 @@ onBeforeUnmount(()=>{disposed=true;++revision;clearTimeout(timer);stops.forEach(
     <div class="timeline-toolbar"><h2>Timeline</h2><Button label="Today" icon="pi pi-calendar" size="small" outlined @click="reset" /></div><Message v-if="error" severity="error">{{error}}</Message>
     <div class="timeline-container">
       <aside class="timeline-sidebar-wrapper">
-        <Accordion v-if="phone" v-model:value="widgetsOpen" multiple><AccordionPanel v-for="widget in widgets" :key="widget.id" :value="widget.id"><AccordionHeader>{{widget.pluginId==='core-shortlist'?'Shortlist':widget.pluginId==='core-meal-planner-ai'?'AI meal suggestions':widget.pluginId}}</AccordionHeader><AccordionContent><component :is="widget.component" :context="windowDates" /></AccordionContent></AccordionPanel></Accordion>
+        <Accordion v-if="phone" v-model:value="widgetsOpen" multiple><AccordionPanel v-for="widget in widgets" :key="widget.id" :value="widget.id"><AccordionHeader>{{widget.pluginId==='core-shortlist'?'Shortlist':widget.pluginId==='core-meal-planner-ai'?'AI meal suggestions':widget.pluginId==='core-recurring'?'Recurring meals':widget.pluginId}}</AccordionHeader><AccordionContent><component :is="widget.component" :context="windowDates" /></AccordionContent></AccordionPanel></Accordion>
         <Slot v-else name="timeline.sidebar" :context="windowDates" />
       </aside>
       <div class="timeline-feed"><Button label="Show 2 earlier days" size="small" text @click="earlier" />

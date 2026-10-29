@@ -1,73 +1,137 @@
 import { test, expect } from './helpers/state'
 import { login } from './helpers/ui'
-function localDay(offset=0) { const d=new Date(); d.setDate(d.getDate()+offset); return d.toLocaleDateString('en-CA') }
-const names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
-test('repeat_provider_schedules_the_same_recipe_seven_days_later', async ({page, request}) => {
+function localDay(offset = 0) {
+  const d = new Date()
+  d.setDate(d.getDate() + offset)
+  return d.toLocaleDateString('en-CA')
+}
+
+const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+test('Timeline recurring widget creates, edits, approves, and dismisses recipe and note rules', async ({
+  page,
+  request,
+}) => {
   await login(page)
-  const result=await request.post('/api/recipes',{data:{title:'Weekly browser lentil soup',language:'en'}})
+  const result = await request.post('/api/recipes', {
+    data: { title: 'Weekly browser lentil soup', language: 'en' },
+  })
   expect(result.status()).toBe(201)
-  const recipe=await result.json()
-  const response=await request.post('/api/schedule',{data:{date:localDay(),meal_type:'dinner',recipe_id:recipe.id}})
-  expect(response.status()).toBe(201)
-  const original=await response.json()
-  let ruleId:string|undefined
+  const recipe = await result.json()
+
+  // Calculate expected household default servings from members
+  const membersRes = await request.get('/api/members')
+  const members = await membersRes.json()
+  const memberList = Array.isArray(members) ? members : members.items || []
+  const expectedDefaultServings =
+    Math.round(
+      memberList.reduce((acc: number, m: any) => acc + (Number(m.serving_ratio) || 1), 0) * 100
+    ) / 100 || 2
+
+  const todayWeekdayName = names[new Date().getDay()]
+  let recipeRuleId: string | undefined
+  let noteRuleId: string | undefined
+
   try {
     await page.goto('/timeline')
-    const card=page.locator('.day-card.is-today .schedule-card').filter({hasText:recipe.title})
-    await expect(card).toBeVisible(); await card.scrollIntoViewIfNeeded(); await card.click()
-    const created = page.waitForResponse(response => response.url().endsWith('/api/x/core-recurring/rules') && response.request().method()==='POST')
-    await page.getByRole('menuitem',{name:`Repeat every ${names[new Date().getDay()]}`,exact:true}).click()
-    expect((await created).ok()).toBe(true)
-    const rule=(await (await request.get('/api/x/core-recurring/rules')).json()).find((row:any)=>row.recipe_id===recipe.id)
-    expect(rule).toBeTruthy(); ruleId=rule.id
-    expect(rule.weekday).toBe((new Date().getDay()+6)%7)
-    await page.getByRole('button',{name:'Show 5 more days',exact:true}).click()
-    const repeated=page.locator(`.day-card[data-timeline-date="${localDay(7)}"] .schedule-card`).filter({hasText:recipe.title})
-    await expect(repeated).toBeVisible()
-    await repeated.locator('.pi-replay').hover()
-    await expect(page.getByRole('tooltip')).toContainText(`Repeats every ${names[new Date().getDay()]}`)
-    const future=(await (await request.get(`/api/schedule?from=${localDay(7)}&to=${localDay(7)}`)).json()).find((row:any)=>row.recipe_id===recipe.id)
-    expect(future.origin).toBe('plugin:core-recurring')
-    await repeated.scrollIntoViewIfNeeded(); await repeated.click()
-    await expect(page.getByRole('menuitem',{name:/^Repeat every /})).toHaveCount(0)
-    await page.keyboard.press('Escape')
-    await page.getByRole('link',{name:'Settings',exact:true}).first().click()
-    await page.locator('#settings-core-recurring').getByRole('button',{name:'Recurring Meals',exact:true}).click()
-    const row=page.locator('.recurring-settings li').filter({hasText:recipe.title})
-    await row.getByRole('button',{name:'Delete',exact:true}).click()
-    await expect(row).toHaveCount(0)
-    expect((await request.get(`/api/schedule/${future.id}`)).status()).toBe(404)
-    expect((await request.get(`/api/schedule/${original.id}`)).status()).toBe(200)
-  } finally { if(ruleId) await request.delete(`/api/x/core-recurring/rules/${ruleId}`) }
-})
+    const widget = page.locator('.recurring-meals-widget')
+    await expect(widget).toBeVisible()
 
-test('Settings creates a recurring meal from weekday slot and recipe search', async ({page,request})=>{
-  await login(page)
-  const result=await request.post('/api/recipes',{data:{title:'Settings weekly pasta',language:'en'}})
-  expect(result.status()).toBe(201)
-  const recipe=await result.json()
-  let ruleId:string|undefined
-  try {
-    await page.goto('/settings?section=core-recurring')
-    const section=page.locator('#settings-core-recurring')
-    await expect(section).toContainText('A recurring meal is planned automatically on the same weekday every week, 14 days ahead.')
-    await expect(section.getByRole('button',{name:'Materialize Now',exact:true})).toHaveCount(0)
-    await section.getByRole('button',{name:'Add recurring meal',exact:true}).click()
-    const dialog=page.getByRole('dialog')
-    await dialog.getByLabel('Weekday',{exact:true}).click()
-    await page.getByRole('option',{name:'Monday',exact:true}).click()
-    await dialog.getByLabel('Meal slot',{exact:true}).click()
-    await page.getByRole('option',{name:'Dinner',exact:true}).click()
-    await dialog.getByLabel('Recipe',{exact:true}).fill('Settings weekly')
-    await page.getByRole('option',{name:'Settings weekly pasta',exact:true}).click()
-    await dialog.getByRole('button',{name:'Add recurring meal',exact:true}).click()
+    // 1. Add a recurring recipe rule for today's weekday
+    await widget.getByRole('button', { name: 'Add recurring meal', exact: true }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByLabel('Servings', { exact: true })).toHaveValue(
+      String(expectedDefaultServings)
+    )
+    await dialog.getByLabel('Weekday', { exact: true }).click()
+    await page.getByRole('option', { name: todayWeekdayName, exact: true }).click()
+    await dialog.getByLabel('Meal slot', { exact: true }).click()
+    await page.getByRole('option', { name: 'Dinner', exact: true }).click()
+    await dialog.getByLabel('Search recipes', { exact: true }).fill('Weekly browser lentil')
+    const resultRow = dialog.locator('.recipe-result').filter({ hasText: recipe.title })
+    await resultRow.getByRole('button', { name: 'Select', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Add recurring meal', exact: true }).click()
     await expect(dialog).not.toBeVisible()
-    await expect(section).toContainText('Every Monday · Dinner · Settings weekly pasta')
-    const rule=(await (await request.get('/api/x/core-recurring/rules')).json()).find((row:any)=>row.recipe_id===recipe.id)
-    ruleId=rule.id
-    expect(rule.weekday).toBe(0); expect(rule.meal_type).toBe('dinner')
-    const meals=(await (await request.get(`/api/schedule?from=${localDay()}&to=${localDay(13)}`)).json()).filter((row:any)=>row.recipe_id===recipe.id)
-    expect(meals).toHaveLength(2)
-  } finally { if(ruleId) await request.delete(`/api/x/core-recurring/rules/${ruleId}`) }
+
+    await expect(widget).toContainText(
+      `Every ${todayWeekdayName} · Dinner · ${recipe.title} (${expectedDefaultServings} servings)`
+    )
+    const rulesAfterCreate = await (await request.get('/api/x/core-recurring/rules')).json()
+    const createdRule = rulesAfterCreate.find((r: any) => r.recipe_id === recipe.id)
+    expect(createdRule).toBeTruthy()
+    recipeRuleId = createdRule.id
+
+    // Verify no schedule entry was auto-created yet
+    const beforeApprove = (
+      await (await request.get(`/api/schedule?from=${localDay()}&to=${localDay(13)}`)).json()
+    ).filter((e: any) => e.recipe_id === recipe.id)
+    expect(beforeApprove).toHaveLength(0)
+
+    // 2. Ghost card is visible in today's dinner slot -> Approve it
+    const todayDinnerSlot = page.locator('.day-card.is-today .meal-slot[data-slot-id="dinner"]')
+    const ghostCard = todayDinnerSlot
+      .locator('.recurring-ghost-card')
+      .filter({ hasText: recipe.title })
+    await expect(ghostCard).toBeVisible()
+    await ghostCard.getByRole('button', { name: 'Approve', exact: true }).click()
+    await expect(ghostCard).toHaveCount(0)
+
+    // Approved meal is now a ScheduleCard with the pi-replay icon and no Repeat weekly menuitem
+    const approvedCard = todayDinnerSlot.locator('.schedule-card').filter({ hasText: recipe.title })
+    await expect(approvedCard).toBeVisible()
+    await expect(approvedCard.locator('.pi-replay')).toBeVisible()
+    await approvedCard.click()
+    await expect(page.getByRole('menuitem', { name: /^Repeat every / })).toHaveCount(0)
+    await page.keyboard.press('Escape')
+
+    // 3. Add a recurring note rule for today's weekday + dinner (even though the slot is now occupied!)
+    await widget.getByRole('button', { name: 'Add recurring meal', exact: true }).click()
+    const noteDialog = page.getByRole('dialog')
+    await noteDialog.getByLabel('Weekday', { exact: true }).click()
+    await page.getByRole('option', { name: todayWeekdayName, exact: true }).click()
+    await noteDialog.getByLabel('Meal slot', { exact: true }).click()
+    await page.getByRole('option', { name: 'Dinner', exact: true }).click()
+    await noteDialog.getByRole('tab', { name: 'Note', exact: true }).click()
+    await noteDialog.getByLabel('Note title', { exact: true }).fill('Homemade garlic bread')
+    await noteDialog.getByRole('button', { name: 'Add recurring meal', exact: true }).click()
+    await expect(noteDialog).not.toBeVisible()
+
+    const rulesWithNote = await (await request.get('/api/x/core-recurring/rules')).json()
+    const noteRule = rulesWithNote.find((r: any) => r.title === 'Homemade garlic bread')
+    expect(noteRule).toBeTruthy()
+    noteRuleId = noteRule.id
+
+    // Note ghost card appears in today's occupied dinner slot -> Dismiss it
+    const noteGhost = todayDinnerSlot
+      .locator('.recurring-ghost-card')
+      .filter({ hasText: 'Homemade garlic bread' })
+    await expect(noteGhost).toBeVisible()
+    await noteGhost.getByRole('button', { name: 'Dismiss', exact: true }).click()
+    await expect(noteGhost).toHaveCount(0)
+
+    // 4. Edit the note rule -> future dismissal is cleared and updated ghost card appears
+    const noteRow = widget.locator('.recurring-rule-item').filter({ hasText: 'Homemade garlic bread' })
+    await noteRow.getByRole('button', { name: 'Edit', exact: true }).click()
+    const editDialog = page.getByRole('dialog')
+    await editDialog.getByLabel('Note title', { exact: true }).fill('Cheesy garlic bread')
+    await editDialog.getByRole('button', { name: 'Save recurring meal', exact: true }).click()
+    await expect(editDialog).not.toBeVisible()
+    await expect(widget).toContainText('Cheesy garlic bread')
+
+    const editedGhost = todayDinnerSlot
+      .locator('.recurring-ghost-card')
+      .filter({ hasText: 'Cheesy garlic bread' })
+    await expect(editedGhost).toBeVisible()
+
+    // 5. Delete the recipe rule -> the already-approved schedule card on today stays intact!
+    const recipeRow = widget.locator('.recurring-rule-item').filter({ hasText: recipe.title })
+    await recipeRow.getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect(recipeRow).toHaveCount(0)
+    recipeRuleId = undefined
+    await expect(approvedCard).toBeVisible()
+  } finally {
+    if (recipeRuleId) await request.delete(`/api/x/core-recurring/rules/${recipeRuleId}`)
+    if (noteRuleId) await request.delete(`/api/x/core-recurring/rules/${noteRuleId}`)
+  }
 })
