@@ -78,10 +78,10 @@ async def test_predefined_notes_on_meal_types_and_household(tmp_path):
         initial = (await client.get("/api/household")).json()
         assert initial["predefined_notes"] == ["Dining out", "Leftovers", "Takeout", "Quick meal"]
 
-        # Patch custom predefined notes on a meal slot (e.g. Brotzeit)
+        # Patch custom predefined notes on a meal slot (e.g. take-out)
         slots_with_notes = [
             {"id": "breakfast", "label": "Breakfast", "predefined_notes": ["Quick meal"]},
-            {"id": "dinner", "label": "Dinner", "predefined_notes": ["Dining out", "Leftovers", "Takeout", "Quick meal", "Brotzeit"]},
+            {"id": "dinner", "label": "Dinner", "predefined_notes": ["Dining out", "Leftovers", "Takeout", "Quick meal", "take-out"]},
         ]
         res = await client.patch("/api/household", json={"meal_types": slots_with_notes})
         assert res.status_code == 200, res.text
@@ -93,9 +93,9 @@ async def test_predefined_notes_on_meal_types_and_household(tmp_path):
         assert fetched["meal_types"] == slots_with_notes
 
         # Household-level predefined_notes update
-        res2 = await client.patch("/api/household", json={"predefined_notes": ["Dining out", "Leftovers", "Brotzeit"]})
+        res2 = await client.patch("/api/household", json={"predefined_notes": ["Dining out", "Leftovers", "take-out"]})
         assert res2.status_code == 200, res2.text
-        assert res2.json()["predefined_notes"] == ["Dining out", "Leftovers", "Brotzeit"]
+        assert res2.json()["predefined_notes"] == ["Dining out", "Leftovers", "take-out"]
 
 
 async def test_predefined_notes_validation(tmp_path):
@@ -120,9 +120,9 @@ async def test_predefined_notes_validation(tmp_path):
 
         # Deduplication works cleanly
         res = await client.patch("/api/household", json={
-            "predefined_notes": ["Brotzeit", "Brotzeit", "  Brotzeit  ", "Takeout"],
-            "meal_types": [{"id": "dinner", "label": "Dinner", "predefined_notes": ["Brotzeit", "Brotzeit"]}],
+            "predefined_notes": ["take-out", "take-out", "  take-out  ", "Takeout"],
+            "meal_types": [{"id": "dinner", "label": "Dinner", "predefined_notes": ["take-out", "take-out"]}],
         })
         assert res.status_code == 200
-        assert res.json()["predefined_notes"] == ["Brotzeit", "Takeout"]
-        assert res.json()["meal_types"][0]["predefined_notes"] == ["Brotzeit"]
+        assert res.json()["predefined_notes"] == ["take-out", "Takeout"]
+        assert res.json()["meal_types"][0]["predefined_notes"] == ["take-out"]

@@ -76,7 +76,7 @@ function removeNote(slotIndex: number, noteIndex: number) {
           <span v-if="!getNotes(slot).length" class="empty-notes-hint">No pre-defined notes</span>
         </div>
         <div class="add-note-row">
-          <InputText :id="`new-note-input-${slot.id}`" v-model="newNoteInputs[slot.id]" :aria-label="`New note for ${slot.label}`" placeholder="Add note (e.g. Brotzeit)" maxlength="64" @keydown.enter.prevent="addNote(index)" />
+          <InputText :id="`new-note-input-${slot.id}`" v-model="newNoteInputs[slot.id]" :aria-label="`New note for ${slot.label}`" placeholder="Add note (e.g. take-out)" maxlength="64" @keydown.enter.prevent="addNote(index)" />
           <Button label="Add note" size="small" text :disabled="!newNoteInputs[slot.id]?.trim()" :aria-label="`Add note to ${slot.label}`" @click="addNote(index)" />
         </div>
       </div>

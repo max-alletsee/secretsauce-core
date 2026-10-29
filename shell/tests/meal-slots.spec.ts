@@ -29,7 +29,7 @@ describe('default meal slots', () => {
     await clickButton('Remove Evening meal')
     expect(wrapper.props('modelValue')).toEqual([{ id: 'lunch', label: 'Lunch' }])
   })
-  it('allows defining custom pre-defined notes like Brotzeit on a slot', async () => {
+  it('allows defining custom pre-defined notes like take-out on a slot', async () => {
     const wrapper = mountWithUi(MealSlotEditor, {
       props: {
         modelValue: [
@@ -47,21 +47,21 @@ describe('default meal slots', () => {
     expect(wrapper.find('[data-slot-notes="dinner"]').text()).toContain('Takeout')
     expect(wrapper.find('[data-slot-notes="dinner"]').text()).toContain('Quick meal')
 
-    // Add "Brotzeit" to dinner notes
+    // Add "take-out" to dinner notes
     const input = wrapper.find<HTMLInputElement>('#new-note-input-dinner')
-    await input.setValue('Brotzeit')
+    await input.setValue('take-out')
     await clickButton('Add note to Dinner')
 
-    // Expect modelValue to include Brotzeit in predefined_notes
+    // Expect modelValue to include take-out in predefined_notes
     expect(wrapper.props('modelValue')[0].predefined_notes).toEqual([
-      'Dining out', 'Leftovers', 'Takeout', 'Quick meal', 'Brotzeit'
+      'Dining out', 'Leftovers', 'Takeout', 'Quick meal', 'take-out'
     ])
-    expect(wrapper.find('[data-slot-notes="dinner"]').text()).toContain('Brotzeit')
+    expect(wrapper.find('[data-slot-notes="dinner"]').text()).toContain('take-out')
 
     // Remove a note: "Takeout"
     await clickButton('Remove note Takeout from Dinner')
     expect(wrapper.props('modelValue')[0].predefined_notes).toEqual([
-      'Dining out', 'Leftovers', 'Quick meal', 'Brotzeit'
+      'Dining out', 'Leftovers', 'Quick meal', 'take-out'
     ])
     expect(wrapper.find('[data-slot-notes="dinner"]').text()).not.toContain('Takeout')
   })

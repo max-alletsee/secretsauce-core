@@ -48,7 +48,7 @@ describe('registered Timeline route (API boundary double)', () => {
     expect(document.querySelector('[role=dialog]')).toBeNull()
     expect(wrapper.text()).toContain('Chocolate cake')
   })
-  it('schedules a custom pre-defined note like Brotzeit from slot settings', async () => {
+  it('schedules a custom pre-defined note like take-out from slot settings', async () => {
     let scheduled: any
     const { wrapper, harness } = await registeredRoute(activate, 'core-timeline', {
       get: async (path: string, query: any) => {
@@ -62,7 +62,7 @@ describe('registered Timeline route (API boundary double)', () => {
       post: async (path: string, body: any) => {
         expect(path).toBe('/api/schedule')
         expect(body.entry_type).toBe('note')
-        expect(body.title).toBe('Brotzeit')
+        expect(body.title).toBe('take-out')
         expect(body.meal_type).toBe('dinner')
         scheduled = { ...body, id: 'entry-note-1', revision: 1, origin: 'member', created_at: '2026-09-28T12:00:00Z', updated_at: '2026-09-28T12:00:00Z' }
         return scheduled
@@ -73,7 +73,7 @@ describe('registered Timeline route (API boundary double)', () => {
     harness.householdStore.household = {
       household_name: 'Our Household',
       meal_types: [
-        { id: 'dinner', label: 'Dinner', predefined_notes: ['Leftovers', 'Brotzeit'] }
+        { id: 'dinner', label: 'Dinner', predefined_notes: ['Leftovers', 'take-out'] }
       ],
       languages: { primary: 'en' },
       units: 'metric',
@@ -81,12 +81,12 @@ describe('registered Timeline route (API boundary double)', () => {
 
     await clickButton('Add meal', wrapper.find('.is-today').element)
     await clickButton('Note')
-    expect(document.querySelector('.quick-notes')?.textContent).toContain('Brotzeit')
-    await clickButton('Brotzeit')
+    expect(document.querySelector('.quick-notes')?.textContent).toContain('take-out')
+    await clickButton('take-out')
     const noteInput = document.querySelector<HTMLInputElement>('#entry-note')!
-    expect(noteInput.value).toBe('Brotzeit')
+    expect(noteInput.value).toBe('take-out')
     await clickButton('Add meal', document.querySelector('[role=dialog]')!)
     expect(document.querySelector('[role=dialog]')).toBeNull()
-    expect(wrapper.text()).toContain('Brotzeit')
+    expect(wrapper.text()).toContain('take-out')
   })
 })

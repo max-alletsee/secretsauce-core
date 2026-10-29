@@ -16,11 +16,11 @@ async def test_household_config_crud(tmp_path):
     assert "passphrase_hash" not in cfg
     assert cfg["predefined_notes"] == ["Dining out", "Leftovers", "Takeout", "Quick meal"]
 
-    await repo.update_config({"household_name": "The Smiths", "units": "metric", "predefined_notes": ["Brotzeit", "Takeout"]})
+    await repo.update_config({"household_name": "The Smiths", "units": "metric", "predefined_notes": ["take-out", "Takeout"]})
     updated = await repo.get_config()
     assert updated["household_name"] == "The Smiths"
     assert updated["units"] == "metric"
-    assert updated["predefined_notes"] == ["Brotzeit", "Takeout"]
+    assert updated["predefined_notes"] == ["take-out", "Takeout"]
     await db.close()
 
 
