@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS plugin_core_meal_planner_suggestions (
     reasoning TEXT,
     confidence REAL,
     status TEXT NOT NULL DEFAULT 'suggested',
-    schedule_entry_id TEXT,
+    timeline_entry_id TEXT,
     created_at TEXT NOT NULL
 );
 

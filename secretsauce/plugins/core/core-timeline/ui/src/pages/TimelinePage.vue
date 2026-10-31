@@ -3,10 +3,10 @@ import { ref, computed, inject, onMounted, onBeforeUnmount, nextTick } from 'vue
 import { Slot, useSecretSauce } from '@secretsauce/ui'
 import DayCard from '../components/DayCard.vue'
 import AddEntryDialog from '../components/AddEntryDialog.vue'
-import { buildDays, localToday, shiftDate, type DateWindow, type ResolvedSlot, type ScheduleEntry } from '../days'
+import { buildDays, localToday, shiftDate, type DateWindow, type ResolvedSlot, type TimelineEntry } from '../days'
 const ss=useSecretSauce()
 const today=ref(localToday()),windowDates=ref<DateWindow>({from:shiftDate(today.value,-2),to:shiftDate(today.value,6)})
-const entries=ref<ScheduleEntry[]>([]),slots=ref<Record<string,ResolvedSlot[]>>({}),error=ref(''),expanded=ref(new Set<string>()),active=ref<{date:string;mealType:string}|null>(null)
+const entries=ref<TimelineEntry[]>([]),slots=ref<Record<string,ResolvedSlot[]>>({}),error=ref(''),expanded=ref(new Set<string>()),active=ref<{date:string;mealType:string}|null>(null)
 const phone=ref(window.innerWidth<768),widgetsOpen=ref<string[]>([])
 const registry=inject<any>('__SS_SLOT_REGISTRY__')
 const widgets=computed(()=>registry?.getContributions('timeline.sidebar')||[])
@@ -15,12 +15,12 @@ const past=computed(()=>days.value.filter(day=>day.isPast)),future=computed(()=>
 let revision=0,timer:ReturnType<typeof setTimeout>|undefined,disposed=false
 async function load(){const n=++revision;const {from,to}=windowDates.value;error.value=''
   try{
-    const timeline:ScheduleEntry[]=[],resolved:Record<string,ResolvedSlot[]>={}
+    const timeline:TimelineEntry[]=[],resolved:Record<string,ResolvedSlot[]>={}
     // Bound both APIs: timeline allows a 62-day difference (63 inclusive), slots 92 inclusive.
     for(let start=from;start<=to;){
       const end=shiftDate(start,62)<to?shiftDate(start,62):to
       const query={from:start,to:end}
-      const [meals,daySlots]=await Promise.all([ss.api.get<ScheduleEntry[]>('/api/timeline',query),ss.api.get<{days:Record<string,ResolvedSlot[]>}>('/api/x/core-timeline/slots',query)])
+      const [meals,daySlots]=await Promise.all([ss.api.get<TimelineEntry[]>('/api/timeline',query),ss.api.get<{days:Record<string,ResolvedSlot[]>}>('/api/x/core-timeline/slots',query)])
       if(n!==revision||disposed)return
       timeline.push(...meals);Object.assign(resolved,daySlots.days)
       start=shiftDate(end,1)

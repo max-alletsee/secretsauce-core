@@ -21,7 +21,7 @@ async function plannedMeal(page: Page, title: string) {
   const entry = await response.json()
   await page.getByRole('link', { name: 'Timeline', exact: true }).first().click()
   await page.reload()
-  const card = page.locator('.schedule-card').filter({ hasText: title })
+  const card = page.locator('.timeline-card').filter({ hasText: title })
   await expect(card).toBeVisible()
   return { entry, card }
 }
@@ -90,13 +90,13 @@ test('planner uses household slots and schedules through its rendered sidebar', 
     await expect(planner).toContainText('Scheduled')
     const plan = await (await page.request.get(`/api/x/core-meal-planner-ai/plans/${suggestion.plan_id}`)).json()
     suggestion = plan.suggestions[0]
-    const entry = await (await page.request.get(`/api/timeline/${suggestion.schedule_entry_id}`)).json()
+    const entry = await (await page.request.get(`/api/timeline/${suggestion.timeline_entry_id}`)).json()
     expect(entry.recipe_id).toBe(suggestion.recipe_id)
     expect(entry.meal_type).toBe('supper')
   } finally {
     await page.request.patch('/api/household', { data: { meal_types: household.meal_types } })
-    if (suggestion?.schedule_entry_id) {
-      const entry = await (await page.request.get(`/api/timeline/${suggestion.schedule_entry_id}`)).json()
+    if (suggestion?.timeline_entry_id) {
+      const entry = await (await page.request.get(`/api/timeline/${suggestion.timeline_entry_id}`)).json()
       await page.request.delete(`/api/timeline/${entry.id}?revision=${entry.revision}`)
     }
   }
@@ -177,7 +177,7 @@ test('ratings use the actual selected member on a cooked timeline entry and relo
   try {
     await page.goto('/timeline')
     await chooseMember(page, member.name)
-    const card = page.locator('.schedule-card').filter({ hasText: 'Ratings test meal' })
+    const card = page.locator('.timeline-card').filter({ hasText: 'Ratings test meal' })
     await card.locator('.upvote-btn').click()
     await expect.poll(async () => (await (await page.request.get(`/api/x/core-ratings?timeline_entry_id=${entry.id}`)).json()).scores).toEqual([{ member_id: member.id, score: 1 }])
     await page.reload()
@@ -192,14 +192,14 @@ test('ratings use the actual selected member on a cooked timeline entry and relo
 
 test('mark_cooked_uses_the_real_outbox_and_persists', async ({ page }) => {
   const { entry, card } = await plannedMeal(page, 'Outbox kitchen meal')
-  await card.locator('.schedule-card-main').click()
+  await card.locator('.timeline-card-main').click()
   await page.getByRole('menuitem', { name: 'Mark as cooked', exact: true }).click({ timeout: 5000 })
   await expect.poll(async () => {
     const rows = await (await page.request.get(`/api/timeline?from=${entry.date}&to=${entry.date}`)).json()
     return rows.find((row: any) => row.id === entry.id)?.status
   }).toBe('cooked')
   await page.reload()
-  const cookedCard = page.locator('.schedule-card').filter({ hasText: 'Outbox kitchen meal' })
+  const cookedCard = page.locator('.timeline-card').filter({ hasText: 'Outbox kitchen meal' })
   await expect(cookedCard.getByTitle('Cooked')).toBeVisible()
   await expect(cookedCard).toContainText('3 servings')
   await expect(cookedCard.locator('.vote-rating')).toBeVisible()
@@ -208,12 +208,12 @@ test('mark_cooked_uses_the_real_outbox_and_persists', async ({ page }) => {
 test('removing a planned meal confirms, persists and does not reload the document', async ({ page }) => {
   const { entry, card } = await plannedMeal(page, 'Remove kitchen meal')
   await page.evaluate(() => { (window as any).__uiSentinel = 'alive' })
-  await card.locator('.schedule-card-main').click()
+  await card.locator('.timeline-card-main').click()
   await page.getByRole('menuitem', { name: 'Remove from plan', exact: true }).click({ timeout: 5000 })
   await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel', exact: true }).click()
   await expect(page.getByRole('alertdialog')).not.toBeVisible()
   await expect(card).toBeVisible()
-  await card.locator('.schedule-card-main').click()
+  await card.locator('.timeline-card-main').click()
   await page.getByRole('menuitem', { name: 'Remove from plan', exact: true }).click()
   await page.getByRole('alertdialog').getByRole('button', { name: 'Remove', exact: true }).click()
   await expect(card).toHaveCount(0)

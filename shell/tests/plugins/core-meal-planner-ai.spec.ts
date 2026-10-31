@@ -14,7 +14,7 @@ describe('registered meal planner sidebar (API boundary double)', () => {
       }
       if (path === '/api/x/core-meal-planner-ai/suggestions/sug-0/accept') {
         expect(body.meal_type).toBe('supper'); expect(body.date).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-        return { ...suggestions[0], status: 'accepted', schedule_entry_id: 'schedule-1' }
+        return { ...suggestions[0], status: 'accepted', timeline_entry_id: 'timeline-1' }
       }
       if (path === '/api/x/core-meal-planner-ai/suggestions/sug-1/dismiss') return { ...suggestions[1], status: 'dismissed' }
       throw new Error(`Unexpected POST ${path}`)

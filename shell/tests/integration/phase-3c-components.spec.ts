@@ -31,7 +31,7 @@ describe('Unified Timeline + inline ratings components (API boundary doubles)', 
     expect(wrapper.find('.vote-rating').exists()).toBe(false)
 
     // Open meal action menu and click "Mark as cooked"
-    await wrapper.find('.schedule-card-main').trigger('click'); await flushPromises()
+    await wrapper.find('.timeline-card-main').trigger('click'); await flushPromises()
     const markItem = Array.from(document.querySelectorAll<HTMLElement>('[role=menuitem]')).find(item => /Mark as cooked/i.test(item.textContent || ''))!
     markItem.querySelector<HTMLElement>('a')!.click(); await flushPromises()
 
@@ -50,7 +50,7 @@ describe('Unified Timeline + inline ratings components (API boundary doubles)', 
     expect(document.querySelector('[role=menu]')).toBeNull()
 
     // Open meal action menu again and click "Unmark as cooked"
-    await wrapper.find('.schedule-card-main').trigger('click'); await flushPromises()
+    await wrapper.find('.timeline-card-main').trigger('click'); await flushPromises()
     const unmarkItem = Array.from(document.querySelectorAll<HTMLElement>('[role=menuitem]')).find(item => /Unmark as cooked/i.test(item.textContent || ''))!
     unmarkItem.querySelector<HTMLElement>('a')!.click(); await flushPromises()
 

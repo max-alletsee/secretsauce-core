@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { IntentTrigger, Slot, useSecretSauce } from '@secretsauce/ui'
-import ScheduleCard from './ScheduleCard.vue'
+import TimelineCard from './TimelineCard.vue'
 import type { SlotVM } from '../days'
 const props=defineProps<{slot:SlotVM;date:string}>()
 const emit=defineEmits<{add:[payload:{date:string;mealType:string}];changed:[]}>()
@@ -25,7 +25,7 @@ const actions=computed(()=>[{label:'Add another meal',icon:'pi pi-plus',command:
     <Message v-if="error" severity="error">{{error}}</Message>
     <div v-if="slot.skipped" class="skipped-row"><span>Skipped this day</span><Button label="Undo" size="small" text :loading="busy" @click="write('undo')" /></div>
     <template v-else>
-      <IntentTrigger v-for="entry in slot.entries" :key="entry.id" hub="entry:interact" :context="{entry,mealType:slot.id}" @resolve="emit('changed')"><template #default="{open}"><ScheduleCard :entry="entry" @interact="open" /></template></IntentTrigger>
+      <IntentTrigger v-for="entry in slot.entries" :key="entry.id" hub="entry:interact" :context="{entry,mealType:slot.id}" @resolve="emit('changed')"><template #default="{open}"><TimelineCard :entry="entry" @interact="open" /></template></IntentTrigger>
       <Slot name="timeline.slot.suggestions" :context="{date,slot,onChanged:()=>emit('changed')}" />
       <Button v-if="!slot.entries.length" class="empty-slot-btn" icon="pi pi-plus" size="small" text aria-label="Add meal" @click="add" />
     </template>

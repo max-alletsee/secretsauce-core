@@ -77,8 +77,8 @@ test('Timeline recurring widget creates, edits, approves, and dismisses recipe a
     await ghostCard.getByRole('button', { name: 'Approve', exact: true }).click()
     await expect(ghostCard).toHaveCount(0)
 
-    // Approved meal is now a ScheduleCard with the pi-replay icon and no Repeat weekly menuitem
-    const approvedCard = todayDinnerSlot.locator('.schedule-card').filter({ hasText: recipe.title })
+    // Approved meal is now a TimelineCard with the pi-replay icon and no Repeat weekly menuitem
+    const approvedCard = todayDinnerSlot.locator('.timeline-card').filter({ hasText: recipe.title })
     await expect(approvedCard).toBeVisible()
     await expect(approvedCard.locator('.pi-replay')).toBeVisible()
     await approvedCard.click()

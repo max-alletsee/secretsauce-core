@@ -228,12 +228,12 @@ async def accept_suggestion_endpoint(
         await tx.execute(
             """
             UPDATE plugin_core_meal_planner_suggestions
-            SET status = 'accepted', schedule_entry_id = ?
+            SET status = 'accepted', timeline_entry_id = ?
             WHERE id = ?
             """,
             (entry["id"], suggestion_id),
         )
-    sug.update(status="accepted", schedule_entry_id=entry["id"])
+    sug.update(status="accepted", timeline_entry_id=entry["id"])
     return sug
 
 

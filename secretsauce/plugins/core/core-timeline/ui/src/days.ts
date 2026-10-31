@@ -1,7 +1,7 @@
 export type DateWindow = { from: string; to: string }
 export type ResolvedSlot = { id: string; label: string; kind: 'default' | 'extra'; skipped: boolean }
-export type ScheduleEntry = { id: string; revision: number; date: string; meal_type: string; recipe_id?: string | null; title?: string | null; [key: string]: any }
-export type SlotVM = ResolvedSlot & { entries: ScheduleEntry[]; synthetic?: boolean }
+export type TimelineEntry = { id: string; revision: number; date: string; meal_type: string; recipe_id?: string | null; title?: string | null; [key: string]: any }
+export type SlotVM = ResolvedSlot & { entries: TimelineEntry[]; synthetic?: boolean }
 export type DayVM = { date: string; isPast: boolean; isToday: boolean; slots: SlotVM[] }
 export function localToday(): string {
   const d = new Date()
@@ -12,7 +12,7 @@ export function shiftDate(date: string, days: number): string {
   d.setDate(d.getDate() + days)
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
-export function buildDays(window: DateWindow, resolvedSlots: Record<string, ResolvedSlot[]>, entries: ScheduleEntry[], today: string): DayVM[] {
+export function buildDays(window: DateWindow, resolvedSlots: Record<string, ResolvedSlot[]>, entries: TimelineEntry[], today: string): DayVM[] {
   const days: DayVM[] = []
   for (let date = window.from; date <= window.to; date = shiftDate(date, 1)) {
     const slots: SlotVM[] = (resolvedSlots[date] || []).map(slot => ({ ...slot, entries: [] }))

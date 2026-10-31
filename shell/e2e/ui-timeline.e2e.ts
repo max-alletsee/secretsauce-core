@@ -53,7 +53,7 @@ test('unmatched legacy slots keep meal actions without offering removal of a non
   await expect(page.getByRole('menuitem', {name:'Add another meal',exact:true})).toBeVisible()
   await expect(page.getByRole('menuitem', {name:'Remove slot',exact:true})).toHaveCount(0)
   await page.keyboard.press('Escape')
-  await slot.locator('.schedule-card').click()
+  await slot.locator('.timeline-card').click()
   await page.getByRole('menuitem', {name:'Remove from plan',exact:true}).click()
   await page.getByRole('alertdialog').getByRole('button', {name:'Remove',exact:true}).click()
   await expect(slot).toHaveCount(0)
@@ -114,14 +114,14 @@ test('another_devices_schedule_write_updates_the_visible_feed', async ({ page, r
   const created = await request.post('/api/timeline',{data:{date:day(),meal_type:'Dinner',entry_type:'note',title:'Live device meal'}})
   expect(created.status()).toBe(201)
   const entry = await created.json()
-  const card = page.locator('.schedule-card').filter({hasText:'Live device meal'})
+  const card = page.locator('.timeline-card').filter({hasText:'Live device meal'})
   await expect(card).toBeVisible()
   const updated = await request.patch(`/api/timeline/${entry.id}`,{data:{revision:entry.revision,title:'Renamed live meal'}})
   expect(updated.ok()).toBe(true)
   const current = await updated.json()
-  await expect(page.locator('.schedule-card').filter({hasText:'Renamed live meal'})).toBeVisible()
+  await expect(page.locator('.timeline-card').filter({hasText:'Renamed live meal'})).toBeVisible()
   expect((await request.delete(`/api/timeline/${entry.id}?revision=${current.revision}`)).status()).toBe(204)
-  await expect(page.locator('.schedule-card').filter({hasText:'Renamed live meal'})).toHaveCount(0)
+  await expect(page.locator('.timeline-card').filter({hasText:'Renamed live meal'})).toHaveCount(0)
   expect((await request.put(`/api/x/core-timeline/days/${day(1)}/slots/lunch`,{data:{kind:'skip'}})).ok()).toBe(true)
   await expect(page.locator(`.day-card[data-timeline-date="${day(1)}"] [data-slot-id=lunch]`)).toContainText('Skipped this day')
 })
@@ -182,7 +182,7 @@ test('planner acceptance resolves one-off choices outside its initial loaded dat
     await suggestion.getByRole('button', {name:'Add to schedule',exact:true}).click()
     const response = await accepted
     expect(response.ok()).toBe(true)
-    entryId = (await response.json()).schedule_entry_id
+    entryId = (await response.json()).timeline_entry_id
     const entry = await (await page.request.get(`/api/timeline/${entryId}`)).json()
     expect(entry.date).toBe(date); expect(entry.meal_type).toBe('far-brunch')
   } finally {

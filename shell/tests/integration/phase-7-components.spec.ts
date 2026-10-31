@@ -29,7 +29,7 @@ describe('Registered import/translate/plan/shopping components (API boundary dou
       if (path === '/api/recipes') { expect(body).toEqual(recipeDraft); imported = true; return savedRecipe }
       if (path === '/api/x/core-translator/translate') { expect(body).toEqual({ recipe_id: 'cake_en', target_language: 'de' }); return translated }
       if (path === '/api/x/core-meal-planner-ai/generate') return { id: 'plan-1', title: 'Desserts', prompt: null, start_date: null, suggestions: [{ ...suggestion }], created_at: suggestion.created_at }
-      if (path === '/api/x/core-meal-planner-ai/suggestions/suggestion-1/accept') { scheduled = true; return { ...suggestion, status: 'accepted', schedule_entry_id: 'entry-1' } }
+      if (path === '/api/x/core-meal-planner-ai/suggestions/suggestion-1/accept') { scheduled = true; return { ...suggestion, status: 'accepted', timeline_entry_id: 'entry-1' } }
       if (path === '/api/x/core-shopping-list/toggle') { expect(body).toEqual({ key: 'cocoa_g', checked: true }); checked = true; return body }
       throw new Error(`Unexpected POST ${path}`)
     } } as any)

@@ -120,7 +120,7 @@ for(const theme of themes) for(const width of [390,1280]) {
     const logged=await request.post('/api/timeline',{data:{date:new Date().toLocaleDateString('en-CA'),meal_type:'dinner',recipe_id:recipe.id,status:'cooked',servings_override:4}})
     expect(logged.status()).toBe(201)
     await page.goto('/timeline')
-    await capture('cooked-timeline-entry',page.locator('.schedule-card').filter({hasText:recipe.title}))
+    await capture('cooked-timeline-entry',page.locator('.timeline-card').filter({hasText:recipe.title}))
     await page.goto('/shopping-list')
     await capture('shopping',page.getByLabel('Extra item name',{exact:true}))
     await page.goto('/settings')

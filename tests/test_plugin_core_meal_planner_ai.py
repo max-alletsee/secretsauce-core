@@ -105,7 +105,7 @@ async def test_generate_meal_plan_candidate_pool_and_accept(tmp_path: Path):
         assert acc_res.status_code == 200, acc_res.text
         acc_data = acc_res.json()
         assert acc_data["status"] == "accepted"
-        assert acc_data.get("schedule_entry_id") is not None
+        assert acc_data.get("timeline_entry_id") is not None
 
         # Verify entry exists in timeline
         sched_entries = await k.timeline.list_entries(from_date="2026-09-21", to_date="2026-09-21")
