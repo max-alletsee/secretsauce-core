@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useSecretSauce } from '@secretsauce/ui'
+import { localToday } from '../days'
 const props=defineProps<{visible:boolean;date:string;mealType:string}>()
 const emit=defineEmits<{'update:visible':[value:boolean];created:[entry:any]}>()
 const DEFAULT_PREDEFINED_NOTES = ['Dining out', 'Leftovers', 'Takeout', 'Quick meal']
@@ -23,7 +24,8 @@ let searchRevision=0
 async function search(){const n=++searchRevision;try{const response=await ss.api.get<any>('/api/recipes',{q:query.value});if(n===searchRevision)results.value=response.items}catch(failure:any){if(n===searchRevision)error.value=failure.message}}
 watch(()=>props.visible, async visible=>{if(!visible){++searchRevision;return}tab.value='recipes';query.value='';note.value='';servings.value=2;error.value='';results.value=[];await search();try{shortlist.value=await ss.api.get<any[]>('/api/x/core-shortlist')}catch{shortlist.value=[]}})
 async function add(recipeId?:string){if(busy.value || (!recipeId && !note.value.trim()))return;busy.value=true;error.value=''
-  try{const entry=await ss.api.post('/api/schedule',{date:props.date,meal_type:props.mealType,entry_type:recipeId?'recipe':'note',...(recipeId?{recipe_id:recipeId}:{title:note.value}),servings_override:servings.value});emit('created',entry);emit('update:visible',false)}catch(failure:any){error.value=failure.message||'Could not add meal'}finally{busy.value=false}}
+  const isPast=props.date<localToday(),status=isPast?'cooked':'planned'
+  try{const entry=await ss.api.post('/api/timeline',{date:props.date,meal_type:props.mealType,entry_type:recipeId?'recipe':'note',...(recipeId?{recipe_id:recipeId}:{title:note.value}),servings_override:servings.value,status,...(isPast&&ss.store.currentMember.value?.id?{cooked_by_member_id:ss.store.currentMember.value.id}:{})});emit('created',entry);emit('update:visible',false)}catch(failure:any){error.value=failure.message||'Could not add meal'}finally{busy.value=false}}
 </script>
 <template>
   <Dialog :visible="visible" @update:visible="emit('update:visible',$event)" :header="`Add meal · ${date}`" modal :style="{width:'36rem',maxWidth:'95vw'}">

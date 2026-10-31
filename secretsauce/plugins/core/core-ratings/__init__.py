@@ -17,19 +17,19 @@ PLUGIN = {
 
 
 class VoteDraft(BaseModel):
-    journal_id: str
+    timeline_entry_id: str
     member_id: str
     score: int = Field(..., description="+1 for upvote, -1 for downvote")
 
 
-async def update_recipe_score_mirror(ctx, journal_id: str) -> None:
+async def update_recipe_score_mirror(ctx, timeline_entry_id: str) -> None:
     try:
-        journal_row = await ctx.journal.get_entry(journal_id)
+        timeline_row = await ctx.timeline.get_entry(timeline_entry_id)
     except Exception:
         return
-    if not journal_row or not journal_row.get("recipe_id"):
+    if not timeline_row or not timeline_row.get("recipe_id"):
         return
-    recipe_id = journal_row["recipe_id"]
+    recipe_id = timeline_row["recipe_id"]
     try:
         recipe_row = await ctx.recipes.get_recipe(recipe_id)
     except Exception:
@@ -42,8 +42,8 @@ async def update_recipe_score_mirror(ctx, journal_id: str) -> None:
         """
         SELECT SUM(r.score) as net_score, COUNT(r.score) as total_votes
         FROM plugin_core_ratings_scores r
-        JOIN cook_journal j ON r.journal_id = j.id
-        JOIN recipes rec ON j.recipe_id = rec.id
+        JOIN timeline_entries t ON r.timeline_entry_id = t.id
+        JOIN recipes rec ON t.recipe_id = rec.id
         WHERE rec.group_id = ?
         """,
         (group_id,),
@@ -59,8 +59,8 @@ async def rebuild(ctx) -> dict[str, Any]:
         """
         SELECT rec.group_id, SUM(r.score) as net_score
         FROM plugin_core_ratings_scores r
-        JOIN cook_journal j ON r.journal_id = j.id
-        JOIN recipes rec ON j.recipe_id = rec.id
+        JOIN timeline_entries t ON r.timeline_entry_id = t.id
+        JOIN recipes rec ON t.recipe_id = rec.id
         GROUP BY rec.group_id
         """
     )
@@ -73,10 +73,10 @@ async def setup(ctx):
     router = APIRouter(prefix="/api/x/core-ratings", tags=["core-ratings"])
 
     @router.get("")
-    async def get_ratings(journal_id: str = Query(...)):
+    async def get_ratings(timeline_entry_id: str = Query(...)):
         rows = await ctx.db.read_all(
-            "SELECT member_id, score FROM plugin_core_ratings_scores WHERE journal_id = ?",
-            (journal_id,),
+            "SELECT member_id, score FROM plugin_core_ratings_scores WHERE timeline_entry_id = ?",
+            (timeline_entry_id,),
         )
         scores = [dict(r) for r in rows]
         net = sum(r["score"] for r in scores) if scores else 0
@@ -89,26 +89,26 @@ async def setup(ctx):
         now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         await ctx.db.write(
             """
-            INSERT INTO plugin_core_ratings_scores (journal_id, member_id, score, created_at)
+            INSERT INTO plugin_core_ratings_scores (timeline_entry_id, member_id, score, created_at)
             VALUES (?, ?, ?, ?)
-            ON CONFLICT(journal_id, member_id) DO UPDATE SET score = excluded.score, created_at = excluded.created_at
+            ON CONFLICT(timeline_entry_id, member_id) DO UPDATE SET score = excluded.score, created_at = excluded.created_at
             """,
-            (draft.journal_id, draft.member_id, draft.score, now),
+            (draft.timeline_entry_id, draft.member_id, draft.score, now),
         )
-        await update_recipe_score_mirror(ctx, draft.journal_id)
+        await update_recipe_score_mirror(ctx, draft.timeline_entry_id)
         rows = await ctx.db.read_all(
-            "SELECT score FROM plugin_core_ratings_scores WHERE journal_id = ?",
-            (draft.journal_id,),
+            "SELECT score FROM plugin_core_ratings_scores WHERE timeline_entry_id = ?",
+            (draft.timeline_entry_id,),
         )
         return {"status": "ok", "net_score": sum(r["score"] for r in rows)}
 
     @router.delete("")
-    async def delete_vote(journal_id: str = Query(...), member_id: str = Query(...)):
+    async def delete_vote(timeline_entry_id: str = Query(...), member_id: str = Query(...)):
         await ctx.db.write(
-            "DELETE FROM plugin_core_ratings_scores WHERE journal_id = ? AND member_id = ?",
-            (journal_id, member_id),
+            "DELETE FROM plugin_core_ratings_scores WHERE timeline_entry_id = ? AND member_id = ?",
+            (timeline_entry_id, member_id),
         )
-        await update_recipe_score_mirror(ctx, journal_id)
+        await update_recipe_score_mirror(ctx, timeline_entry_id)
         return {"status": "ok"}
 
     ctx.router(router)

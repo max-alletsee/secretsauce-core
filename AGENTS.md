@@ -101,3 +101,20 @@ The backend and Playwright E2E tests rely on compiled bundles:
 
 - Before removing a worktree (`git worktree remove`), ensure all background server processes, pytest runs, and Node processes are completely terminated. Windows will lock files and corrupt worktree pruning if handles remain open.
 - Never delete `tmp/`, `tmp_claudecode/`, or test data directories like `my-test-data/` unless explicitly requested.
+
+---
+
+## Agent skills
+
+### Issue tracker
+
+Local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default canonical roles (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context (`GLOSSARY.md` and `docs/adr/` at repo root). See `docs/agents/domain.md`.
+

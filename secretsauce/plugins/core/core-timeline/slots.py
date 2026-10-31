@@ -76,7 +76,7 @@ class TimelineSlotsService:
     async def entries_for(self, day: str, slot_id: str, conn):
         # Id matching has priority over labels, just like frontend composition.
         slots = (await self.slots_for(day, day, conn=conn))[day]
-        entries = await self.ctx.schedule.get_for_date(day, conn=conn)
+        entries = await self.ctx.timeline.get_for_date(day, conn=conn)
         result = []
         for entry in entries:
             alias = entry['meal_type'].lower()
@@ -120,7 +120,7 @@ class TimelineSlotsService:
                 entries = await self.entries_for(day, slot_id, tx)
                 if entries and not with_entries: raise ConflictError('Slot still has planned meals', current={'entry_count': len(entries)})
                 for entry in entries:
-                    await self.ctx.schedule.delete_entry(entry['id'], revision=entry['revision'], conn=tx)
+                    await self.ctx.timeline.delete_entry(entry['id'], revision=entry['revision'], conn=tx)
             await tx.execute('DELETE FROM plugin_core_timeline_day_slots WHERE date=? AND meal_type=?', (day, slot_id))
             resolved = (await self.slots_for(day, day, conn=tx))[day]
             self.push_after_commit(day)

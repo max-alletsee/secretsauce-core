@@ -214,12 +214,12 @@ class MembersRepo:
             )
 
             # Section 4.4: Deleting a member also removes its id from every participant_member_ids array
-            sched_rows = await self.db.read_all(
-                "SELECT id, participant_member_ids FROM schedule_entries WHERE participant_member_ids LIKE ?;",
+            tl_rows = await self.db.read_all(
+                "SELECT id, participant_member_ids FROM timeline_entries WHERE participant_member_ids LIKE ?;",
                 (f"%{member_id}%",),
                 conn=writer_conn,
             )
-            for row in sched_rows:
+            for row in tl_rows:
                 try:
                     participants = json.loads(row["participant_member_ids"])
                 except (json.JSONDecodeError, TypeError):
@@ -227,7 +227,7 @@ class MembersRepo:
                 if isinstance(participants, list) and member_id in participants:
                     updated_participants = [p for p in participants if p != member_id]
                     await writer_conn.execute(
-                        "UPDATE schedule_entries SET participant_member_ids = ? WHERE id = ?;",
+                        "UPDATE timeline_entries SET participant_member_ids = ? WHERE id = ?;",
                         (json.dumps(updated_participants), row["id"]),
                     )
 

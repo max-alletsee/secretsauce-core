@@ -6,7 +6,7 @@ REST writes are member writes, and the actor comes from X-Actor-Member.
 """
 
 from datetime import date
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -127,10 +127,10 @@ class RecipePatch(RecipeFields, _Revisioned):
     pass
 
 
-# -- schedule and journal ------------------------------------------------------------
+# -- timeline ------------------------------------------------------------------
 
 
-class ScheduleFields(_Body):
+class TimelineFields(_Body):
     date: str | None = None
     meal_type: str | None = Field(default=None, min_length=1, max_length=64)
     entry_type: str | None = Field(default=None, max_length=32)
@@ -141,40 +141,17 @@ class ScheduleFields(_Body):
     position: int | None = None
     assigned_cook_id: str | None = None
     participant_member_ids: list[str] | None = None
-
-    _check_date = field_validator("date")(_iso_date)
-
-
-class ScheduleCreate(ScheduleFields):
-    id: str | None = Field(default=None, max_length=64)
-    date: str
-    meal_type: str = Field(min_length=1, max_length=64)
-
-
-class SchedulePatch(ScheduleFields, _Revisioned):
-    pass
-
-
-class JournalFields(_Body):
-    date: str | None = None
-    meal_type: str | None = Field(default=None, min_length=1, max_length=64)
-    recipe_id: str | None = None
-    schedule_entry_id: str | None = None
-    title: str | None = None
-    status: str | None = Field(default=None, max_length=32)
-    servings_cooked: float | None = Field(default=None, ge=0)
-    servings_left: float | None = Field(default=None, ge=0)
+    status: Literal["planned", "cooked"] | None = None
     cooked_by_member_id: str | None = None
-    notes: str | None = None
 
     _check_date = field_validator("date")(_iso_date)
 
 
-class JournalCreate(JournalFields):
+class TimelineCreate(TimelineFields):
     id: str | None = Field(default=None, max_length=64)
     date: str
     meal_type: str = Field(min_length=1, max_length=64)
 
 
-class JournalPatch(JournalFields, _Revisioned):
+class TimelinePatch(TimelineFields, _Revisioned):
     pass

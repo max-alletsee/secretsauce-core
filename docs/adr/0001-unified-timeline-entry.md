@@ -1,0 +1,3 @@
+# Unify Schedule and Cook Journal into a Single Timeline Entry Noun and View
+
+Previously, meal planning (`schedule_entries` / `/timeline`) and cooking history (`cook_journal` / `/journal`) were split across two kernel nouns, two REST APIs, and two separate frontend views, even though the Timeline already fetched both datasets and users had to switch views just to see cook notes or rate a meal. We decided to merge both backend nouns and frontend views into a single **Timeline Entry** (`timeline_entry`) displayed exclusively on the **Timeline**, eliminating backwards-compatibility shims for the old split model so that planning, execution tracking, and rating operate on one lifecycle and one entity.

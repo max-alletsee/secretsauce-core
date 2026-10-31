@@ -131,6 +131,7 @@ export interface IntentProvider<C = unknown, R = unknown> {
   title: string
   titleFor?: (context: C) => string
   icon?: string
+  iconFor?: (context: C) => string
   order: number
   isAvailable?: (context: C) => boolean
   disabledReason?: (context: C) => string | null

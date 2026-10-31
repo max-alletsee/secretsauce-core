@@ -21,7 +21,7 @@ describe('Registered import/translate/plan/shopping components (API boundary dou
       if (path === '/api/recipes') return { items: imported ? [savedRecipe] : [], total: imported ? 1 : 0, limit: 50, offset: 0 }
       if (path === '/api/recipes/cake_en') return savedRecipe
       if (path === '/api/recipes/cake_de') return translated
-      if (path === '/api/x/core-shortlist' || path.startsWith('/api/schedule') || path.startsWith('/api/journal')) return []
+      if (path === '/api/x/core-shortlist' || path.startsWith('/api/timeline')) return []
       if (path === '/api/x/core-shopping-list') return { items: scheduled ? [{ key: 'cocoa_g', name: 'Cocoa', quantity: 100, unit: 'g', category: 'Other', source_type: 'scheduled_recipe', checked, sources: [{ recipe_title: savedRecipe.title, scaled_qty: 100, date: query.from_date }] }] : [], from_date: query.from_date, to_date: query.to_date }
       throw new Error(`Unexpected GET ${path}`)
     }, post: async (path: string, body: any) => {

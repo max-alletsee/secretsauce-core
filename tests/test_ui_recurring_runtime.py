@@ -47,7 +47,7 @@ async def create_rule(client, recipe_id=None, weekday=2, meal_type='dinner', **e
 
 
 async def meals(client, start=MONDAY, end=END):
-    response = await client.get(f'/api/schedule?from={start}&to={end}')
+    response = await client.get(f'/api/timeline?from={start}&to={end}')
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -99,8 +99,8 @@ async def test_approving_and_dismissing_persist_across_deleted_entries_and_resta
         assert await suggestions(client) == []
         assert [row['date'] for row in await meals(client)] == [WEDNESDAY_1]
 
-        # Delete the approved schedule entry -> suggestion stays handled (does not resurrect)
-        assert (await client.delete(f"/api/schedule/{entry['id']}?revision={entry['revision']}")).status_code == 204
+        # Delete the approved timeline entry -> suggestion stays handled (does not resurrect)
+        assert (await client.delete(f"/api/timeline/{entry['id']}?revision={entry['revision']}")).status_code == 204
         assert await meals(client) == []
         assert await suggestions(client) == []
 

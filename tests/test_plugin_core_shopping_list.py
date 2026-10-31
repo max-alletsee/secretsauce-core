@@ -106,7 +106,7 @@ async def test_aggregate_scheduled_meals_scaled_and_toggle(tmp_path: Path):
 
         # 4. Schedule meals:
         # Schedule A on 2026-09-22 with servings_override=4 (2x scale!) -> Spaghetti 400g, Eggs 4 pieces
-        await k.schedule.create_entry({
+        await k.timeline.create_entry({
             "date": "2026-09-22",
             "meal_type": "dinner",
             "recipe_id": rec_a["id"],
@@ -114,11 +114,20 @@ async def test_aggregate_scheduled_meals_scaled_and_toggle(tmp_path: Path):
         })
 
         # Schedule B on 2026-09-23 with servings_override=4 (1x scale) -> Spaghetti 100g, Garlic 3 cloves
-        await k.schedule.create_entry({
+        await k.timeline.create_entry({
             "date": "2026-09-23",
             "meal_type": "dinner",
             "recipe_id": rec_b["id"],
             "servings_override": 4,
+        })
+
+        # Already cooked meal in the same range must NOT be aggregated into shopping list
+        await k.timeline.create_entry({
+            "date": "2026-09-22",
+            "meal_type": "lunch",
+            "recipe_id": rec_a["id"],
+            "servings_override": 2,
+            "status": "cooked",
         })
 
         # 5. Fetch aggregated shopping list

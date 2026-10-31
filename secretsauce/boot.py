@@ -17,10 +17,9 @@ from secretsauce.jobs import JobManager
 from secretsauce.nouns.assets import AssetsRepo
 from secretsauce.nouns.attributes import AttributesRepo
 from secretsauce.nouns.household import HouseholdRepo
-from secretsauce.nouns.journal import JournalRepo
 from secretsauce.nouns.members import MembersRepo
 from secretsauce.nouns.recipes import RecipesRepo
-from secretsauce.nouns.schedule import ScheduleRepo
+from secretsauce.nouns.timeline import TimelineRepo
 from secretsauce.plugins.context import PluginContext, RouterRegistry, ServiceRegistry
 from secretsauce.plugins.loader import PluginLoader
 from secretsauce.plugins.registry import PluginRegistry
@@ -73,8 +72,7 @@ class BootedKernel:
         self.hooks = HookRegistry()
         self.household = HouseholdRepo(db)
         self.recipes = RecipesRepo(db, household_repo=self.household, hooks=self.hooks, events=self.events)
-        self.schedule = ScheduleRepo(db, recipes_repo=self.recipes, events=self.events)
-        self.journal = JournalRepo(db, recipes_repo=self.recipes, events=self.events)
+        self.timeline = TimelineRepo(db, recipes_repo=self.recipes, events=self.events)
         self.members = MembersRepo(db, events=self.events)
         self.assets = AssetsRepo(db, uploads_dir=self.uploads_dir, events=self.events)
         self.attributes = AttributesRepo(db)

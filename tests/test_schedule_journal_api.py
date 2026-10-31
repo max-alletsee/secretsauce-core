@@ -3,8 +3,12 @@ from secretsauce.testing import make_kernel
 
 
 @pytest.mark.asyncio
-async def test_schedule_and_journal_api(tmp_path):
+async def test_timeline_api(tmp_path):
     async with make_kernel(tmp_path) as k:
+        # Legacy routes are removed
+        assert (await k.client.get("/api/schedule?from=2026-09-01&to=2026-09-30")).status_code == 404
+        assert (await k.client.get("/api/journal")).status_code == 404
+
         # Create a recipe to attach
         rec_res = await k.client.post(
             "/api/recipes",
@@ -19,9 +23,11 @@ async def test_schedule_and_journal_api(tmp_path):
         rec = rec_res.json()
         rec_id = rec["id"]
 
-        # 1. Schedule Entry
-        sch_res = await k.client.post(
-            "/api/schedule",
+        member = (await k.members.list_members())[0]
+
+        # 1. Create Planned Timeline Entry
+        tl_res = await k.client.post(
+            "/api/timeline",
             json={
                 "date": "2026-09-15",
                 "meal_type": "dinner",
@@ -30,113 +36,108 @@ async def test_schedule_and_journal_api(tmp_path):
                 "note": "Quick dinner",
             },
         )
-        assert sch_res.status_code == 201
-        sch_entry = sch_res.json()
-        s_id = sch_entry["id"]
-        assert sch_entry["revision"] == 1
+        assert tl_res.status_code == 201
+        tl_entry = tl_res.json()
+        entry_id = tl_entry["id"]
+        assert tl_entry["revision"] == 1
+        assert tl_entry["status"] == "planned"
+        assert tl_entry["cooked_by_member_id"] is None
 
-        # 2. GET schedule list validation
-        # Missing from/to
-        bad_range = await k.client.get("/api/schedule")
+        # Invalid status -> 422
+        bad_status = await k.client.post(
+            "/api/timeline",
+            json={
+                "date": "2026-09-15",
+                "meal_type": "dinner",
+                "status": "invalid",
+            },
+        )
+        assert bad_status.status_code == 422
+
+        # 2. GET timeline list validation
+        bad_range = await k.client.get("/api/timeline")
         assert bad_range.status_code == 422
 
-        # Range > 62 days
         too_long = await k.client.get(
-            "/api/schedule?from=2026-01-01&to=2026-04-01"
+            "/api/timeline?from=2026-01-01&to=2026-04-01"
         )
         assert too_long.status_code == 422
 
         # Valid range
-        sch_list = await k.client.get(
-            "/api/schedule?from=2026-09-01&to=2026-09-30"
+        tl_list = await k.client.get(
+            "/api/timeline?from=2026-09-01&to=2026-09-30"
         )
-        assert sch_list.status_code == 200
-        items = sch_list.json()
+        assert tl_list.status_code == 200
+        items = tl_list.json()
         assert len(items) == 1
-        assert items[0]["id"] == s_id
+        assert items[0]["id"] == entry_id
         assert items[0]["recipe"]["title"] == "Pasta Pomodoro"
 
-        # 3. GET single schedule entry
-        single_sch = await k.client.get(f"/api/schedule/{s_id}")
-        assert single_sch.status_code == 200
-        assert single_sch.json()["recipe"]["title"] == "Pasta Pomodoro"
+        # 3. GET single timeline entry
+        single_tl = await k.client.get(f"/api/timeline/{entry_id}")
+        assert single_tl.status_code == 200
+        assert single_tl.json()["recipe"]["title"] == "Pasta Pomodoro"
 
-        # 4. PATCH schedule entry
-        patch_sch = await k.client.patch(
-            f"/api/schedule/{s_id}",
-            json={"revision": 1, "note": "Updated note"},
+        # 4. PATCH timeline entry to mark as cooked + update note & servings
+        patch_cooked = await k.client.patch(
+            f"/api/timeline/{entry_id}",
+            json={
+                "revision": 1,
+                "status": "cooked",
+                "cooked_by_member_id": member["id"],
+                "servings_override": 3.0,
+                "note": "Turned out fantastic!",
+            },
         )
-        assert patch_sch.status_code == 200
-        assert patch_sch.json()["note"] == "Updated note"
-        assert patch_sch.json()["revision"] == 2
+        assert patch_cooked.status_code == 200
+        cooked_body = patch_cooked.json()
+        assert cooked_body["status"] == "cooked"
+        assert cooked_body["cooked_by_member_id"] == member["id"]
+        assert cooked_body["servings_override"] == 3.0
+        assert cooked_body["note"] == "Turned out fantastic!"
+        assert cooked_body["revision"] == 2
 
         # Stale revision -> 409
-        stale_sch = await k.client.patch(
-            f"/api/schedule/{s_id}",
+        stale_tl = await k.client.patch(
+            f"/api/timeline/{entry_id}",
             json={"revision": 1, "note": "Stale note"},
         )
-        assert stale_sch.status_code == 409
+        assert stale_tl.status_code == 409
 
-        # 5. Journal Entry
-        j_res = await k.client.post(
-            "/api/journal",
+        # 5. PATCH timeline entry back to planned (unmark as cooked)
+        patch_planned = await k.client.patch(
+            f"/api/timeline/{entry_id}",
             json={
-                "date": "2026-09-15",
+                "revision": 2,
+                "status": "planned",
+                "cooked_by_member_id": None,
+            },
+        )
+        assert patch_planned.status_code == 200
+        assert patch_planned.json()["status"] == "planned"
+        assert patch_planned.json()["cooked_by_member_id"] is None
+        assert patch_planned.json()["revision"] == 3
+
+        # 6. Create directly as cooked (e.g. past day entry)
+        past_res = await k.client.post(
+            "/api/timeline",
+            json={
+                "date": "2026-09-10",
                 "meal_type": "dinner",
-                "schedule_entry_id": s_id,
                 "recipe_id": rec_id,
-                "servings_cooked": 3.0,
-                "rating": 5,
-                "notes": "Turned out fantastic!",
+                "status": "cooked",
+                "cooked_by_member_id": member["id"],
+                "servings_override": 2.0,
             },
         )
-        assert j_res.status_code == 201
-        j_entry = j_res.json()
-        j_id = j_entry["id"]
-        assert j_entry["revision"] == 1
+        assert past_res.status_code == 201
+        past_entry = past_res.json()
+        assert past_entry["status"] == "cooked"
+        assert past_entry["cooked_by_member_id"] == member["id"]
 
-        # Duplicate schedule_entry_id -> 409
-        dup_j = await k.client.post(
-            "/api/journal",
-            json={
-                "date": "2026-09-15",
-                "meal_type": "dinner",
-                "schedule_entry_id": s_id,
-            },
-        )
-        assert dup_j.status_code == 409
+        # 7. DELETE timeline entries
+        del_1 = await k.client.delete(f"/api/timeline/{entry_id}?revision=3")
+        assert del_1.status_code == 204
+        del_2 = await k.client.delete(f"/api/timeline/{past_entry['id']}?revision=1")
+        assert del_2.status_code == 204
 
-        # 6. GET journal list
-        j_list = await k.client.get(
-            "/api/journal?from=2026-09-01&to=2026-09-30"
-        )
-        assert j_list.status_code == 200
-        assert len(j_list.json()) == 1
-        assert j_list.json()[0]["id"] == j_id
-
-        # GET journal list with default date range (no from/to provided)
-        j_list_default = await k.client.get("/api/journal")
-        assert j_list_default.status_code == 200
-        assert isinstance(j_list_default.json(), list)
-
-        # 7. GET single journal entry
-        single_j = await k.client.get(f"/api/journal/{j_id}")
-        assert single_j.status_code == 200
-        assert single_j.json()["id"] == j_id
-
-        # 8. PATCH journal entry
-        patch_j = await k.client.patch(
-            f"/api/journal/{j_id}",
-            json={"revision": 1, "notes": "Updated review"},
-        )
-        assert patch_j.status_code == 200
-        assert patch_j.json()["notes"] == "Updated review"
-        assert patch_j.json()["revision"] == 2
-
-        # 9. DELETE journal entry
-        del_j = await k.client.delete(f"/api/journal/{j_id}?revision=2")
-        assert del_j.status_code == 204
-
-        # 10. DELETE schedule entry
-        del_s = await k.client.delete(f"/api/schedule/{s_id}?revision=2")
-        assert del_s.status_code == 204

@@ -16,7 +16,7 @@ async function plannedMeal(page: Page, title: string) {
     const day = new Date()
     return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
   })
-  const response = await page.request.post('/api/schedule', { data: { date, meal_type: 'dinner', title, servings_override: 3 } })
+  const response = await page.request.post('/api/timeline', { data: { date, meal_type: 'dinner', title, servings_override: 3 } })
   expect(response.status()).toBe(201)
   const entry = await response.json()
   await page.getByRole('link', { name: 'Timeline', exact: true }).first().click()
@@ -90,14 +90,14 @@ test('planner uses household slots and schedules through its rendered sidebar', 
     await expect(planner).toContainText('Scheduled')
     const plan = await (await page.request.get(`/api/x/core-meal-planner-ai/plans/${suggestion.plan_id}`)).json()
     suggestion = plan.suggestions[0]
-    const entry = await (await page.request.get(`/api/schedule/${suggestion.schedule_entry_id}`)).json()
+    const entry = await (await page.request.get(`/api/timeline/${suggestion.schedule_entry_id}`)).json()
     expect(entry.recipe_id).toBe(suggestion.recipe_id)
     expect(entry.meal_type).toBe('supper')
   } finally {
     await page.request.patch('/api/household', { data: { meal_types: household.meal_types } })
     if (suggestion?.schedule_entry_id) {
-      const entry = await (await page.request.get(`/api/schedule/${suggestion.schedule_entry_id}`)).json()
-      await page.request.delete(`/api/schedule/${entry.id}?revision=${entry.revision}`)
+      const entry = await (await page.request.get(`/api/timeline/${suggestion.schedule_entry_id}`)).json()
+      await page.request.delete(`/api/timeline/${entry.id}?revision=${entry.revision}`)
     }
   }
 })
@@ -106,7 +106,7 @@ test('shopping navigation aggregates scheduled quantities and keeps checked stat
   await login(page)
   const recipe = await createRecipe(page, { title: 'Shopping test soup', servings: 2, ingredients: [{ name: 'Shopping test carrots', quantity: 200, unit: 'g' }] })
   const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'))
-  const entry = await (await page.request.post('/api/schedule', { data: { date, meal_type: 'dinner', recipe_id: recipe.id, servings_override: 4 } })).json()
+  const entry = await (await page.request.post('/api/timeline', { data: { date, meal_type: 'dinner', recipe_id: recipe.id, servings_override: 4 } })).json()
   let manual: any
   try {
     await page.getByRole('link', { name: 'Shopping list', exact: true }).first().click()
@@ -128,7 +128,7 @@ test('shopping navigation aggregates scheduled quantities and keeps checked stat
   } finally {
     await page.request.post('/api/x/core-shopping-list/toggle', { data: { key: 'shopping test carrots_g', checked: false } })
     if (manual) await page.request.delete(`/api/x/core-shopping-list/items/${manual.id}`)
-    await page.request.delete(`/api/schedule/${entry.id}?revision=${entry.revision}`)
+    await page.request.delete(`/api/timeline/${entry.id}?revision=${entry.revision}`)
     await page.request.delete(`/api/recipes/${recipe.group_id}`)
   }
 })
@@ -168,55 +168,55 @@ test('shortlist action persists and sidebar link uses shell navigation', async (
   }
 })
 
-test('ratings use the actual selected member and reload the per-member vote', async ({ page }) => {
+test('ratings use the actual selected member on a cooked timeline entry and reload the per-member vote', async ({ page }) => {
   await login(page)
   const members = await (await page.request.get('/api/members')).json()
   const member = members.find((row: any) => row.name === 'Alex')
   const date = await page.evaluate(() => new Date().toLocaleDateString('en-CA'))
-  const entry = await (await page.request.post('/api/journal', { data: { date, meal_type: 'dinner', title: 'Ratings test meal', servings_cooked: 2 } })).json()
+  const entry = await (await page.request.post('/api/timeline', { data: { date, meal_type: 'dinner', title: 'Ratings test meal', servings_override: 2, status: 'cooked' } })).json()
   try {
-    await page.goto('/journal')
+    await page.goto('/timeline')
     await chooseMember(page, member.name)
-    const card = page.locator('.journal-entry-card').filter({ hasText: 'Ratings test meal' })
+    const card = page.locator('.schedule-card').filter({ hasText: 'Ratings test meal' })
     await card.locator('.upvote-btn').click()
-    await expect.poll(async () => (await (await page.request.get(`/api/x/core-ratings?journal_id=${entry.id}`)).json()).scores).toEqual([{ member_id: member.id, score: 1 }])
+    await expect.poll(async () => (await (await page.request.get(`/api/x/core-ratings?timeline_entry_id=${entry.id}`)).json()).scores).toEqual([{ member_id: member.id, score: 1 }])
     await page.reload()
     await expect(card.locator('.upvote-btn')).toHaveAttribute('aria-pressed', 'true')
     await card.locator('.upvote-btn').click()
-    await expect.poll(async () => (await (await page.request.get(`/api/x/core-ratings?journal_id=${entry.id}`)).json()).scores).toEqual([])
+    await expect.poll(async () => (await (await page.request.get(`/api/x/core-ratings?timeline_entry_id=${entry.id}`)).json()).scores).toEqual([])
   } finally {
-    await page.request.delete(`/api/x/core-ratings?journal_id=${entry.id}&member_id=${member.id}`)
-    await page.request.delete(`/api/journal/${entry.id}?revision=${entry.revision}`)
+    await page.request.delete(`/api/x/core-ratings?timeline_entry_id=${entry.id}&member_id=${member.id}`)
+    await page.request.delete(`/api/timeline/${entry.id}?revision=${entry.revision}`)
   }
 })
 
 test('mark_cooked_uses_the_real_outbox_and_persists', async ({ page }) => {
   const { entry, card } = await plannedMeal(page, 'Outbox kitchen meal')
-  await card.click()
+  await card.locator('.schedule-card-main').click()
   await page.getByRole('menuitem', { name: 'Mark as cooked', exact: true }).click({ timeout: 5000 })
   await expect.poll(async () => {
-    const rows = await (await page.request.get(`/api/journal?from=${entry.date}&to=${entry.date}`)).json()
-    return rows.filter((row: any) => row.schedule_entry_id === entry.id)
-  }).toHaveLength(1)
+    const rows = await (await page.request.get(`/api/timeline?from=${entry.date}&to=${entry.date}`)).json()
+    return rows.find((row: any) => row.id === entry.id)?.status
+  }).toBe('cooked')
   await page.reload()
-  await expect(page.locator('.schedule-card').filter({ hasText: 'Outbox kitchen meal' }).getByTitle('Cooked')).toBeVisible()
-  await page.getByRole('link', { name: 'Journal', exact: true }).first().click()
-  await expect(page.locator('.journal-page')).toContainText('Outbox kitchen meal')
-  await expect(page.locator('.journal-entry-card').filter({ hasText: 'Outbox kitchen meal' })).toContainText('3 servings')
+  const cookedCard = page.locator('.schedule-card').filter({ hasText: 'Outbox kitchen meal' })
+  await expect(cookedCard.getByTitle('Cooked')).toBeVisible()
+  await expect(cookedCard).toContainText('3 servings')
+  await expect(cookedCard.locator('.vote-rating')).toBeVisible()
 })
 
 test('removing a planned meal confirms, persists and does not reload the document', async ({ page }) => {
   const { entry, card } = await plannedMeal(page, 'Remove kitchen meal')
   await page.evaluate(() => { (window as any).__uiSentinel = 'alive' })
-  await card.click()
+  await card.locator('.schedule-card-main').click()
   await page.getByRole('menuitem', { name: 'Remove from plan', exact: true }).click({ timeout: 5000 })
   await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel', exact: true }).click()
   await expect(page.getByRole('alertdialog')).not.toBeVisible()
   await expect(card).toBeVisible()
-  await card.click()
+  await card.locator('.schedule-card-main').click()
   await page.getByRole('menuitem', { name: 'Remove from plan', exact: true }).click()
   await page.getByRole('alertdialog').getByRole('button', { name: 'Remove', exact: true }).click()
   await expect(card).toHaveCount(0)
-  expect((await page.request.get(`/api/schedule/${entry.id}`)).status()).toBe(404)
+  expect((await page.request.get(`/api/timeline/${entry.id}`)).status()).toBe(404)
   expect(await page.evaluate(() => (window as any).__uiSentinel)).toBe('alive')
 })

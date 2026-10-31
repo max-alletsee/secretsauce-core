@@ -214,7 +214,7 @@ async def accept_suggestion_endpoint(
         sug = await _suggestion(ctx, suggestion_id, conn=tx)
         if sug["status"] != "suggested":
             raise ConflictError(f"Suggestion is already {sug['status']}", current=sug)
-        entry = await ctx.schedule.create_entry(
+        entry = await ctx.timeline.create_entry(
             {
                 "date": req.date,
                 "meal_type": req.meal_type,

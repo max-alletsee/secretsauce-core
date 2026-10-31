@@ -81,7 +81,7 @@ async def test_slot_ranges_are_strict_calendar_dates_and_bounded(tmp_path, start
 async def test_occupied_slot_checks_include_legacy_label_aliases(tmp_path, legacy):
     async with runtime(tmp_path) as (_, client):
         await client.patch('/api/household', json={'meal_types':[{'id':'dinner','label':'Evening meal'}]})
-        assert (await client.post('/api/schedule', json={'date':DAY,'meal_type':legacy,'entry_type':'note','title':'Legacy meal'})).status_code == 201
+        assert (await client.post('/api/timeline', json={'date':DAY,'meal_type':legacy,'entry_type':'note','title':'Legacy meal'})).status_code == 201
         response = await client.put(path('dinner'), json={'kind':'skip'})
         assert response.status_code == 409, response.text
         assert response.json()['error']['details']['current']['entry_count'] == 1
@@ -91,15 +91,15 @@ async def test_deleting_extra_with_entries_is_atomic(tmp_path, monkeypatch):
     async with runtime(tmp_path) as (app, client):
         await put(client, 'brunch', {'kind':'extra','label':'Sunday brunch'})
         for alias in ['brunch', 'Sunday Brunch']:
-            assert (await client.post('/api/schedule', json={'date':DAY,'meal_type':alias,'entry_type':'note','title':alias})).status_code == 201
+            assert (await client.post('/api/timeline', json={'date':DAY,'meal_type':alias,'entry_type':'note','title':alias})).status_code == 201
         response = await client.delete(path('brunch'))
         assert response.status_code == 409
         assert response.json()['error']['details']['current']['entry_count'] == 2
         kernel = app.state.kernel
         async def snapshot():
-            return [(await client.get(f'/api/schedule?from={DAY}&to={DAY}')).json(), (await client.get(f'{BASE}/slots?from={DAY}&to={DAY}')).json(), await kernel.db.read_all('SELECT * FROM events ORDER BY seq')]
+            return [(await client.get(f'/api/timeline?from={DAY}&to={DAY}')).json(), (await client.get(f'{BASE}/slots?from={DAY}&to={DAY}')).json(), await kernel.db.read_all('SELECT * FROM events ORDER BY seq')]
         before = await snapshot()
-        original = kernel.schedule.delete_entry
+        original = kernel.timeline.delete_entry
         calls = 0
         async def failing_delete(*args, **kwargs):
             nonlocal calls
@@ -108,16 +108,16 @@ async def test_deleting_extra_with_entries_is_atomic(tmp_path, monkeypatch):
             return await original(*args, **kwargs)
         pushes = []
         async def capture_push(*args): pushes.append(args)
-        monkeypatch.setattr(kernel.schedule, 'delete_entry', failing_delete)
+        monkeypatch.setattr(kernel.timeline, 'delete_entry', failing_delete)
         monkeypatch.setattr(kernel.active_ctx('core-timeline'), 'push', capture_push)
         response = await client.delete(path('brunch')+'?with_entries=true')
         assert response.status_code == 500, response.text
         assert await snapshot() == before
         assert pushes == []
-        monkeypatch.setattr(kernel.schedule, 'delete_entry', original)
+        monkeypatch.setattr(kernel.timeline, 'delete_entry', original)
         response = await client.delete(path('brunch')+'?with_entries=true')
         assert response.status_code == 200
-        assert (await client.get(f'/api/schedule?from={DAY}&to={DAY}')).json() == []
+        assert (await client.get(f'/api/timeline?from={DAY}&to={DAY}')).json() == []
         assert [slot['id'] for slot in response.json()['slots']] == ['breakfast','lunch','dinner']
         assert len(pushes) == 1
 
@@ -162,19 +162,19 @@ async def test_planner_invalid_calendar_dates_fail_before_paid_completion(tmp_pa
 async def test_removing_obsolete_extra_override_does_not_delete_new_default_meals(tmp_path):
     async with runtime(tmp_path) as (_, client):
         await put(client, 'brunch', {'kind':'extra','label':'Brunch'})
-        entry = (await client.post('/api/schedule', json={'date':DAY,'meal_type':'brunch','entry_type':'note','title':'Keep this meal'})).json()
+        entry = (await client.post('/api/timeline', json={'date':DAY,'meal_type':'brunch','entry_type':'note','title':'Keep this meal'})).json()
         response = await client.patch('/api/household', json={'meal_types':[{'id':'brunch','label':'Daily brunch'},{'id':'dinner','label':'Dinner'}]})
         assert response.status_code == 200
         response = await client.delete(path('brunch')+'?with_entries=true')
         assert response.status_code == 200, response.text
         assert response.json()['slots'][0] == {'id':'brunch','label':'Daily brunch','kind':'default','skipped':False}
-        assert (await client.get('/api/schedule/'+entry['id'])).status_code == 200
+        assert (await client.get('/api/timeline/'+entry['id'])).status_code == 200
 
 
 async def test_id_matches_take_priority_over_another_slots_label(tmp_path):
     async with runtime(tmp_path) as (_, client):
         await client.patch('/api/household', json={'meal_types':[{'id':'breakfast','label':'Dinner'},{'id':'dinner','label':'Evening meal'}]})
-        await client.post('/api/schedule', json={'date':DAY,'meal_type':'DINNER','entry_type':'note','title':'Canonical dinner'})
+        await client.post('/api/timeline', json={'date':DAY,'meal_type':'DINNER','entry_type':'note','title':'Canonical dinner'})
         assert (await client.put(path('breakfast'), json={'kind':'skip'})).status_code == 200
         assert (await client.put(path('dinner'), json={'kind':'skip'})).status_code == 409
 

@@ -34,7 +34,7 @@ describe('all core activation contracts', () => {
       expect(registrationErrors).toEqual([])
       const slots = ['shell.header.right', 'recipe.card.actions', 'recipe.list.filters', 'recipe.detail.sidebar',
         'recipe.edit.actions', 'plugin_manager.plugin.actions',
-        'timeline.sidebar', 'timeline.slot.suggestions', 'timeline.entry.badge', 'journal.entry.footer']
+        'timeline.sidebar', 'timeline.slot.suggestions', 'timeline.entry.badge', 'timeline.entry.footer']
       for (const contribution of harness.slots.slots.value) expect(slots, contribution.pluginId).toContain(contribution.slotName)
       for (const provider of harness.intents.providers.value) {
         expect(['recipe:create', 'recipe:actions', 'entry:interact'], provider.id).toContain(provider.hub)

@@ -272,8 +272,7 @@ class PluginContext:
         self.log = logging.getLogger(f"secretsauce.plugin.{plugin_id}")
 
         self.recipes = kernel.recipes
-        self.schedule = kernel.schedule
-        self.journal = kernel.journal
+        self.timeline = kernel.timeline
         self.members = kernel.members
         self.household = kernel.household
         self.assets = kernel.assets

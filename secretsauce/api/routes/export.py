@@ -13,10 +13,9 @@ from starlette.background import BackgroundTask
 
 from secretsauce import __version__
 from secretsauce.db import Database
-from secretsauce.nouns.journal import _deserialize_journal
 from secretsauce.nouns.members import _deserialize_member
 from secretsauce.nouns.recipes import _deserialize_recipe
-from secretsauce.nouns.schedule import _deserialize_schedule
+from secretsauce.nouns.timeline import _deserialize_timeline
 
 router = APIRouter(tags=["export"])
 
@@ -126,16 +125,14 @@ async def export_json(request: Request):
     kernel = request.app.state.kernel
     db: Database = kernel.db
     recipes = await db.read_all("SELECT * FROM recipes ORDER BY group_id, language;")
-    schedule = await db.read_all("SELECT * FROM schedule_entries ORDER BY date, position;")
-    journal = await db.read_all("SELECT * FROM cook_journal ORDER BY date DESC, created_at DESC;")
+    timeline = await db.read_all("SELECT * FROM timeline_entries ORDER BY date, position;")
     members = await db.read_all("SELECT * FROM household_members ORDER BY name;")
     assets = await db.read_all("SELECT * FROM assets ORDER BY created_at;")
     config = await kernel.household.get_config()
     config.pop("passphrase_version", None)
     return {
         "recipes": [_deserialize_recipe(r) for r in recipes],
-        "schedule_entries": [_deserialize_schedule(r) for r in schedule],
-        "cook_journal": [_deserialize_journal(r) for r in journal],
+        "timeline_entries": [_deserialize_timeline(r) for r in timeline],
         "household_members": [_deserialize_member(r) for r in members],
         "assets": assets,
         "household_config": config,

@@ -1,144 +1,177 @@
-import { defineComponent as K, resolveComponent as m, resolveDirective as de, openBlock as s, createBlock as C, withCtx as w, createElementVNode as _, toDisplayString as M, withDirectives as ue, createElementBlock as T, createCommentVNode as L, createVNode as u, unref as ee, ref as y, computed as Y, normalizeClass as ce, createTextVNode as U, Fragment as z, renderList as O, watch as ve, withModifiers as pe, inject as fe, onMounted as ye, onBeforeUnmount as ge, resolveDynamicComponent as be, nextTick as he } from "vue";
-import { Slot as ae, useSecretSauce as ne, IntentTrigger as _e } from "@secretsauce/ui";
-const ke = { class: "card-header" }, $e = { class: "card-title" }, we = ["aria-label"], Te = {
+import { defineComponent as G, resolveComponent as m, openBlock as i, createBlock as w, createCommentVNode as A, resolveDirective as de, createElementBlock as h, createVNode as u, withCtx as T, createElementVNode as _, toDisplayString as I, withDirectives as ue, unref as J, withModifiers as ce, ref as f, computed as Y, normalizeClass as ve, createTextVNode as z, Fragment as E, renderList as F, watch as me, inject as pe, onMounted as ye, onBeforeUnmount as fe, resolveDynamicComponent as be, nextTick as ge } from "vue";
+import { Slot as X, useSecretSauce as ie, IntentTrigger as ke } from "@secretsauce/ui";
+const _e = /* @__PURE__ */ G({
+  __name: "CookedBadge",
+  props: {
+    context: {}
+  },
+  setup(t) {
+    return (b, e) => {
+      var d, l;
+      const a = m("Tag");
+      return ((l = (d = t.context) == null ? void 0 : d.entry) == null ? void 0 : l.status) === "cooked" ? (i(), w(a, {
+        key: 0,
+        value: "Cooked",
+        icon: "pi pi-check",
+        severity: "success",
+        title: "Cooked"
+      })) : A("v-if", !0);
+    };
+  }
+}), he = { class: "card-header" }, $e = { class: "card-title" }, Ce = ["aria-label"], Te = {
   key: 0,
   class: "card-servings"
-}, Ce = {
+}, we = {
   key: 1,
   class: "card-note"
-}, Se = /* @__PURE__ */ K({
+}, Se = /* @__PURE__ */ G({
   __name: "ScheduleCard",
   props: {
     entry: {}
   },
   emits: ["interact"],
-  setup(e, { emit: g }) {
-    function t(d) {
+  setup(t, { emit: b }) {
+    function e(d) {
       return (/* @__PURE__ */ new Date(`${d}T12:00:00`)).toLocaleDateString("en", { weekday: "long" });
     }
-    const n = g;
-    return (d, r) => {
+    const a = b;
+    return (d, l) => {
       const v = m("Button"), c = de("tooltip");
-      return s(), C(v, {
+      return i(), h("div", {
         class: "schedule-card",
-        variant: "text",
-        onClick: r[0] || (r[0] = (o) => n("interact", o))
-      }, {
-        default: w(() => {
-          var o;
-          return [
-            _("div", ke, [
-              _(
-                "span",
-                $e,
-                M(((o = e.entry.recipe) == null ? void 0 : o.title) || e.entry.title || "Planned Meal"),
+        onClick: l[1] || (l[1] = (r) => a("interact", r))
+      }, [
+        u(v, {
+          class: "schedule-card-main",
+          variant: "text"
+        }, {
+          default: T(() => {
+            var r;
+            return [
+              _("div", he, [
+                _(
+                  "span",
+                  $e,
+                  I(((r = t.entry.recipe) == null ? void 0 : r.title) || t.entry.title || "Planned Meal"),
+                  1
+                  /* TEXT */
+                ),
+                t.entry.origin === "plugin:core-recurring" ? ue((i(), h("i", {
+                  key: 0,
+                  class: "pi pi-replay",
+                  "aria-label": `Repeats every ${e(t.entry.date)}`
+                }, null, 8, Ce)), [
+                  [c, `Repeats every ${e(t.entry.date)}`]
+                ]) : A("v-if", !0),
+                u(J(X), {
+                  name: "timeline.entry.badge",
+                  context: { entry: t.entry }
+                }, null, 8, ["context"])
+              ]),
+              t.entry.servings_override ? (i(), h(
+                "div",
+                Te,
+                I(t.entry.servings_override) + " servings",
                 1
                 /* TEXT */
-              ),
-              e.entry.origin === "plugin:core-recurring" ? ue((s(), T("i", {
-                key: 0,
-                class: "pi pi-replay",
-                "aria-label": `Repeats every ${t(e.entry.date)}`
-              }, null, 8, we)), [
-                [c, `Repeats every ${t(e.entry.date)}`]
-              ]) : L("v-if", !0),
-              u(ee(ae), {
-                name: "timeline.entry.badge",
-                context: { entry: e.entry }
-              }, null, 8, ["context"])
-            ]),
-            e.entry.servings_override ? (s(), T(
-              "div",
-              Te,
-              M(e.entry.servings_override) + " servings",
-              1
-              /* TEXT */
-            )) : L("v-if", !0),
-            e.entry.note ? (s(), T(
-              "div",
-              Ce,
-              M(e.entry.note),
-              1
-              /* TEXT */
-            )) : L("v-if", !0)
-          ];
+              )) : A("v-if", !0),
+              t.entry.note ? (i(), h(
+                "div",
+                we,
+                I(t.entry.note),
+                1
+                /* TEXT */
+              )) : A("v-if", !0)
+            ];
+          }),
+          _: 1
+          /* STABLE */
         }),
-        _: 1
-        /* STABLE */
-      });
+        t.entry.status === "cooked" ? (i(), h("div", {
+          key: 0,
+          class: "card-footer",
+          onClick: l[0] || (l[0] = ce(() => {
+          }, ["stop"]))
+        }, [
+          u(J(X), {
+            name: "timeline.entry.footer",
+            context: { entry: t.entry }
+          }, null, 8, ["context"])
+        ])) : A("v-if", !0)
+      ]);
     };
   }
-}), X = (e, g) => {
-  const t = e.__vccOpts || e;
-  for (const [n, d] of g)
-    t[n] = d;
-  return t;
-}, xe = /* @__PURE__ */ X(Se, [["__scopeId", "data-v-a27a3d19"]]), De = ["data-slot-id"], Ae = { class: "slot-header" }, Le = {
+}), K = (t, b) => {
+  const e = t.__vccOpts || t;
+  for (const [a, d] of b)
+    e[a] = d;
+  return e;
+}, xe = /* @__PURE__ */ K(Se, [["__scopeId", "data-v-f5fb2957"]]), De = ["data-slot-id"], Ae = { class: "slot-header" }, Me = {
   key: 0,
   class: "pi pi-calendar-plus",
   "aria-label": "Only on this day"
-}, Ie = {
+}, Le = {
   key: 1,
   class: "skipped-row"
-}, Me = /* @__PURE__ */ K({
+}, Ie = /* @__PURE__ */ G({
   __name: "MealSlot",
   props: {
     slot: {},
     date: {}
   },
   emits: ["add", "changed"],
-  setup(e, { emit: g }) {
-    const t = e, n = g, d = ne(), r = y(), v = y(""), c = y(!1);
-    function o() {
-      n("add", { date: t.date, mealType: t.slot.id });
+  setup(t, { emit: b }) {
+    const e = t, a = b, d = ie(), l = f(), v = f(""), c = f(!1);
+    function r() {
+      a("add", { date: e.date, mealType: e.slot.id });
     }
-    async function b(p) {
+    async function C(p) {
       if (!c.value) {
         c.value = !0, v.value = "";
         try {
-          if (p === "remove" && t.slot.entries.length && !await d.confirm({ header: "Remove slot", message: `Remove ${t.slot.label} and its ${t.slot.entries.length} planned meal${t.slot.entries.length === 1 ? "" : "s"}?`, acceptLabel: "Remove", rejectLabel: "Cancel", severity: "danger" })) return;
-          const a = `/api/x/core-timeline/days/${t.date}/slots/${encodeURIComponent(t.slot.id)}`;
-          p === "skip" ? await d.api.put(a, { kind: "skip" }) : await d.api.delete(a, p === "remove" ? { with_entries: "true" } : void 0), n("changed");
-        } catch (a) {
-          v.value = a.message || "Could not change slot";
+          if (p === "remove" && e.slot.entries.length && !await d.confirm({ header: "Remove slot", message: `Remove ${e.slot.label} and its ${e.slot.entries.length} planned meal${e.slot.entries.length === 1 ? "" : "s"}?`, acceptLabel: "Remove", rejectLabel: "Cancel", severity: "danger" })) return;
+          const n = `/api/x/core-timeline/days/${e.date}/slots/${encodeURIComponent(e.slot.id)}`;
+          p === "skip" ? await d.api.put(n, { kind: "skip" }) : await d.api.delete(n, p === "remove" ? { with_entries: "true" } : void 0), a("changed");
+        } catch (n) {
+          v.value = n.message || "Could not change slot";
         } finally {
           c.value = !1;
         }
       }
     }
-    const k = Y(() => [{ label: "Add another meal", icon: "pi pi-plus", command: o }, ...t.slot.kind === "default" && !t.slot.entries.length ? [{ label: "Skip on this day", command: () => b("skip") }] : [], ...t.slot.kind === "extra" && !t.slot.synthetic ? [{ label: "Remove slot", icon: "pi pi-trash", command: () => b("remove") }] : []]);
-    return (p, a) => {
-      const S = m("Button"), E = m("Menu"), B = m("Message"), N = de("tooltip");
-      return s(), T("div", {
+    const $ = Y(() => [{ label: "Add another meal", icon: "pi pi-plus", command: r }, ...e.slot.kind === "default" && !e.slot.entries.length ? [{ label: "Skip on this day", command: () => C("skip") }] : [], ...e.slot.kind === "extra" && !e.slot.synthetic ? [{ label: "Remove slot", icon: "pi pi-trash", command: () => C("remove") }] : []]);
+    return (p, n) => {
+      const S = m("Button"), O = m("Menu"), B = m("Message"), V = de("tooltip");
+      return i(), h("div", {
         class: "meal-slot",
-        "data-slot-id": e.slot.id
+        "data-slot-id": t.slot.id
       }, [
         _("div", Ae, [
           _(
             "span",
             {
-              class: ce(["slot-name", { skipped: e.slot.skipped }])
+              class: ve(["slot-name", { skipped: t.slot.skipped }])
             },
             [
-              U(
-                M(e.slot.label) + " ",
+              z(
+                I(t.slot.label) + " ",
                 1
                 /* TEXT */
               ),
-              e.slot.kind === "extra" ? ue((s(), T(
+              t.slot.kind === "extra" ? ue((i(), h(
                 "i",
-                Le,
+                Me,
                 null,
                 512
                 /* NEED_PATCH */
               )), [
-                [N, "Only on this day"]
-              ]) : L("v-if", !0)
+                [V, "Only on this day"]
+              ]) : A("v-if", !0)
             ],
             2
             /* CLASS */
           ),
-          e.slot.skipped ? L("v-if", !0) : (s(), C(S, {
+          t.slot.skipped ? A("v-if", !0) : (i(), w(S, {
             key: 0,
             icon: "pi pi-ellipsis-h",
             size: "small",
@@ -146,31 +179,31 @@ const ke = { class: "card-header" }, $e = { class: "card-title" }, we = ["aria-l
             rounded: "",
             "aria-label": "Slot actions",
             disabled: c.value,
-            onClick: a[0] || (a[0] = (x) => r.value.toggle(x))
+            onClick: n[0] || (n[0] = (x) => l.value.toggle(x))
           }, null, 8, ["disabled"])),
-          u(E, {
+          u(O, {
             ref_key: "menu",
-            ref: r,
-            model: k.value,
+            ref: l,
+            model: $.value,
             popup: ""
           }, null, 8, ["model"])
         ]),
-        v.value ? (s(), C(B, {
+        v.value ? (i(), w(B, {
           key: 0,
           severity: "error"
         }, {
-          default: w(() => [
-            U(
-              M(v.value),
+          default: T(() => [
+            z(
+              I(v.value),
               1
               /* TEXT */
             )
           ]),
           _: 1
           /* STABLE */
-        })) : L("v-if", !0),
-        e.slot.skipped ? (s(), T("div", Ie, [
-          a[3] || (a[3] = _(
+        })) : A("v-if", !0),
+        t.slot.skipped ? (i(), h("div", Le, [
+          n[3] || (n[3] = _(
             "span",
             null,
             "Skipped this day",
@@ -182,25 +215,25 @@ const ke = { class: "card-header" }, $e = { class: "card-title" }, we = ["aria-l
             size: "small",
             text: "",
             loading: c.value,
-            onClick: a[1] || (a[1] = (x) => b("undo"))
+            onClick: n[1] || (n[1] = (x) => C("undo"))
           }, null, 8, ["loading"])
-        ])) : (s(), T(
-          z,
+        ])) : (i(), h(
+          E,
           { key: 2 },
           [
-            (s(!0), T(
-              z,
+            (i(!0), h(
+              E,
               null,
-              O(e.slot.entries, (x) => (s(), C(ee(_e), {
+              F(t.slot.entries, (x) => (i(), w(J(ke), {
                 key: x.id,
                 hub: "entry:interact",
-                context: { entry: x, mealType: e.slot.id },
-                onResolve: a[2] || (a[2] = (h) => n("changed"))
+                context: { entry: x, mealType: t.slot.id },
+                onResolve: n[2] || (n[2] = (g) => a("changed"))
               }, {
-                default: w(({ open: h }) => [
+                default: T(({ open: g }) => [
                   u(xe, {
                     entry: x,
-                    onInteract: h
+                    onInteract: g
                   }, null, 8, ["entry", "onInteract"])
                 ]),
                 _: 2
@@ -209,18 +242,18 @@ const ke = { class: "card-header" }, $e = { class: "card-title" }, we = ["aria-l
               128
               /* KEYED_FRAGMENT */
             )),
-            u(ee(ae), {
+            u(J(X), {
               name: "timeline.slot.suggestions",
-              context: { date: e.date, slot: e.slot, onChanged: () => n("changed") }
+              context: { date: t.date, slot: t.slot, onChanged: () => a("changed") }
             }, null, 8, ["context"]),
-            e.slot.entries.length ? L("v-if", !0) : (s(), C(S, {
+            t.slot.entries.length ? A("v-if", !0) : (i(), w(S, {
               key: 0,
               class: "empty-slot-btn",
               icon: "pi pi-plus",
               size: "small",
               text: "",
               "aria-label": "Add meal",
-              onClick: o
+              onClick: r
             }))
           ],
           64
@@ -229,17 +262,17 @@ const ke = { class: "card-header" }, $e = { class: "card-title" }, we = ["aria-l
       ], 8, De);
     };
   }
-}), Ve = /* @__PURE__ */ X(Me, [["__scopeId", "data-v-c6b8aadf"]]);
-function Be(e, g) {
-  const t = e.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "slot", n = new Set(g);
-  let d = t.slice(0, 64).replace(/-+$/g, "");
-  for (let r = 2; n.has(d); r++) {
-    const v = `-${r}`;
-    d = t.slice(0, 64 - v.length).replace(/-+$/g, "") + v;
+}), Ve = /* @__PURE__ */ K(Ie, [["__scopeId", "data-v-c6b8aadf"]]);
+function Be(t, b) {
+  const e = t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "slot", a = new Set(b);
+  let d = e.slice(0, 64).replace(/-+$/g, "");
+  for (let l = 2; a.has(d); l++) {
+    const v = `-${l}`;
+    d = e.slice(0, 64 - v.length).replace(/-+$/g, "") + v;
   }
   return d;
 }
-const Re = /* @__PURE__ */ K({
+const Pe = /* @__PURE__ */ G({
   __name: "AddSlotDialog",
   props: {
     visible: { type: Boolean },
@@ -247,69 +280,69 @@ const Re = /* @__PURE__ */ K({
     slots: {}
   },
   emits: ["update:visible", "changed"],
-  setup(e, { emit: g }) {
-    const t = e, n = g, d = ne(), r = y(""), v = y(null), c = y(!1), o = y(""), b = Y(() => [{ label: "At the end", value: null }, ...t.slots.filter((p) => p.kind === "default").map((p) => ({ label: `Before ${p.label}`, value: p.id }))]);
-    ve(() => t.visible, (p) => {
-      p && (r.value = "", v.value = null, o.value = "");
+  setup(t, { emit: b }) {
+    const e = t, a = b, d = ie(), l = f(""), v = f(null), c = f(!1), r = f(""), C = Y(() => [{ label: "At the end", value: null }, ...e.slots.filter((p) => p.kind === "default").map((p) => ({ label: `Before ${p.label}`, value: p.id }))]);
+    me(() => e.visible, (p) => {
+      p && (l.value = "", v.value = null, r.value = "");
     });
-    async function k() {
-      if (!(!r.value.trim() || c.value)) {
-        c.value = !0, o.value = "";
+    async function $() {
+      if (!(!l.value.trim() || c.value)) {
+        c.value = !0, r.value = "";
         try {
-          const p = Be(r.value, [...t.slots.map((a) => a.id), ...d.store.household.value.meal_types.map((a) => a.id)]);
-          await d.api.put(`/api/x/core-timeline/days/${t.date}/slots/${p}`, { kind: "extra", label: r.value.trim(), before: v.value }), n("changed"), n("update:visible", !1);
+          const p = Be(l.value, [...e.slots.map((n) => n.id), ...d.store.household.value.meal_types.map((n) => n.id)]);
+          await d.api.put(`/api/x/core-timeline/days/${e.date}/slots/${p}`, { kind: "extra", label: l.value.trim(), before: v.value }), a("changed"), a("update:visible", !1);
         } catch (p) {
-          o.value = p.message || "Could not add slot";
+          r.value = p.message || "Could not add slot";
         } finally {
           c.value = !1;
         }
       }
     }
-    return (p, a) => {
-      const S = m("Message"), E = m("InputText"), B = m("Select"), N = m("Button"), x = m("Dialog");
-      return s(), C(x, {
-        visible: e.visible,
-        "onUpdate:visible": a[2] || (a[2] = (h) => n("update:visible", h)),
+    return (p, n) => {
+      const S = m("Message"), O = m("InputText"), B = m("Select"), V = m("Button"), x = m("Dialog");
+      return i(), w(x, {
+        visible: t.visible,
+        "onUpdate:visible": n[2] || (n[2] = (g) => a("update:visible", g)),
         header: "Add slot for this day",
         modal: "",
         style: { width: "28rem", maxWidth: "95vw" }
       }, {
-        default: w(() => [
+        default: T(() => [
           _(
             "form",
             {
-              onSubmit: pe(k, ["prevent"])
+              onSubmit: ce($, ["prevent"])
             },
             [
-              o.value ? (s(), C(S, {
+              r.value ? (i(), w(S, {
                 key: 0,
                 severity: "error"
               }, {
-                default: w(() => [
-                  U(
-                    M(o.value),
+                default: T(() => [
+                  z(
+                    I(r.value),
                     1
                     /* TEXT */
                   )
                 ]),
                 _: 1
                 /* STABLE */
-              })) : L("v-if", !0),
-              a[3] || (a[3] = _(
+              })) : A("v-if", !0),
+              n[3] || (n[3] = _(
                 "label",
                 { for: "extra-slot-name" },
                 "Slot name",
                 -1
                 /* CACHED */
               )),
-              u(E, {
+              u(O, {
                 id: "extra-slot-name",
-                modelValue: r.value,
-                "onUpdate:modelValue": a[0] || (a[0] = (h) => r.value = h),
+                modelValue: l.value,
+                "onUpdate:modelValue": n[0] || (n[0] = (g) => l.value = g),
                 maxlength: "64",
                 required: ""
               }, null, 8, ["modelValue"]),
-              a[4] || (a[4] = _(
+              n[4] || (n[4] = _(
                 "label",
                 { for: "extra-slot-position" },
                 "Position",
@@ -320,16 +353,16 @@ const Re = /* @__PURE__ */ K({
                 inputId: "extra-slot-position",
                 "aria-label": "Position",
                 modelValue: v.value,
-                "onUpdate:modelValue": a[1] || (a[1] = (h) => v.value = h),
-                options: b.value,
+                "onUpdate:modelValue": n[1] || (n[1] = (g) => v.value = g),
+                options: C.value,
                 optionLabel: "label",
                 optionValue: "value"
               }, null, 8, ["modelValue", "options"]),
-              u(N, {
+              u(V, {
                 label: "Add slot",
                 type: "submit",
                 loading: c.value,
-                disabled: !r.value.trim()
+                disabled: !l.value.trim()
               }, null, 8, ["loading", "disabled"])
             ],
             32
@@ -341,51 +374,51 @@ const Re = /* @__PURE__ */ K({
       }, 8, ["visible"]);
     };
   }
-}), Pe = /* @__PURE__ */ X(Re, [["__scopeId", "data-v-8c53feab"]]), Ue = ["data-timeline-date"], ze = /* @__PURE__ */ K({
+}), Re = /* @__PURE__ */ K(Pe, [["__scopeId", "data-v-8c53feab"]]), Ue = ["data-timeline-date"], ze = /* @__PURE__ */ G({
   __name: "DayCard",
   props: {
     day: {}
   },
   emits: ["add", "changed"],
-  setup(e, { emit: g }) {
-    const t = g, n = y(), d = y(!1), r = [{ label: "Add slot for this day", icon: "pi pi-calendar-plus", command: () => {
+  setup(t, { emit: b }) {
+    const e = b, a = f(), d = f(!1), l = [{ label: "Add slot for this day", icon: "pi pi-calendar-plus", command: () => {
       d.value = !0;
     } }];
     function v(c) {
       return (/* @__PURE__ */ new Date(`${c}T12:00:00`)).toLocaleDateString(void 0, { weekday: "long", day: "numeric", month: "short" });
     }
-    return (c, o) => {
-      const b = m("Tag"), k = m("Button"), p = m("Menu");
-      return s(), T("section", {
-        class: ce(["day-card", { "is-today": e.day.isToday }]),
-        "data-timeline-date": e.day.date
+    return (c, r) => {
+      const C = m("Tag"), $ = m("Button"), p = m("Menu");
+      return i(), h("section", {
+        class: ve(["day-card", { "is-today": t.day.isToday }]),
+        "data-timeline-date": t.day.date
       }, [
         _("header", null, [
           _(
             "h3",
             null,
-            M(v(e.day.date)),
+            I(v(t.day.date)),
             1
             /* TEXT */
           ),
-          e.day.isToday ? (s(), C(b, {
+          t.day.isToday ? (i(), w(C, {
             key: 0,
             value: "Today"
-          })) : L("v-if", !0),
-          u(k, {
+          })) : A("v-if", !0),
+          u($, {
             icon: "pi pi-ellipsis-v",
             size: "small",
             text: "",
             rounded: "",
             "aria-label": "Day actions",
-            onClick: o[0] || (o[0] = (a) => n.value.toggle(a))
+            onClick: r[0] || (r[0] = (n) => a.value.toggle(n))
           }),
           u(
             p,
             {
               ref_key: "menu",
-              ref: n,
-              model: r,
+              ref: a,
+              model: l,
               popup: ""
             },
             null,
@@ -393,34 +426,56 @@ const Re = /* @__PURE__ */ K({
             /* NEED_PATCH */
           )
         ]),
-        (s(!0), T(
-          z,
+        (i(!0), h(
+          E,
           null,
-          O(e.day.slots, (a) => (s(), C(Ve, {
-            key: a.id,
-            slot: a,
-            date: e.day.date,
-            onAdd: o[1] || (o[1] = (S) => t("add", S)),
-            onChanged: o[2] || (o[2] = (S) => t("changed"))
+          F(t.day.slots, (n) => (i(), w(Ve, {
+            key: n.id,
+            slot: n,
+            date: t.day.date,
+            onAdd: r[1] || (r[1] = (S) => e("add", S)),
+            onChanged: r[2] || (r[2] = (S) => e("changed"))
           }, null, 8, ["slot", "date"]))),
           128
           /* KEYED_FRAGMENT */
         )),
-        u(ee(ae), {
+        u(J(X), {
           name: "timeline.day.footer",
-          context: { date: e.day.date }
+          context: { date: t.day.date }
         }, null, 8, ["context"]),
-        u(Pe, {
+        u(Re, {
           visible: d.value,
-          "onUpdate:visible": o[3] || (o[3] = (a) => d.value = a),
-          date: e.day.date,
-          slots: e.day.slots,
-          onChanged: o[4] || (o[4] = (a) => t("changed"))
+          "onUpdate:visible": r[3] || (r[3] = (n) => d.value = n),
+          date: t.day.date,
+          slots: t.day.slots,
+          onChanged: r[4] || (r[4] = (n) => e("changed"))
         }, null, 8, ["visible", "date", "slots"])
       ], 10, Ue);
     };
   }
-}), re = /* @__PURE__ */ X(ze, [["__scopeId", "data-v-1b485257"]]), Ee = { class: "add-entry" }, Ne = { key: 0 }, je = { class: "quick-notes" }, qe = /* @__PURE__ */ K({
+}), re = /* @__PURE__ */ K(ze, [["__scopeId", "data-v-1b485257"]]);
+function oe() {
+  const t = /* @__PURE__ */ new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
+function L(t, b) {
+  const e = /* @__PURE__ */ new Date(`${t}T12:00:00`);
+  return e.setDate(e.getDate() + b), `${e.getFullYear()}-${String(e.getMonth() + 1).padStart(2, "0")}-${String(e.getDate()).padStart(2, "0")}`;
+}
+function Ee(t, b, e, a) {
+  const d = [];
+  for (let l = t.from; l <= t.to; l = L(l, 1)) {
+    const v = (b[l] || []).map((c) => ({ ...c, entries: [] }));
+    for (const c of e.filter((r) => r.date === l)) {
+      const r = c.meal_type.toLowerCase();
+      let C = v.find(($) => $.id.toLowerCase() === r) || v.find(($) => $.label.toLowerCase() === r);
+      C || (C = { id: c.meal_type, label: c.meal_type.replace(/[-_]/g, " ").replace(/\b\w/g, ($) => $.toUpperCase()), kind: "extra", skipped: !1, entries: [], synthetic: !0 }, v.push(C)), C.entries.push(c), C.skipped = !1;
+    }
+    d.push({ date: l, isPast: l < a, isToday: l === a, slots: v });
+  }
+  return d;
+}
+const Ne = { class: "add-entry" }, qe = { key: 0 }, Fe = { class: "quick-notes" }, Oe = /* @__PURE__ */ G({
   __name: "AddEntryDialog",
   props: {
     visible: { type: Boolean },
@@ -428,104 +483,105 @@ const Re = /* @__PURE__ */ K({
     mealType: {}
   },
   emits: ["update:visible", "created"],
-  setup(e, { emit: g }) {
-    const t = e, n = g, d = ["Dining out", "Leftovers", "Takeout", "Quick meal"], r = ne(), v = y("recipes"), c = y(""), o = y([]), b = y([]), k = y(""), p = y(2), a = y(!1), S = y(""), E = Y(() => {
-      var H, j;
-      const i = (((H = r.store.household.value) == null ? void 0 : H.meal_types) || []).find(
-        (q) => {
-          var W, R, F, G;
-          return q.id === t.mealType || ((W = q.id) == null ? void 0 : W.toLowerCase()) === ((R = t.mealType) == null ? void 0 : R.toLowerCase()) || ((F = q.label) == null ? void 0 : F.toLowerCase()) === ((G = t.mealType) == null ? void 0 : G.toLowerCase());
+  setup(t, { emit: b }) {
+    const e = t, a = b, d = ["Dining out", "Leftovers", "Takeout", "Quick meal"], l = ie(), v = f("recipes"), c = f(""), r = f([]), C = f([]), $ = f(""), p = f(2), n = f(!1), S = f(""), O = Y(() => {
+      var P, M;
+      const o = (((P = l.store.household.value) == null ? void 0 : P.meal_types) || []).find(
+        (j) => {
+          var H, R, q, Q;
+          return j.id === e.mealType || ((H = j.id) == null ? void 0 : H.toLowerCase()) === ((R = e.mealType) == null ? void 0 : R.toLowerCase()) || ((q = j.label) == null ? void 0 : q.toLowerCase()) === ((Q = e.mealType) == null ? void 0 : Q.toLowerCase());
         }
       );
-      if (i && Array.isArray(i.predefined_notes))
-        return i.predefined_notes;
-      const A = (j = r.store.household.value) == null ? void 0 : j.predefined_notes;
-      return Array.isArray(A) ? A : d;
+      if (o && Array.isArray(o.predefined_notes))
+        return o.predefined_notes;
+      const N = (M = l.store.household.value) == null ? void 0 : M.predefined_notes;
+      return Array.isArray(N) ? N : d;
     });
     let B = 0;
-    async function N() {
-      const h = ++B;
+    async function V() {
+      const g = ++B;
       try {
-        const i = await r.api.get("/api/recipes", { q: c.value });
-        h === B && (o.value = i.items);
-      } catch (i) {
-        h === B && (S.value = i.message);
+        const o = await l.api.get("/api/recipes", { q: c.value });
+        g === B && (r.value = o.items);
+      } catch (o) {
+        g === B && (S.value = o.message);
       }
     }
-    ve(() => t.visible, async (h) => {
-      if (!h) {
+    me(() => e.visible, async (g) => {
+      if (!g) {
         ++B;
         return;
       }
-      v.value = "recipes", c.value = "", k.value = "", p.value = 2, S.value = "", o.value = [], await N();
+      v.value = "recipes", c.value = "", $.value = "", p.value = 2, S.value = "", r.value = [], await V();
       try {
-        b.value = await r.api.get("/api/x/core-shortlist");
+        C.value = await l.api.get("/api/x/core-shortlist");
       } catch {
-        b.value = [];
+        C.value = [];
       }
     });
-    async function x(h) {
-      if (!(a.value || !h && !k.value.trim())) {
-        a.value = !0, S.value = "";
-        try {
-          const i = await r.api.post("/api/schedule", { date: t.date, meal_type: t.mealType, entry_type: h ? "recipe" : "note", ...h ? { recipe_id: h } : { title: k.value }, servings_override: p.value });
-          n("created", i), n("update:visible", !1);
-        } catch (i) {
-          S.value = i.message || "Could not add meal";
-        } finally {
-          a.value = !1;
-        }
+    async function x(g) {
+      var P;
+      if (n.value || !g && !$.value.trim()) return;
+      n.value = !0, S.value = "";
+      const o = e.date < oe(), N = o ? "cooked" : "planned";
+      try {
+        const M = await l.api.post("/api/timeline", { date: e.date, meal_type: e.mealType, entry_type: g ? "recipe" : "note", ...g ? { recipe_id: g } : { title: $.value }, servings_override: p.value, status: N, ...o && ((P = l.store.currentMember.value) != null && P.id) ? { cooked_by_member_id: l.store.currentMember.value.id } : {} });
+        a("created", M), a("update:visible", !1);
+      } catch (M) {
+        S.value = M.message || "Could not add meal";
+      } finally {
+        n.value = !1;
       }
     }
-    return (h, i) => {
-      const A = m("Message"), H = m("InputNumber"), j = m("Tab"), q = m("TabList"), W = m("InputText"), R = m("Button"), F = m("TabPanel"), G = m("TabPanels"), oe = m("Tabs"), ie = m("Dialog");
-      return s(), C(ie, {
-        visible: e.visible,
-        "onUpdate:visible": i[5] || (i[5] = (l) => n("update:visible", l)),
-        header: `Add meal · ${e.date}`,
+    return (g, o) => {
+      const N = m("Message"), P = m("InputNumber"), M = m("Tab"), j = m("TabList"), H = m("InputText"), R = m("Button"), q = m("TabPanel"), Q = m("TabPanels"), se = m("Tabs"), y = m("Dialog");
+      return i(), w(y, {
+        visible: t.visible,
+        "onUpdate:visible": o[5] || (o[5] = (s) => a("update:visible", s)),
+        header: `Add meal · ${t.date}`,
         modal: "",
         style: { width: "36rem", maxWidth: "95vw" }
       }, {
-        default: w(() => [
-          _("div", Ee, [
-            S.value ? (s(), C(A, {
+        default: T(() => [
+          _("div", Ne, [
+            S.value ? (i(), w(N, {
               key: 0,
               severity: "error"
             }, {
-              default: w(() => [
-                U(
-                  M(S.value),
+              default: T(() => [
+                z(
+                  I(S.value),
                   1
                   /* TEXT */
                 )
               ]),
               _: 1
               /* STABLE */
-            })) : L("v-if", !0),
-            i[11] || (i[11] = _(
+            })) : A("v-if", !0),
+            o[11] || (o[11] = _(
               "label",
               { for: "entry-servings" },
               "Servings",
               -1
               /* CACHED */
             )),
-            u(H, {
+            u(P, {
               inputId: "entry-servings",
               modelValue: p.value,
-              "onUpdate:modelValue": i[0] || (i[0] = (l) => p.value = l),
+              "onUpdate:modelValue": o[0] || (o[0] = (s) => p.value = s),
               min: 0.25,
               maxFractionDigits: 2
             }, null, 8, ["modelValue"]),
-            u(oe, {
+            u(se, {
               value: v.value,
-              "onUpdate:value": i[4] || (i[4] = (l) => v.value = l)
+              "onUpdate:value": o[4] || (o[4] = (s) => v.value = s)
             }, {
-              default: w(() => [
-                u(q, null, {
-                  default: w(() => [
-                    u(j, { value: "recipes" }, {
-                      default: w(() => [...i[6] || (i[6] = [
-                        U(
+              default: T(() => [
+                u(j, null, {
+                  default: T(() => [
+                    u(M, { value: "recipes" }, {
+                      default: T(() => [...o[6] || (o[6] = [
+                        z(
                           "Recipes",
                           -1
                           /* CACHED */
@@ -534,9 +590,9 @@ const Re = /* @__PURE__ */ K({
                       _: 1
                       /* STABLE */
                     }),
-                    u(j, { value: "shortlist" }, {
-                      default: w(() => [...i[7] || (i[7] = [
-                        U(
+                    u(M, { value: "shortlist" }, {
+                      default: T(() => [...o[7] || (o[7] = [
+                        z(
                           "Shortlist",
                           -1
                           /* CACHED */
@@ -545,9 +601,9 @@ const Re = /* @__PURE__ */ K({
                       _: 1
                       /* STABLE */
                     }),
-                    u(j, { value: "note" }, {
-                      default: w(() => [...i[8] || (i[8] = [
-                        U(
+                    u(M, { value: "note" }, {
+                      default: T(() => [...o[8] || (o[8] = [
+                        z(
                           "Note",
                           -1
                           /* CACHED */
@@ -560,42 +616,42 @@ const Re = /* @__PURE__ */ K({
                   _: 1
                   /* STABLE */
                 }),
-                u(G, null, {
-                  default: w(() => [
-                    u(F, { value: "recipes" }, {
-                      default: w(() => [
-                        i[9] || (i[9] = _(
+                u(Q, null, {
+                  default: T(() => [
+                    u(q, { value: "recipes" }, {
+                      default: T(() => [
+                        o[9] || (o[9] = _(
                           "label",
                           { for: "entry-recipe-search" },
                           "Search recipes",
                           -1
                           /* CACHED */
                         )),
-                        u(W, {
+                        u(H, {
                           id: "entry-recipe-search",
                           modelValue: c.value,
-                          "onUpdate:modelValue": i[1] || (i[1] = (l) => c.value = l),
-                          onInput: N,
+                          "onUpdate:modelValue": o[1] || (o[1] = (s) => c.value = s),
+                          onInput: V,
                           fluid: ""
                         }, null, 8, ["modelValue"]),
-                        (s(!0), T(
-                          z,
+                        (i(!0), h(
+                          E,
                           null,
-                          O(o.value, (l) => (s(), T("div", {
-                            key: l.id,
+                          F(r.value, (s) => (i(), h("div", {
+                            key: s.id,
                             class: "recipe-result"
                           }, [
                             _(
                               "span",
                               null,
-                              M(l.title),
+                              I(s.title),
                               1
                               /* TEXT */
                             ),
                             u(R, {
                               label: "Schedule",
-                              loading: a.value,
-                              onClick: ($) => x(l.id)
+                              loading: n.value,
+                              onClick: (D) => x(s.id)
                             }, null, 8, ["loading", "onClick"])
                           ]))),
                           128
@@ -605,27 +661,27 @@ const Re = /* @__PURE__ */ K({
                       _: 1
                       /* STABLE */
                     }),
-                    u(F, { value: "shortlist" }, {
-                      default: w(() => [
-                        b.value.length ? L("v-if", !0) : (s(), T("p", Ne, "No recipes in shortlist")),
-                        (s(!0), T(
-                          z,
+                    u(q, { value: "shortlist" }, {
+                      default: T(() => [
+                        C.value.length ? A("v-if", !0) : (i(), h("p", qe, "No recipes in shortlist")),
+                        (i(!0), h(
+                          E,
                           null,
-                          O(b.value, (l) => (s(), T("div", {
-                            key: l.recipe_id,
+                          F(C.value, (s) => (i(), h("div", {
+                            key: s.recipe_id,
                             class: "recipe-result"
                           }, [
                             _(
                               "span",
                               null,
-                              M(l.recipe_title),
+                              I(s.recipe_title),
                               1
                               /* TEXT */
                             ),
                             u(R, {
                               label: "Schedule",
-                              loading: a.value,
-                              onClick: ($) => x(l.recipe_id)
+                              loading: n.value,
+                              onClick: (D) => x(s.recipe_id)
                             }, null, 8, ["loading", "onClick"])
                           ]))),
                           128
@@ -635,31 +691,31 @@ const Re = /* @__PURE__ */ K({
                       _: 1
                       /* STABLE */
                     }),
-                    u(F, { value: "note" }, {
-                      default: w(() => [
-                        i[10] || (i[10] = _(
+                    u(q, { value: "note" }, {
+                      default: T(() => [
+                        o[10] || (o[10] = _(
                           "label",
                           { for: "entry-note" },
                           "Note title",
                           -1
                           /* CACHED */
                         )),
-                        u(W, {
+                        u(H, {
                           id: "entry-note",
-                          modelValue: k.value,
-                          "onUpdate:modelValue": i[2] || (i[2] = (l) => k.value = l),
+                          modelValue: $.value,
+                          "onUpdate:modelValue": o[2] || (o[2] = (s) => $.value = s),
                           fluid: ""
                         }, null, 8, ["modelValue"]),
-                        _("div", je, [
-                          (s(!0), T(
-                            z,
+                        _("div", Fe, [
+                          (i(!0), h(
+                            E,
                             null,
-                            O(E.value, (l) => (s(), C(R, {
-                              key: l,
-                              label: l,
+                            F(O.value, (s) => (i(), w(R, {
+                              key: s,
+                              label: s,
                               outlined: "",
                               size: "small",
-                              onClick: ($) => k.value = l
+                              onClick: (D) => $.value = s
                             }, null, 8, ["label", "onClick"]))),
                             128
                             /* KEYED_FRAGMENT */
@@ -667,9 +723,9 @@ const Re = /* @__PURE__ */ K({
                         ]),
                         u(R, {
                           label: "Add meal",
-                          loading: a.value,
-                          disabled: !k.value.trim(),
-                          onClick: i[3] || (i[3] = (l) => x())
+                          loading: n.value,
+                          disabled: !$.value.trim(),
+                          onClick: o[3] || (o[3] = (s) => x())
                         }, null, 8, ["loading", "disabled"])
                       ]),
                       _: 1
@@ -690,143 +746,119 @@ const Re = /* @__PURE__ */ K({
       }, 8, ["visible", "header"]);
     };
   }
-}), Fe = /* @__PURE__ */ X(qe, [["__scopeId", "data-v-73f61ade"]]);
-function I(e, g) {
-  const t = /* @__PURE__ */ new Date(`${e}T12:00:00`);
-  return t.setDate(t.getDate() + g), `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
-}
-function Oe(e, g, t, n) {
-  const d = [];
-  for (let r = e.from; r <= e.to; r = I(r, 1)) {
-    const v = (g[r] || []).map((c) => ({ ...c, entries: [] }));
-    for (const c of t.filter((o) => o.date === r)) {
-      const o = c.meal_type.toLowerCase();
-      let b = v.find((k) => k.id.toLowerCase() === o) || v.find((k) => k.label.toLowerCase() === o);
-      b || (b = { id: c.meal_type, label: c.meal_type.replace(/[-_]/g, " ").replace(/\b\w/g, (k) => k.toUpperCase()), kind: "extra", skipped: !1, entries: [], synthetic: !0 }, v.push(b)), b.entries.push(c), b.skipped = !1;
-    }
-    d.push({ date: r, isPast: r < n, isToday: r === n, slots: v });
-  }
-  return d;
-}
-const We = { class: "timeline-page" }, Ye = { class: "timeline-toolbar" }, He = { class: "timeline-container" }, Ge = { class: "timeline-sidebar-wrapper" }, Qe = { class: "timeline-feed" }, Je = { class: "past-days" }, Ke = ["data-timeline-date"], Xe = /* @__PURE__ */ K({
+}), je = /* @__PURE__ */ K(Oe, [["__scopeId", "data-v-23ac8af0"]]), He = { class: "timeline-page" }, We = { class: "timeline-toolbar" }, Ye = { class: "timeline-container" }, Ge = { class: "timeline-sidebar-wrapper" }, Qe = { class: "timeline-feed" }, Je = { class: "past-days" }, Ke = ["data-timeline-date"], Xe = /* @__PURE__ */ G({
   __name: "TimelinePage",
-  setup(e) {
-    const g = ne();
-    function t() {
-      const l = /* @__PURE__ */ new Date();
-      return `${l.getFullYear()}-${String(l.getMonth() + 1).padStart(2, "0")}-${String(l.getDate()).padStart(2, "0")}`;
-    }
-    const n = y(t()), d = y({ from: I(n.value, -2), to: I(n.value, 6) }), r = y([]), v = y({}), c = y(""), o = y(/* @__PURE__ */ new Set()), b = y(null), k = y(window.innerWidth < 768), p = y([]), a = fe("__SS_SLOT_REGISTRY__"), S = Y(() => (a == null ? void 0 : a.getContributions("timeline.sidebar")) || []), E = Y(() => Oe(d.value, v.value, r.value, n.value)), B = Y(() => E.value.filter((l) => l.isPast)), N = Y(() => E.value.filter((l) => !l.isPast));
-    let x = 0, h, i = !1;
-    async function A() {
-      const l = ++x, { from: $, to: V } = d.value;
-      c.value = "";
+  setup(t) {
+    const b = ie(), e = f(oe()), a = f({ from: L(e.value, -2), to: L(e.value, 6) }), d = f([]), l = f({}), v = f(""), c = f(/* @__PURE__ */ new Set()), r = f(null), C = f(window.innerWidth < 768), $ = f([]), p = pe("__SS_SLOT_REGISTRY__"), n = Y(() => (p == null ? void 0 : p.getContributions("timeline.sidebar")) || []), S = Y(() => Ee(a.value, l.value, d.value, e.value)), O = Y(() => S.value.filter((y) => y.isPast)), B = Y(() => S.value.filter((y) => !y.isPast));
+    let V = 0, x, g = !1;
+    async function o() {
+      const y = ++V, { from: s, to: D } = a.value;
+      v.value = "";
       try {
-        const P = [], te = [], le = {};
-        for (let D = $; D <= V; ) {
-          const Z = I(D, 62) < V ? I(D, 62) : V, Q = { from: D, to: Z }, [f, J, me] = await Promise.all([g.api.get("/api/schedule", Q), g.api.get("/api/journal", Q), g.api.get("/api/x/core-timeline/slots", Q)]);
-          if (l !== x || i) return;
-          P.push(...f), te.push(...J), Object.assign(le, me.days), D = I(Z, 1);
+        const U = [], Z = {};
+        for (let W = s; W <= D; ) {
+          const ee = L(W, 62) < D ? L(W, 62) : D, te = { from: W, to: ee }, [ae, le] = await Promise.all([b.api.get("/api/timeline", te), b.api.get("/api/x/core-timeline/slots", te)]);
+          if (y !== V || g) return;
+          U.push(...ae), Object.assign(Z, le.days), W = L(ee, 1);
         }
-        const se = new Set(te.filter((D) => D.status === "cooked").map((D) => D.schedule_entry_id));
-        r.value = P.map((D) => ({ ...D, is_cooked: se.has(D.id) })), v.value = le;
-      } catch (P) {
-        l === x && !i && (c.value = P.message || "Could not load Timeline");
+        d.value = U, l.value = Z;
+      } catch (U) {
+        y === V && !g && (v.value = U.message || "Could not load Timeline");
       }
     }
+    function N() {
+      clearTimeout(x), x = setTimeout(o, 300);
+    }
+    const P = ["timeline:created", "timeline:updated", "timeline:deleted", "core-timeline:slots-changed"].map((y) => b.on(y, N));
+    function M() {
+      C.value = window.innerWidth < 768;
+    }
+    function j() {
+      a.value = { ...a.value, from: L(a.value.from, -4) }, o();
+    }
     function H() {
-      clearTimeout(h), h = setTimeout(A, 300);
+      a.value = { ...a.value, to: L(a.value.to, 5) }, o();
     }
-    const j = ["schedule:created", "schedule:updated", "schedule:deleted", "journal:created", "journal:updated", "journal:deleted", "core-timeline:slots-changed"].map((l) => g.on(l, H));
-    function q() {
-      k.value = window.innerWidth < 768;
+    async function R() {
+      var y, s;
+      e.value = oe(), a.value = { from: L(e.value, -2), to: L(e.value, 6) }, c.value.clear(), await o(), await ge(), (s = (y = document.querySelector(".day-card.is-today")) == null ? void 0 : y.scrollIntoView) == null || s.call(y, { block: "start", behavior: "smooth" });
     }
-    function W() {
-      d.value = { ...d.value, from: I(d.value.from, -2) }, A();
+    function q(y) {
+      c.value.has(y) ? c.value.delete(y) : c.value.add(y);
     }
-    function R() {
-      d.value = { ...d.value, to: I(d.value.to, 5) }, A();
+    function Q(y) {
+      return (/* @__PURE__ */ new Date(`${y}T12:00:00`)).toLocaleDateString(void 0, { weekday: "short", day: "numeric", month: "short" });
     }
-    async function F() {
-      var l, $;
-      n.value = t(), d.value = { from: I(n.value, -2), to: I(n.value, 6) }, o.value.clear(), await A(), await he(), ($ = (l = document.querySelector(".day-card.is-today")) == null ? void 0 : l.scrollIntoView) == null || $.call(l, { block: "start", behavior: "smooth" });
-    }
-    function G(l) {
-      o.value.has(l) ? o.value.delete(l) : o.value.add(l);
-    }
-    function oe(l) {
-      return (/* @__PURE__ */ new Date(`${l}T12:00:00`)).toLocaleDateString(void 0, { weekday: "short", day: "numeric", month: "short" });
-    }
-    function ie(l) {
-      return l.slots.flatMap(($) => $.entries.map((V) => {
-        var P;
-        return `${$.label.toUpperCase()} ${((P = V.recipe) == null ? void 0 : P.title) || V.title || "Planned meal"}`;
+    function se(y) {
+      return y.slots.flatMap((s) => s.entries.map((D) => {
+        var U;
+        return `${D.status === "cooked" ? "✓ " : ""}${s.label.toUpperCase()} ${((U = D.recipe) == null ? void 0 : U.title) || D.title || "Planned meal"}`;
       })).join(" · ") || "—";
     }
     return ye(() => {
-      A(), window.addEventListener("resize", q);
-    }), ge(() => {
-      i = !0, ++x, clearTimeout(h), j.forEach((l) => {
-        typeof l == "function" && l();
-      }), window.removeEventListener("resize", q);
-    }), (l, $) => {
-      var Z, Q;
-      const V = m("Button"), P = m("Message"), te = m("AccordionHeader"), le = m("AccordionContent"), se = m("AccordionPanel"), D = m("Accordion");
-      return s(), T("div", We, [
-        _("div", Ye, [
-          $[4] || ($[4] = _(
+      o(), window.addEventListener("resize", M);
+    }), fe(() => {
+      g = !0, ++V, clearTimeout(x), P.forEach((y) => {
+        typeof y == "function" && y();
+      }), window.removeEventListener("resize", M);
+    }), (y, s) => {
+      var ae, le;
+      const D = m("Button"), U = m("Message"), Z = m("AccordionHeader"), W = m("AccordionContent"), ee = m("AccordionPanel"), te = m("Accordion");
+      return i(), h("div", He, [
+        _("div", We, [
+          s[4] || (s[4] = _(
             "h2",
             null,
             "Timeline",
             -1
             /* CACHED */
           )),
-          u(V, {
+          u(D, {
             label: "Today",
             icon: "pi pi-calendar",
             size: "small",
             outlined: "",
-            onClick: F
+            onClick: R
           })
         ]),
-        c.value ? (s(), C(P, {
+        v.value ? (i(), w(U, {
           key: 0,
           severity: "error"
         }, {
-          default: w(() => [
-            U(
-              M(c.value),
+          default: T(() => [
+            z(
+              I(v.value),
               1
               /* TEXT */
             )
           ]),
           _: 1
           /* STABLE */
-        })) : L("v-if", !0),
-        _("div", He, [
+        })) : A("v-if", !0),
+        _("div", Ye, [
           _("aside", Ge, [
-            k.value ? (s(), C(D, {
+            C.value ? (i(), w(te, {
               key: 0,
-              value: p.value,
-              "onUpdate:value": $[0] || ($[0] = (f) => p.value = f),
+              value: $.value,
+              "onUpdate:value": s[0] || (s[0] = (k) => $.value = k),
               multiple: ""
             }, {
-              default: w(() => [
-                (s(!0), T(
-                  z,
+              default: T(() => [
+                (i(!0), h(
+                  E,
                   null,
-                  O(S.value, (f) => (s(), C(se, {
-                    key: f.id,
-                    value: f.id
+                  F(n.value, (k) => (i(), w(ee, {
+                    key: k.id,
+                    value: k.id
                   }, {
-                    default: w(() => [
+                    default: T(() => [
                       u(
-                        te,
+                        Z,
                         null,
                         {
-                          default: w(() => [
-                            U(
-                              M(f.pluginId === "core-shortlist" ? "Shortlist" : f.pluginId === "core-meal-planner-ai" ? "AI meal suggestions" : f.pluginId === "core-recurring" ? "Recurring meals" : f.pluginId),
+                          default: T(() => [
+                            z(
+                              I(k.pluginId === "core-shortlist" ? "Shortlist" : k.pluginId === "core-meal-planner-ai" ? "AI meal suggestions" : k.pluginId === "core-recurring" ? "Recurring meals" : k.pluginId),
                               1
                               /* TEXT */
                             )
@@ -838,11 +870,11 @@ const We = { class: "timeline-page" }, Ye = { class: "timeline-toolbar" }, He = 
                         /* DYNAMIC_SLOTS */
                       ),
                       u(
-                        le,
+                        W,
                         null,
                         {
-                          default: w(() => [
-                            (s(), C(be(f.component), { context: d.value }, null, 8, ["context"]))
+                          default: T(() => [
+                            (i(), w(be(k.component), { context: a.value }, null, 8, ["context"]))
                           ]),
                           _: 2
                           /* DYNAMIC */
@@ -860,115 +892,149 @@ const We = { class: "timeline-page" }, Ye = { class: "timeline-toolbar" }, He = 
               ]),
               _: 1
               /* STABLE */
-            }, 8, ["value"])) : (s(), C(ee(ae), {
+            }, 8, ["value"])) : (i(), w(J(X), {
               key: 1,
               name: "timeline.sidebar",
-              context: d.value
+              context: a.value
             }, null, 8, ["context"]))
           ]),
           _("div", Qe, [
-            u(V, {
-              label: "Show 2 earlier days",
+            u(D, {
+              label: "Show 4 earlier days",
               size: "small",
               text: "",
-              onClick: W
+              onClick: j
             }),
             _("div", Je, [
-              (s(!0), T(
-                z,
+              (i(!0), h(
+                E,
                 null,
-                O(B.value, (f) => (s(), T("div", {
-                  key: f.date,
-                  "data-timeline-date": o.value.has(f.date) ? void 0 : f.date
+                F(O.value, (k) => (i(), h("div", {
+                  key: k.date,
+                  "data-timeline-date": c.value.has(k.date) ? void 0 : k.date
                 }, [
-                  u(V, {
+                  u(D, {
                     class: "past-day-line",
-                    label: `${oe(f.date)} · ${ie(f)}`,
+                    label: `${Q(k.date)} · ${se(k)}`,
                     size: "small",
                     text: "",
-                    "aria-expanded": o.value.has(f.date),
-                    onClick: (J) => G(f.date)
+                    "aria-expanded": c.value.has(k.date),
+                    onClick: (ne) => q(k.date)
                   }, null, 8, ["label", "aria-expanded", "onClick"]),
-                  o.value.has(f.date) ? (s(), C(re, {
+                  c.value.has(k.date) ? (i(), w(re, {
                     key: 0,
-                    day: f,
-                    onAdd: $[1] || ($[1] = (J) => b.value = J),
-                    onChanged: A
-                  }, null, 8, ["day"])) : L("v-if", !0)
+                    day: k,
+                    onAdd: s[1] || (s[1] = (ne) => r.value = ne),
+                    onChanged: o
+                  }, null, 8, ["day"])) : A("v-if", !0)
                 ], 8, Ke))),
                 128
                 /* KEYED_FRAGMENT */
               ))
             ]),
-            (s(!0), T(
-              z,
+            (i(!0), h(
+              E,
               null,
-              O(N.value, (f) => (s(), C(re, {
-                key: f.date,
-                day: f,
-                onAdd: $[2] || ($[2] = (J) => b.value = J),
-                onChanged: A
+              F(B.value, (k) => (i(), w(re, {
+                key: k.date,
+                day: k,
+                onAdd: s[2] || (s[2] = (ne) => r.value = ne),
+                onChanged: o
               }, null, 8, ["day"]))),
               128
               /* KEYED_FRAGMENT */
             )),
-            u(V, {
+            u(D, {
               label: "Show 5 more days",
               size: "small",
               outlined: "",
-              onClick: R
+              onClick: H
             })
           ])
         ]),
-        u(Fe, {
-          visible: !!b.value,
-          date: ((Z = b.value) == null ? void 0 : Z.date) || n.value,
-          mealType: ((Q = b.value) == null ? void 0 : Q.mealType) || "",
-          "onUpdate:visible": $[3] || ($[3] = (f) => {
-            f || (b.value = null);
+        u(je, {
+          visible: !!r.value,
+          date: ((ae = r.value) == null ? void 0 : ae.date) || e.value,
+          mealType: ((le = r.value) == null ? void 0 : le.mealType) || "",
+          "onUpdate:visible": s[3] || (s[3] = (k) => {
+            k || (r.value = null);
           }),
-          onCreated: A
+          onCreated: o
         }, null, 8, ["visible", "date", "mealType"])
       ]);
     };
   }
-}), Ze = /* @__PURE__ */ X(Xe, [["__scopeId", "data-v-7df69d31"]]);
-function lt(e) {
-  e.route({ path: "/timeline", component: Ze, nav: { label: "Timeline", icon: "calendar", order: 5 } }), e.intent.hub({ id: "entry:create", title: "Add entry to timeline" }), e.intent.hub({ id: "entry:interact", title: "Meal actions" }), e.intent.hub({ id: "timeline:assist", title: "Timeline planning assistance" }), e.intent.provider({
+}), Ze = /* @__PURE__ */ K(Xe, [["__scopeId", "data-v-c40a2a54"]]);
+function at(t) {
+  t.route({ path: "/timeline", component: Ze, nav: { label: "Timeline", icon: "calendar", order: 5 } }), t.slot("timeline.entry.badge", _e, { order: 10 }), t.intent.hub({ id: "entry:create", title: "Add entry to timeline" }), t.intent.hub({ id: "entry:interact", title: "Meal actions" }), t.intent.hub({ id: "timeline:assist", title: "Timeline planning assistance" }), t.intent.provider({
     hub: "entry:interact",
     id: "view-recipe",
     title: "View recipe",
     icon: "book",
     order: 10,
     kind: "headless",
-    isAvailable: (t) => {
-      var n;
-      return !!((n = t == null ? void 0 : t.entry) != null && n.recipe_id);
+    isAvailable: (e) => {
+      var a;
+      return !!((a = e == null ? void 0 : e.entry) != null && a.recipe_id);
     },
-    execute: (t) => e.navigate(`/recipes/${t.entry.recipe_id}`)
-  }), e.intent.provider({
+    execute: (e) => t.navigate(`/recipes/${e.entry.recipe_id}`)
+  }), t.intent.provider({
+    hub: "entry:interact",
+    id: "toggle-cooked",
+    title: "Mark as cooked",
+    titleFor: (e) => {
+      var a;
+      return ((a = e == null ? void 0 : e.entry) == null ? void 0 : a.status) === "cooked" ? "Unmark as cooked" : "Mark as cooked";
+    },
+    icon: "check",
+    iconFor: (e) => {
+      var a;
+      return ((a = e == null ? void 0 : e.entry) == null ? void 0 : a.status) === "cooked" ? "undo" : "check";
+    },
+    order: 20,
+    kind: "headless",
+    isAvailable: (e) => !!(e != null && e.entry),
+    execute: async (e) => {
+      var d;
+      const a = e.entry;
+      if (a.status === "cooked")
+        await t.outbox.enqueue({
+          method: "PATCH",
+          path: `/api/timeline/${a.id}`,
+          body: { revision: a.revision, status: "planned", cooked_by_member_id: null }
+        }), a.status = "planned", a.cooked_by_member_id = null, a.revision = (a.revision || 1) + 1, t.notify({ level: "info", message: "Meal unmarked as cooked" });
+      else {
+        const l = a.assigned_cook_id || ((d = t.store.currentMember.value) == null ? void 0 : d.id) || null;
+        await t.outbox.enqueue({
+          method: "PATCH",
+          path: `/api/timeline/${a.id}`,
+          body: { revision: a.revision, status: "cooked", cooked_by_member_id: l }
+        }), a.status = "cooked", a.cooked_by_member_id = l, a.revision = (a.revision || 1) + 1, t.notify({ level: "success", message: "Meal marked as cooked!" });
+      }
+    }
+  }), t.intent.provider({
     hub: "entry:interact",
     id: "remove",
     title: "Remove from plan",
     icon: "trash",
     order: 999,
     kind: "headless",
-    execute: async (t) => {
-      const n = t == null ? void 0 : t.entry;
-      !n || !await e.confirm({ header: "Remove meal", message: "Remove this meal from the plan?", acceptLabel: "Remove", rejectLabel: "Cancel", severity: "danger" }) || (await e.api.delete(`/api/schedule/${n.id}?revision=${n.revision}`), e.notify({ level: "success", message: "Meal removed from plan" }));
+    execute: async (e) => {
+      const a = e == null ? void 0 : e.entry;
+      !a || !await t.confirm({ header: "Remove meal", message: "Remove this meal from the plan?", acceptLabel: "Remove", rejectLabel: "Cancel", severity: "danger" }) || (await t.api.delete(`/api/timeline/${a.id}?revision=${a.revision}`), t.notify({ level: "success", message: "Meal removed from plan" }));
     }
   });
-  const g = async () => {
+  const b = async () => {
     try {
-      const t = /* @__PURE__ */ new Date(), n = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`, d = await e.api.get(`/api/schedule?from=${I(n, -2)}&to=${I(n, 14)}`);
-      for (const r of d) r.recipe_id && e.api.get(`/api/recipes/${r.recipe_id}`).catch(() => {
+      const e = oe(), a = await t.api.get(`/api/timeline?from=${L(e, -2)}&to=${L(e, 14)}`);
+      for (const d of a) d.recipe_id && t.api.get(`/api/recipes/${d.recipe_id}`).catch(() => {
       });
     } catch {
     }
   };
-  g();
-  for (const t of ["schedule:created", "schedule:updated", "schedule:deleted"]) e.on(t, g);
+  b();
+  for (const e of ["timeline:created", "timeline:updated", "timeline:deleted"]) t.on(e, b);
 }
 export {
-  lt as default
+  at as default
 };

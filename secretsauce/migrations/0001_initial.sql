@@ -61,7 +61,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS recipes_fts USING fts5(
     tokenize='trigram'
 );
 
-CREATE TABLE IF NOT EXISTS schedule_entries (
+CREATE TABLE IF NOT EXISTS timeline_entries (
     id TEXT PRIMARY KEY,
     revision INTEGER NOT NULL DEFAULT 1,
     date TEXT NOT NULL,
@@ -74,32 +74,14 @@ CREATE TABLE IF NOT EXISTS schedule_entries (
     position INTEGER NOT NULL DEFAULT 0,
     assigned_cook_id TEXT REFERENCES household_members(id) ON DELETE SET NULL,
     participant_member_ids JSON NOT NULL DEFAULT '[]',
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    actor_member_id TEXT,
-    origin TEXT NOT NULL DEFAULT 'member'
-);
-CREATE INDEX IF NOT EXISTS idx_schedule_date ON schedule_entries(date);
-
-CREATE TABLE IF NOT EXISTS cook_journal (
-    id TEXT PRIMARY KEY,
-    revision INTEGER NOT NULL DEFAULT 1,
-    date TEXT NOT NULL,
-    meal_type TEXT NOT NULL,
-    recipe_id TEXT REFERENCES recipes(id) ON DELETE SET NULL,
-    schedule_entry_id TEXT UNIQUE REFERENCES schedule_entries(id) ON DELETE SET NULL,
-    title TEXT,
-    status TEXT NOT NULL,
-    servings_cooked REAL,
-    servings_left REAL,
+    status TEXT NOT NULL DEFAULT 'planned',
     cooked_by_member_id TEXT REFERENCES household_members(id) ON DELETE SET NULL,
-    notes TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     actor_member_id TEXT,
     origin TEXT NOT NULL DEFAULT 'member'
 );
-CREATE INDEX IF NOT EXISTS idx_journal_date ON cook_journal(date);
+CREATE INDEX IF NOT EXISTS idx_timeline_date ON timeline_entries(date);
 
 CREATE TABLE IF NOT EXISTS assets (
     id TEXT PRIMARY KEY,

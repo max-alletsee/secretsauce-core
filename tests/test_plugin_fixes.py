@@ -50,14 +50,14 @@ async def test_recurring_rules_are_validated_and_explicitly_approved(tmp_path):
         payload = {"weekday": today.weekday(), "meal_type": "dinner", "recipe_id": recipe["id"], "servings": 3}
         rule = (await k.client.post('/api/x/core-recurring/rules', json=payload)).json()
         # No automatic materialization on rule creation
-        assert await k.schedule.list_entries(
+        assert await k.timeline.list_entries(
             from_date=today.isoformat(), to_date=(today + timedelta(days=13)).isoformat()
         ) == []
         approved = await k.client.post(
             f"/api/x/core-recurring/rules/{rule['id']}/approve", json={"date": today.isoformat()}
         )
         assert approved.status_code == 200
-        entries = await k.schedule.list_entries(
+        entries = await k.timeline.list_entries(
             from_date=today.isoformat(), to_date=(today + timedelta(days=13)).isoformat()
         )
         assert len(entries) == 1

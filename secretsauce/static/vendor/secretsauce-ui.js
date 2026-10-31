@@ -1,57 +1,57 @@
-var G = Object.defineProperty;
-var H = (t, n, o) => n in t ? G(t, n, { enumerable: !0, configurable: !0, writable: !0, value: o }) : t[n] = o;
-var g = (t, n, o) => H(t, typeof n != "symbol" ? n + "" : n, o);
-import { inject as I, defineComponent as P, computed as C, openBlock as v, createElementBlock as h, Fragment as M, renderList as L, createBlock as w, resolveDynamicComponent as O, ref as d, shallowRef as j, resolveComponent as y, resolveDirective as z, renderSlot as K, withDirectives as D, createVNode as E, withCtx as k, mergeProps as J, normalizeClass as Q, createCommentVNode as b, createElementVNode as W, toDisplayString as N, createTextVNode as X } from "vue";
-const se = 1;
+var H = Object.defineProperty;
+var L = (t, s, n) => s in t ? H(t, s, { enumerable: !0, configurable: !0, writable: !0, value: n }) : t[s] = n;
+var p = (t, s, n) => L(t, typeof s != "symbol" ? s + "" : s, n);
+import { inject as I, defineComponent as P, computed as C, openBlock as m, createElementBlock as h, Fragment as M, renderList as j, createBlock as w, resolveDynamicComponent as O, ref as d, shallowRef as z, resolveComponent as y, resolveDirective as K, renderSlot as J, withDirectives as R, createVNode as E, withCtx as k, mergeProps as Q, normalizeClass as W, createCommentVNode as b, createElementVNode as X, toDisplayString as D, createTextVNode as Z } from "vue";
+const ae = 1;
 class B extends Error {
-  constructor(o, a, u, r) {
+  constructor(n, l, u, r) {
     super(u);
-    g(this, "status");
-    g(this, "code");
-    g(this, "details");
-    this.name = "ApiError", this.status = o, this.code = a, this.details = r;
+    p(this, "status");
+    p(this, "code");
+    p(this, "details");
+    this.name = "ApiError", this.status = n, this.code = l, this.details = r;
   }
 }
 class le extends B {
-  constructor(o, a) {
-    super(409, "conflict", o, { current: a });
-    g(this, "current");
-    this.name = "ConflictError", this.current = a;
+  constructor(n, l) {
+    super(409, "conflict", n, { current: l });
+    p(this, "current");
+    this.name = "ConflictError", this.current = l;
   }
 }
-class ae extends B {
-  constructor(n = "Network unavailable") {
-    super(0, "offline", n), this.name = "OfflineError";
+class ie extends B {
+  constructor(s = "Network unavailable") {
+    super(0, "offline", s), this.name = "OfflineError";
   }
 }
-const Z = "__SS_UI__";
-function ie() {
-  const t = I(Z);
+const ee = "__SS_UI__";
+function re() {
+  const t = I(ee);
   if (!t) throw new Error("useSecretSauce() requires a registered plugin component");
   return t;
 }
-const re = /* @__PURE__ */ P({
+const ce = /* @__PURE__ */ P({
   __name: "Slot",
   props: {
     name: {},
     context: {}
   },
   setup(t) {
-    const n = t, o = I("__SS_SLOT_REGISTRY__", {
+    const s = t, n = I("__SS_SLOT_REGISTRY__", {
       getContributions: () => []
-    }), a = C(() => [...o.getContributions(n.name) || []].sort((r, s) => (r.order ?? 50) - (s.order ?? 50)));
-    return (u, r) => (v(!0), h(
+    }), l = C(() => [...n.getContributions(s.name) || []].sort((r, a) => (r.order ?? 50) - (a.order ?? 50)));
+    return (u, r) => (m(!0), h(
       M,
       null,
-      L(a.value, (s) => (v(), w(O(s.component), {
-        key: s.id,
-        context: n.context || {}
+      j(l.value, (a) => (m(), w(O(a.component), {
+        key: a.id,
+        context: s.context || {}
       }, null, 8, ["context"]))),
       128
       /* KEYED_FRAGMENT */
     ));
   }
-}), ee = /* @__PURE__ */ P({
+}), te = /* @__PURE__ */ P({
   __name: "IntentTrigger",
   props: {
     hub: {},
@@ -59,59 +59,66 @@ const re = /* @__PURE__ */ P({
     label: {}
   },
   emits: ["resolve", "cancel"],
-  setup(t, { emit: n }) {
-    const o = t, a = n, u = I("__SS_INTENT_REGISTRY__", { getProviders: () => [] }), r = d(), s = j(null), c = d(!1), f = d(""), i = C(() => u.getProviders(o.hub).filter((e) => !e.isAvailable || e.isAvailable(o.context)).slice().sort((e, l) => e.order - l.order));
+  setup(t, { emit: s }) {
+    const n = t, l = s, u = I("__SS_INTENT_REGISTRY__", { getProviders: () => [] }), r = d(), a = z(null), c = d(!1), f = d(""), i = C(() => u.getProviders(n.hub).filter((e) => !e.isAvailable || e.isAvailable(n.context)).slice().sort((e, o) => e.order - o.order));
     function _(e) {
-      var l;
-      return ((l = e.disabledReason) == null ? void 0 : l.call(e, o.context)) || "";
+      var o;
+      return ((o = e.disabledReason) == null ? void 0 : o.call(e, n.context)) || "";
     }
     function x(e) {
-      var l;
-      return ((l = e.titleFor) == null ? void 0 : l.call(e, o.context)) || e.title;
+      var o;
+      return ((o = e.titleFor) == null ? void 0 : o.call(e, n.context)) || e.title;
     }
-    const U = C(() => i.value.map((e) => ({
-      label: x(e),
-      icon: e.icon ? `pi pi-${e.icon}` : void 0,
-      disabled: !!_(e),
-      reason: _(e),
-      command: () => A(e)
-    })));
+    function U(e) {
+      var o;
+      return ((o = e.iconFor) == null ? void 0 : o.call(e, n.context)) || e.icon;
+    }
+    const V = C(() => i.value.map((e) => {
+      const o = U(e);
+      return {
+        label: x(e),
+        icon: o ? `pi pi-${o}` : void 0,
+        disabled: !!_(e),
+        reason: _(e),
+        command: () => A(e)
+      };
+    }));
     async function T(e) {
-      var l;
-      c.value || (f.value = "", i.value.length === 1 ? await A(i.value[0]) : (l = r.value) == null || l.toggle(e));
+      var o;
+      c.value || (f.value = "", i.value.length === 1 ? await A(i.value[0]) : (o = r.value) == null || o.toggle(e));
     }
     async function A(e) {
-      var l;
+      var o;
       if (!(c.value || _(e))) {
-        if ((l = r.value) == null || l.hide(), f.value = "", e.kind === "ui") {
-          s.value = e;
+        if ((o = r.value) == null || o.hide(), f.value = "", e.kind === "ui") {
+          a.value = e;
           return;
         }
         c.value = !0;
         try {
-          a("resolve", await e.execute(o.context));
-        } catch (p) {
-          f.value = (p == null ? void 0 : p.message) || "Action failed";
+          l("resolve", await e.execute(n.context));
+        } catch (g) {
+          f.value = (g == null ? void 0 : g.message) || "Action failed";
         } finally {
           c.value = !1;
         }
       }
     }
-    function V(e) {
-      s.value = null, a("resolve", e);
+    function F(e) {
+      a.value = null, l("resolve", e);
     }
     function S() {
-      s.value && (s.value = null, a("cancel"));
+      a.value && (a.value = null, l("cancel"));
     }
-    return (e, l) => {
-      const p = y("Button"), $ = y("Menu"), F = y("Message"), Y = y("Dialog"), R = z("tooltip");
-      return i.value.length ? (v(), h(
+    return (e, o) => {
+      const g = y("Button"), $ = y("Menu"), Y = y("Message"), q = y("Dialog"), N = K("tooltip");
+      return i.value.length ? (m(), h(
         M,
         { key: 0 },
         [
-          K(e.$slots, "default", { open: T }, () => [
-            D((v(), h("span", null, [
-              E(p, {
+          J(e.$slots, "default", { open: T }, () => [
+            R((m(), h("span", null, [
+              E(g, {
                 class: "ss-intent-trigger",
                 label: t.label || x(i.value[0]),
                 loading: c.value,
@@ -122,35 +129,35 @@ const re = /* @__PURE__ */ P({
                 onClick: T
               }, null, 8, ["label", "loading", "disabled", "icon", "iconPos", "aria-haspopup"])
             ])), [
-              [R, i.value.length === 1 ? _(i.value[0]) : ""]
+              [N, i.value.length === 1 ? _(i.value[0]) : ""]
             ])
           ], !0),
           E($, {
             ref_key: "menu",
             ref: r,
-            model: U.value,
+            model: V.value,
             popup: ""
           }, {
-            item: k(({ item: m, props: q }) => [
-              D((v(), h(
+            item: k(({ item: v, props: G }) => [
+              R((m(), h(
                 "a",
-                J(q.action, { class: "ss-intent-item" }),
+                Q(G.action, { class: "ss-intent-item" }),
                 [
-                  m.icon ? (v(), h(
+                  v.icon ? (m(), h(
                     "span",
                     {
                       key: 0,
-                      class: Q(m.icon),
+                      class: W(v.icon),
                       "aria-hidden": "true"
                     },
                     null,
                     2
                     /* CLASS */
                   )) : b("v-if", !0),
-                  W(
+                  X(
                     "span",
                     null,
-                    N(m.label),
+                    D(v.label),
                     1
                     /* TEXT */
                   )
@@ -158,19 +165,19 @@ const re = /* @__PURE__ */ P({
                 16
                 /* FULL_PROPS */
               )), [
-                [R, m.reason]
+                [N, v.reason]
               ])
             ]),
             _: 1
             /* STABLE */
           }, 8, ["model"]),
-          f.value ? (v(), w(F, {
+          f.value ? (m(), w(Y, {
             key: 0,
             severity: "error"
           }, {
             default: k(() => [
-              X(
-                N(f.value),
+              Z(
+                D(f.value),
                 1
                 /* TEXT */
               )
@@ -178,21 +185,21 @@ const re = /* @__PURE__ */ P({
             _: 1
             /* STABLE */
           })) : b("v-if", !0),
-          E(Y, {
-            visible: !!s.value,
-            header: s.value ? x(s.value) : "",
+          E(q, {
+            visible: !!a.value,
+            header: a.value ? x(a.value) : "",
             modal: "",
             style: { width: "min(52rem, 95vw)" },
-            "onUpdate:visible": l[0] || (l[0] = (m) => {
-              m || S();
+            "onUpdate:visible": o[0] || (o[0] = (v) => {
+              v || S();
             }),
             onHide: S
           }, {
             default: k(() => [
-              s.value ? (v(), w(O(s.value.component), {
+              a.value ? (m(), w(O(a.value.component), {
                 key: 0,
                 context: t.context,
-                onResolve: V,
+                onResolve: F,
                 onCancel: S
               }, null, 40, ["context"])) : b("v-if", !0)
             ]),
@@ -205,14 +212,14 @@ const re = /* @__PURE__ */ P({
       )) : b("v-if", !0);
     };
   }
-}), te = (t, n) => {
-  const o = t.__vccOpts || t;
-  for (const [a, u] of n)
-    o[a] = u;
-  return o;
-}, ce = /* @__PURE__ */ te(ee, [["__scopeId", "data-v-50c3b741"]]);
-function ue(t = "test-plugin") {
-  const n = d({
+}), ne = (t, s) => {
+  const n = t.__vccOpts || t;
+  for (const [l, u] of s)
+    n[l] = u;
+  return n;
+}, ue = /* @__PURE__ */ ne(te, [["__scopeId", "data-v-2287d676"]]);
+function de(t = "test-plugin") {
+  const s = d({
     id: "m1",
     revision: 1,
     name: "Alice",
@@ -223,7 +230,7 @@ function ue(t = "test-plugin") {
     disliked_ingredients: [],
     favorite_cuisines: [],
     preferred_language: "en"
-  }), o = d([n.value]), a = d({
+  }), n = d([s.value]), l = d({
     household_name: "Test House",
     meal_types: [{ id: "dinner", label: "Dinner" }],
     languages: { primary: "en" },
@@ -236,7 +243,7 @@ function ue(t = "test-plugin") {
     delete: async () => {
     },
     upload: async () => ({})
-  }, s = {
+  }, a = {
     pending: d(0),
     failed: d([]),
     enqueue: async () => "outbox-id-1",
@@ -260,8 +267,8 @@ function ue(t = "test-plugin") {
     },
     api: r,
     url: (c) => c,
-    store: { currentMember: n, members: o, household: a, online: u },
-    outbox: s,
+    store: { currentMember: s, members: n, household: l, online: u },
+    outbox: a,
     i18n: { add: () => {
     } },
     t: (c) => c,
@@ -273,13 +280,13 @@ function ue(t = "test-plugin") {
   };
 }
 export {
-  se as API_VERSION,
+  ae as API_VERSION,
   B as ApiError,
   le as ConflictError,
-  ce as IntentTrigger,
-  ae as OfflineError,
-  Z as SECRET_SAUCE_UI_KEY,
-  re as Slot,
-  ue as createFakeSecretSauceUI,
-  ie as useSecretSauce
+  ue as IntentTrigger,
+  ie as OfflineError,
+  ee as SECRET_SAUCE_UI_KEY,
+  ce as Slot,
+  de as createFakeSecretSauceUI,
+  re as useSecretSauce
 };

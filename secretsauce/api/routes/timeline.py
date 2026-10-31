@@ -2,10 +2,10 @@ from datetime import date
 
 from fastapi import APIRouter, Query, Request, Response
 
-from secretsauce.api.models import ScheduleCreate, SchedulePatch
+from secretsauce.api.models import TimelineCreate, TimelinePatch
 from secretsauce.errors import ValidationError
 
-router = APIRouter(prefix="/api/schedule", tags=["schedule"])
+router = APIRouter(prefix="/api/timeline", tags=["timeline"])
 
 MAX_RANGE_DAYS = 62
 
@@ -24,7 +24,7 @@ def parse_range(from_date: str, to_date: str, max_days: int | None = None) -> No
 
 
 @router.get("")
-async def list_schedule(
+async def list_timeline(
     request: Request,
     from_date: str = Query(..., alias="from"),
     to_date: str = Query(..., alias="to"),
@@ -32,29 +32,29 @@ async def list_schedule(
     sort: str = "date,position",
 ):
     parse_range(from_date, to_date, MAX_RANGE_DAYS)
-    return await request.app.state.kernel.schedule.list_entries(
+    return await request.app.state.kernel.timeline.list_entries(
         from_date=from_date, to_date=to_date, lang=lang, sort=sort
     )
 
 
 @router.post("", status_code=201)
-async def create_schedule_entry(payload: ScheduleCreate, request: Request):
-    return await request.app.state.kernel.schedule.create_entry(payload.data(request))
+async def create_timeline_entry(payload: TimelineCreate, request: Request):
+    return await request.app.state.kernel.timeline.create_entry(payload.data(request))
 
 
 @router.get("/{entry_id}")
-async def get_schedule_entry(entry_id: str, request: Request, lang: str | None = None):
-    return await request.app.state.kernel.schedule.get_entry(entry_id, lang=lang)
+async def get_timeline_entry(entry_id: str, request: Request, lang: str | None = None):
+    return await request.app.state.kernel.timeline.get_entry(entry_id, lang=lang)
 
 
 @router.patch("/{entry_id}")
-async def patch_schedule_entry(entry_id: str, payload: SchedulePatch, request: Request):
-    return await request.app.state.kernel.schedule.update_entry(
+async def patch_timeline_entry(entry_id: str, payload: TimelinePatch, request: Request):
+    return await request.app.state.kernel.timeline.update_entry(
         entry_id=entry_id, revision=payload.revision, data=payload.data(request)
     )
 
 
 @router.delete("/{entry_id}", status_code=204)
-async def delete_schedule_entry(entry_id: str, request: Request, revision: int = Query(...)):
-    await request.app.state.kernel.schedule.delete_entry(entry_id=entry_id, revision=revision)
+async def delete_timeline_entry(entry_id: str, request: Request, revision: int = Query(...)):
+    await request.app.state.kernel.timeline.delete_entry(entry_id=entry_id, revision=revision)
     return Response(status_code=204)

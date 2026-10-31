@@ -36,8 +36,9 @@ async def test_boot_and_export(tmp_path):
         assert exp_json.status_code == 200
         payload = exp_json.json()
         assert "recipes" in payload
-        assert "schedule_entries" in payload
-        assert "cook_journal" in payload
+        assert "timeline_entries" in payload
+        assert "schedule_entries" not in payload
+        assert "cook_journal" not in payload
         assert "household_members" in payload
         assert "assets" in payload
         assert "household_config" in payload

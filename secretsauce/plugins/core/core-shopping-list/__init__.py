@@ -73,11 +73,13 @@ async def get_aggregated_shopping_list(
 
     items_map: dict[str, dict[str, Any]] = {}
 
-    # 1. Scheduled meal entries
+    # 1. Planned timeline entries
     if from_date and to_date:
         # Entries arrive with their recipe embedded (bulk-fetched); no lookup per entry.
-        entries = await ctx.schedule.list_entries(from_date=from_date, to_date=to_date)
+        entries = await ctx.timeline.list_entries(from_date=from_date, to_date=to_date)
         for entry in entries:
+            if entry.get("status") == "cooked":
+                continue
             recipe = entry.get("recipe")
             if not recipe:
                 continue

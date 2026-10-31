@@ -16,9 +16,9 @@ export const test = base.extend<{ isolatedState: void }>({
     const login = await request.post('/api/auth/login', { data: { passphrase: 'secretpassphrase' } })
     expect(login.status()).toBe(200)
     const range = `?from=${localDate(-20)}&to=${localDate(20)}`
-    const [household, ai, recipes, schedule, journal, shortlist, shopping, members] = await Promise.all([
+    const [household, ai, recipes, timeline, shortlist, shopping, members] = await Promise.all([
       json(request, '/api/household'), json(request, '/api/x/core-ai-provider/settings'), json(request, '/api/recipes?limit=200'),
-      json(request, `/api/schedule${range}`), json(request, `/api/journal${range}`), json(request, '/api/x/core-shortlist'),
+      json(request, `/api/timeline${range}`), json(request, '/api/x/core-shortlist'),
       json(request, '/api/x/core-shopping-list'), json(request, '/api/members'),
     ])
     const slotsBefore = await json(request, `/api/x/core-timeline/slots${range}`)
@@ -32,11 +32,9 @@ export const test = base.extend<{ isolatedState: void }>({
         if (!ruleIds.has(rule.id)) expect((await request.delete(`/api/x/core-recurring/rules/${rule.id}`)).ok()).toBe(true)
       }
       // Remove dependent writes before their recipe/member rows, using current revisions.
-      for (const [noun, before] of [['journal', journal], ['schedule', schedule]] as const) {
-        const ids = new Set(before.map((row: any) => row.id))
-        for (const row of await json(request, `/api/${noun}${range}`)) {
-          if (!ids.has(row.id)) expect((await request.delete(`/api/${noun}/${row.id}?revision=${row.revision}`)).status()).toBe(204)
-        }
+      const timelineIds = new Set(timeline.map((row: any) => row.id))
+      for (const row of await json(request, `/api/timeline${range}`)) {
+        if (!timelineIds.has(row.id)) expect((await request.delete(`/api/timeline/${row.id}?revision=${row.revision}`)).status()).toBe(204)
       }
       const slotsAfter = await json(request, `/api/x/core-timeline/slots${range}`)
       for (const [date, after] of Object.entries<any[]>(slotsAfter.days)) {

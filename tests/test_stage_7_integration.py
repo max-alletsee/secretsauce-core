@@ -140,8 +140,8 @@ async def test_stage_7_full_lifecycle_integration(tmp_path: Path):
         assert acc_res.status_code == 200
         assert acc_res.json()["status"] == "accepted"
 
-        # Verify entry was created in schedule
-        sched_entries = await k.schedule.list_entries(from_date="2026-09-25", to_date="2026-09-25")
+        # Verify entry was created in timeline
+        sched_entries = await k.timeline.list_entries(from_date="2026-09-25", to_date="2026-09-25")
         assert len(sched_entries) == 1
         assert sched_entries[0]["recipe_id"] == rec_id
 

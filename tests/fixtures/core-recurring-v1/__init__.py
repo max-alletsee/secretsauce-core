@@ -76,7 +76,7 @@ async def materialize_rules(ctx: PluginContext) -> dict[str, int]:
 
     today = date.today()
     horizon = [today + timedelta(days=i) for i in range(HORIZON_DAYS)]
-    existing = await ctx.schedule.list_entries(
+    existing = await ctx.timeline.list_entries(
         from_date=horizon[0].isoformat(), to_date=horizon[-1].isoformat()
     )
     planned = {(e["date"], e["meal_type"]) for e in existing}
@@ -87,7 +87,7 @@ async def materialize_rules(ctx: PluginContext) -> dict[str, int]:
             slot = (day.isoformat(), rule["meal_type"])
             if rule["weekday"] != day.weekday() or slot in planned:
                 continue
-            await ctx.schedule.create_entry(
+            await ctx.timeline.create_entry(
                 {
                     "date": slot[0],
                     "meal_type": rule["meal_type"],

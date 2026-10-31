@@ -8,10 +8,9 @@ from secretsauce.events import EventLog, acting_as
 from secretsauce.hooks import HookRegistry
 from secretsauce.nouns.assets import AssetsRepo
 from secretsauce.nouns.household import HouseholdRepo
-from secretsauce.nouns.journal import JournalRepo
 from secretsauce.nouns.members import MembersRepo
 from secretsauce.nouns.recipes import RecipesRepo
-from secretsauce.nouns.schedule import ScheduleRepo
+from secretsauce.nouns.timeline import TimelineRepo
 
 
 class Repos:
@@ -23,8 +22,7 @@ class Repos:
         self.recipes = RecipesRepo(
             db, household_repo=self.household, hooks=self.hooks, events=self.events
         )
-        self.schedule = ScheduleRepo(db, recipes_repo=self.recipes, events=self.events)
-        self.journal = JournalRepo(db, recipes_repo=self.recipes, events=self.events)
+        self.timeline = TimelineRepo(db, recipes_repo=self.recipes, events=self.events)
         self.members = MembersRepo(db, events=self.events)
         self.assets = AssetsRepo(db, uploads_dir=uploads_dir, events=self.events)
 
@@ -120,29 +118,22 @@ async def test_update_origin_is_per_write_not_inherited(repos):
 
 async def test_writes_inside_plugin_context_default_to_plugin_origin(repos):
     with acting_as("plugin:core-recurring"):
-        entry = await repos.schedule.create_entry(
+        entry = await repos.timeline.create_entry(
             {"date": "2026-09-24", "meal_type": "dinner"}
         )
     assert entry["origin"] == "plugin:core-recurring"
-    [e] = await repos.events_named("schedule:created")
+    [e] = await repos.events_named("timeline:created")
     assert e["origin"] == "plugin:core-recurring"
 
 
-async def test_schedule_journal_member_asset_events(repos):
+async def test_timeline_member_asset_events(repos):
     await repos.members.create_member({"name": "Survivor"})
     member = await repos.members.create_member({"name": "Ann"})
     await repos.members.update_member(member["id"], 1, {"name": "Anna"})
 
-    entry = await repos.schedule.create_entry({"date": "2026-09-24", "meal_type": "dinner"})
-    await repos.schedule.update_entry(entry["id"], 1, {"note": "early"})
-
-    journal = await repos.journal.create_entry(
-        {"date": "2026-09-24", "meal_type": "dinner", "schedule_entry_id": entry["id"]}
-    )
-    await repos.journal.update_entry(journal["id"], 1, {"notes": "tasty"})
-    await repos.journal.delete_entry(journal["id"], revision=2)
-
-    await repos.schedule.delete_entry(entry["id"], revision=2)
+    entry = await repos.timeline.create_entry({"date": "2026-09-24", "meal_type": "dinner"})
+    await repos.timeline.update_entry(entry["id"], 1, {"note": "early", "status": "cooked"})
+    await repos.timeline.delete_entry(entry["id"], revision=2)
 
     asset = await repos.assets.save_asset(
         "member", member["id"], "a.png", "image/png", b"\x89PNG\r\n\x1a\n" + b"0" * 16
@@ -158,28 +149,26 @@ async def test_schedule_journal_member_asset_events(repos):
         "member:created",  # survivor
         "member:created",
         "member:updated",
-        "schedule:created",
-        "schedule:updated",
-        "journal:created",
-        "journal:updated",
-        "journal:deleted",
-        "schedule:deleted",
+        "timeline:created",
+        "timeline:updated",
+        "timeline:deleted",
         "asset:created",
         "asset:deleted",
         "member:deleted",
     ]
-    [sched_update] = await repos.events_named("schedule:updated")
-    assert sched_update["entity_type"] == "schedule_entry"
-    assert sched_update["data"]["after"]["note"] == "early"
-    assert "recipe" not in sched_update["data"]["after"]
+    [tl_update] = await repos.events_named("timeline:updated")
+    assert tl_update["entity_type"] == "timeline_entry"
+    assert tl_update["data"]["after"]["note"] == "early"
+    assert tl_update["data"]["after"]["status"] == "cooked"
+    assert "recipe" not in tl_update["data"]["after"]
 
 
 async def test_missing_required_fields_raise_validation_errors(repos):
     with pytest.raises(ValidationError):
         await repos.recipes.create_recipe({"title": "No language"})
     with pytest.raises(ValidationError):
-        await repos.schedule.create_entry({"meal_type": "dinner"})
+        await repos.timeline.create_entry({"meal_type": "dinner"})
     with pytest.raises(ValidationError):
-        await repos.journal.create_entry({"date": "2026-09-24"})
+        await repos.timeline.create_entry({"date": "2026-09-24"})
     with pytest.raises(ValidationError):
         await repos.members.create_member({})

@@ -20,23 +20,23 @@ it('deactivation and reactivation do not orphan or duplicate plugin subscription
     let delivered = 0, fail = false
     const diagnostic = vi.spyOn(console, 'error').mockImplementation(() => {})
     const loader = createPluginLoader({...harness,makeSecretSauceUI:harness.ss,importModule:async()=>({default:(ss:any)=>{
-      ss.on('schedule:created',()=>{delivered++})
+      ss.on('timeline:created',()=>{delivered++})
       if (fail) throw new Error('Activation failed after subscribing')
     }})})
     const plugin = {id:'timeline',ui_entry:'/timeline.js',name:'Timeline'}
     await loader.activatePlugin(plugin); stream.connect()
     EventSourceDouble.current.frame('hello',{kind:'hello',boot_id:'boot',seq:0})
-    EventSourceDouble.current.frame('event',{kind:'event',name:'schedule:created',seq:1})
+    EventSourceDouble.current.frame('event',{kind:'event',name:'timeline:created',seq:1})
     expect(delivered).toBe(1)
     loader.deactivatePlugin('timeline')
-    EventSourceDouble.current.frame('event',{kind:'event',name:'schedule:created',seq:2})
+    EventSourceDouble.current.frame('event',{kind:'event',name:'timeline:created',seq:2})
     expect(delivered).toBe(1)
     await loader.activatePlugin(plugin)
-    EventSourceDouble.current.frame('event',{kind:'event',name:'schedule:created',seq:3})
+    EventSourceDouble.current.frame('event',{kind:'event',name:'timeline:created',seq:3})
     expect(delivered).toBe(2)
     loader.deactivatePlugin('timeline'); fail = true
     await loader.activatePlugin(plugin)
-    EventSourceDouble.current.frame('event',{kind:'event',name:'schedule:created',seq:4})
+    EventSourceDouble.current.frame('event',{kind:'event',name:'timeline:created',seq:4})
     expect(delivered).toBe(2)
     expect(loader.loadedPlugins.has('timeline')).toBe(false)
     expect(diagnostic).toHaveBeenCalledWith('Failed to activate plugin timeline:', expect.any(Error))

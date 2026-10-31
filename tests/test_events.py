@@ -61,7 +61,7 @@ async def test_wildcard_subscription(tmp_path):
     async with db.transaction() as tx:
         await event_log.append(tx, name="recipe:created")
         await event_log.append(tx, name="recipe:updated")
-        await event_log.append(tx, name="schedule:created")
+        await event_log.append(tx, name="timeline:created")
 
     await dispatcher.drain_to_head()
     assert received == ["recipe:created", "recipe:updated"]

@@ -5,7 +5,7 @@ import uuid
 import aiosqlite
 
 from secretsauce.db import Database
-from secretsauce.errors import ConflictError, NotFoundError
+from secretsauce.errors import ConflictError, NotFoundError, ValidationError
 from secretsauce.events import EventLog, resolve_origin
 from secretsauce.nouns._common import (
     emit_noun_event,
@@ -18,8 +18,20 @@ from secretsauce.nouns._common import (
 from secretsauce.nouns.recipes import RecipesRepo
 from secretsauce.util import now_iso
 
+VALID_STATUSES = ("planned", "cooked")
 
-def _deserialize_schedule(row: dict[str, Any]) -> dict[str, Any]:
+
+def _validate_status(status: Any) -> str:
+    value = status if status is not None else "planned"
+    if value not in VALID_STATUSES:
+        raise ValidationError(
+            "Status must be 'planned' or 'cooked'",
+            fields={"status": "Must be 'planned' or 'cooked'"},
+        )
+    return value
+
+
+def _deserialize_timeline(row: dict[str, Any]) -> dict[str, Any]:
     res = dict(row)
     participants = res.get("participant_member_ids")
     if isinstance(participants, str):
@@ -35,7 +47,7 @@ def _deserialize_schedule(row: dict[str, Any]) -> dict[str, Any]:
     return res
 
 
-class ScheduleRepo:
+class TimelineRepo:
     def __init__(
         self,
         db: Database,
@@ -48,11 +60,11 @@ class ScheduleRepo:
 
     async def _row(self, entry_id: str, conn: aiosqlite.Connection | None) -> dict[str, Any]:
         row = await self.db.read_one(
-            "SELECT * FROM schedule_entries WHERE id = ?;", (entry_id,), conn=conn
+            "SELECT * FROM timeline_entries WHERE id = ?;", (entry_id,), conn=conn
         )
         if row is None:
-            raise NotFoundError(f"Schedule entry '{entry_id}' not found")
-        return _deserialize_schedule(row)
+            raise NotFoundError(f"Timeline entry '{entry_id}' not found")
+        return _deserialize_timeline(row)
 
     async def _embed_recipes(
         self, entries: list[dict[str, Any]], conn: aiosqlite.Connection | None
@@ -77,16 +89,17 @@ class ScheduleRepo:
         self, data: dict[str, Any], conn: aiosqlite.Connection | None = None
     ) -> dict[str, Any]:
         require_fields(data, "date", "meal_type")
+        status = _validate_status(data.get("status"))
 
         async def _do_create(writer_conn: aiosqlite.Connection) -> dict[str, Any]:
             entry_id = data.get("id") or str(uuid.uuid4()).lower()
             existing = await self.db.read_one(
-                "SELECT * FROM schedule_entries WHERE id = ?;", (entry_id,), conn=writer_conn
+                "SELECT * FROM timeline_entries WHERE id = ?;", (entry_id,), conn=writer_conn
             )
             if existing is not None:
                 raise ConflictError(
-                    f"Schedule entry '{entry_id}' already exists",
-                    current=_deserialize_schedule(existing),
+                    f"Timeline entry '{entry_id}' already exists",
+                    current=_deserialize_timeline(existing),
                 )
 
             now = now_iso()
@@ -94,11 +107,12 @@ class ScheduleRepo:
             origin = resolve_origin(data.get("origin"))
             await writer_conn.execute(
                 """
-                INSERT INTO schedule_entries (
+                INSERT INTO timeline_entries (
                     id, revision, date, meal_type, entry_type, recipe_id,
                     title, note, servings_override, position, assigned_cook_id,
-                    participant_member_ids, created_at, updated_at, actor_member_id, origin
-                ) VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    participant_member_ids, status, cooked_by_member_id,
+                    created_at, updated_at, actor_member_id, origin
+                ) VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                 """,
                 (
                     entry_id,
@@ -112,6 +126,8 @@ class ScheduleRepo:
                     to_int(data.get("position", 0), "position"),
                     data.get("assigned_cook_id"),
                     json.dumps(data.get("participant_member_ids") or []),
+                    status,
+                    data.get("cooked_by_member_id"),
                     now,
                     now,
                     actor_member_id,
@@ -122,8 +138,8 @@ class ScheduleRepo:
             await emit_noun_event(
                 self.events,
                 writer_conn,
-                "schedule:created",
-                "schedule_entry",
+                "timeline:created",
+                "timeline_entry",
                 entry_id,
                 revision=1,
                 after=created,
@@ -146,12 +162,13 @@ class ScheduleRepo:
             if current["revision"] != revision:
                 raise ConflictError("Revision mismatch", current=current)
 
+            status = _validate_status(data["status"] if "status" in data else current["status"])
             new_revision = current["revision"] + 1
             actor_member_id = data.get("actor_member_id")
             origin = resolve_origin(data.get("origin"))
             await writer_conn.execute(
                 """
-                UPDATE schedule_entries SET
+                UPDATE timeline_entries SET
                     revision = ?,
                     date = ?,
                     meal_type = ?,
@@ -163,6 +180,8 @@ class ScheduleRepo:
                     position = ?,
                     assigned_cook_id = ?,
                     participant_member_ids = ?,
+                    status = ?,
+                    cooked_by_member_id = ?,
                     updated_at = ?,
                     actor_member_id = ?,
                     origin = ?
@@ -182,6 +201,8 @@ class ScheduleRepo:
                     to_int(merged_value(data, current, "position", 0) or 0, "position"),
                     merged_value(data, current, "assigned_cook_id"),
                     json.dumps(merged_value(data, current, "participant_member_ids") or []),
+                    status,
+                    merged_value(data, current, "cooked_by_member_id"),
                     now_iso(),
                     actor_member_id,
                     origin,
@@ -192,8 +213,8 @@ class ScheduleRepo:
             await emit_noun_event(
                 self.events,
                 writer_conn,
-                "schedule:updated",
-                "schedule_entry",
+                "timeline:updated",
+                "timeline_entry",
                 entry_id,
                 revision=new_revision,
                 before=current,
@@ -216,23 +237,22 @@ class ScheduleRepo:
             if revision is not None and current["revision"] != revision:
                 raise ConflictError("Revision mismatch", current=current)
 
-            # Section 4.4: Delete assets and attributes for schedule entry
             await writer_conn.execute(
-                "DELETE FROM assets WHERE entity_type = 'schedule_entry' AND entity_id = ?;",
+                "DELETE FROM assets WHERE entity_type = 'timeline_entry' AND entity_id = ?;",
                 (entry_id,),
             )
             await writer_conn.execute(
-                "DELETE FROM entity_attributes WHERE entity_type = 'schedule_entry' AND entity_id = ?;",
+                "DELETE FROM entity_attributes WHERE entity_type = 'timeline_entry' AND entity_id = ?;",
                 (entry_id,),
             )
             await writer_conn.execute(
-                "DELETE FROM schedule_entries WHERE id = ?;", (entry_id,)
+                "DELETE FROM timeline_entries WHERE id = ?;", (entry_id,)
             )
             await emit_noun_event(
                 self.events,
                 writer_conn,
-                "schedule:deleted",
-                "schedule_entry",
+                "timeline:deleted",
+                "timeline_entry",
                 entry_id,
                 revision=current["revision"],
                 before=current,
@@ -250,14 +270,14 @@ class ScheduleRepo:
     ) -> list[dict[str, Any]]:
         rows = await self.db.read_all(
             """
-            SELECT * FROM schedule_entries
+            SELECT * FROM timeline_entries
             WHERE date >= ? AND date <= ?
             ORDER BY date ASC, position ASC;
             """,
             (from_date, to_date),
             conn=conn,
         )
-        return await self._embed_recipes([_deserialize_schedule(r) for r in rows], conn)
+        return await self._embed_recipes([_deserialize_timeline(r) for r in rows], conn)
 
     create = create_entry
 

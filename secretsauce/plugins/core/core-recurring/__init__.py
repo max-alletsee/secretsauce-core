@@ -367,7 +367,7 @@ async def approve_rule_occurrence(
         else:
             entry_data["title"] = rule["title"]
 
-        entry = await ctx.schedule.create_entry(entry_data, conn=tx)
+        entry = await ctx.timeline.create_entry(entry_data, conn=tx)
         await tx.execute(
             """INSERT INTO plugin_core_recurring_materialized (rule_id, date, status, entry_id)
                VALUES (?, ?, 'approved', ?)""",

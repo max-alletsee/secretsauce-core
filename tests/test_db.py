@@ -19,8 +19,9 @@ async def test_database_init_and_pragmas(tmp_path):
         tables = await db.read_all("SELECT name FROM sqlite_master WHERE type='table';")
         table_names = {t["name"] for t in tables}
         assert "recipes" in table_names
-        assert "schedule_entries" in table_names
-        assert "cook_journal" in table_names
+        assert "timeline_entries" in table_names
+        assert "schedule_entries" not in table_names
+        assert "cook_journal" not in table_names
         assert "household_members" in table_names
         assert "assets" in table_names
         assert "entity_attributes" in table_names

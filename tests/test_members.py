@@ -66,24 +66,24 @@ async def test_member_delete_cleans_participants(db):
     m1 = await repo.create_member({"name": "Member 1"})
     m2 = await repo.create_member({"name": "Member 2"})
 
-    # Insert a schedule entry referencing m1 and m2 in participant_member_ids
+    # Insert a timeline entry referencing m1 and m2 in participant_member_ids
     async with db.transaction() as conn:
         await conn.execute(
             """
-            INSERT INTO schedule_entries (
+            INSERT INTO timeline_entries (
                 id, revision, date, meal_type, entry_type,
                 participant_member_ids, created_at, updated_at, origin
             ) VALUES (?, 1, '2026-09-10', 'dinner', 'note', ?, '2026-09-09T12:00:00Z', '2026-09-09T12:00:00Z', 'member');
             """,
-            ("sched-1", f'["{m1["id"]}", "{m2["id"]}"]'),
+            ("tl-1", f'["{m1["id"]}", "{m2["id"]}"]'),
         )
 
     # Delete m1
     await repo.delete_member(m1["id"], revision=1)
 
-    # Verify schedule entry has m1 removed from participant_member_ids
+    # Verify timeline entry has m1 removed from participant_member_ids
     row = await db.read_one(
-        "SELECT participant_member_ids FROM schedule_entries WHERE id = 'sched-1';"
+        "SELECT participant_member_ids FROM timeline_entries WHERE id = 'tl-1';"
     )
     import json
 

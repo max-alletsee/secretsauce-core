@@ -15,13 +15,12 @@ from secretsauce.api.routes.auth import router as auth_router
 from secretsauce.api.routes.export import router as export_router
 from secretsauce.api.routes.household import router as household_router
 from secretsauce.api.routes.jobs import router as jobs_router
-from secretsauce.api.routes.journal import router as journal_router
 from secretsauce.api.routes.members import router as members_router
 from secretsauce.api.routes.plugins import router as plugins_router
 from secretsauce.api.routes.pwa import render_index_html, router as pwa_router
 from secretsauce.api.routes.recipes import router as recipes_router
-from secretsauce.api.routes.schedule import router as schedule_router
 from secretsauce.api.routes.setup import router as setup_router
+from secretsauce.api.routes.timeline import router as timeline_router
 from secretsauce.auth import AuthMiddleware
 from secretsauce.boot import BootedKernel, boot
 from secretsauce.config import Config
@@ -101,8 +100,7 @@ def configure_app(app: FastAPI) -> None:
         household_router,
         members_router,
         recipes_router,
-        schedule_router,
-        journal_router,
+        timeline_router,
         assets_router,
         attributes_router,
         plugins_router,

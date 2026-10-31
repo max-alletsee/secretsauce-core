@@ -6,10 +6,10 @@ test('window_extends_and_today_resets_without_persistence', async ({ page }) => 
   await login(page)
   await page.goto('/timeline')
   await expect(page.locator('[data-timeline-date]')).toHaveCount(9)
-  await page.getByRole('button', {name:'Show 2 earlier days',exact:true}).click()
-  await expect(page.locator('[data-timeline-date]')).toHaveCount(11)
+  await page.getByRole('button', {name:'Show 4 earlier days',exact:true}).click()
+  await expect(page.locator('[data-timeline-date]')).toHaveCount(13)
   await page.getByRole('button', {name:'Show 5 more days',exact:true}).click()
-  await expect(page.locator('[data-timeline-date]')).toHaveCount(16)
+  await expect(page.locator('[data-timeline-date]')).toHaveCount(18)
   await page.getByRole('button', {name:'Today',exact:true}).click()
   await expect(page.locator('[data-timeline-date]')).toHaveCount(9)
   const past = page.locator('.past-day-line').first()
@@ -20,7 +20,7 @@ test('window_extends_and_today_resets_without_persistence', async ({ page }) => 
 test('repeated window expansion loads slots and meals beyond 92 days', async ({ page }) => {
   await login(page)
   const remoteDay = day(91)
-  const response = await page.request.post('/api/schedule', {data:{date:remoteDay,meal_type:'dinner',entry_type:'note',title:'Far future meal'}})
+  const response = await page.request.post('/api/timeline', {data:{date:remoteDay,meal_type:'dinner',entry_type:'note',title:'Far future meal'}})
   expect(response.status()).toBe(201)
   const entry = await response.json()
   try {
@@ -37,14 +37,14 @@ test('repeated window expansion loads slots and meals beyond 92 days', async ({ 
   await expect(page.locator('.timeline-page > [data-pc-name=message]')).toHaveCount(0)
   } finally {
     // This date is outside the shared ±20-day fixture; clean up only our row.
-    const current = await page.request.get(`/api/schedule/${entry.id}`)
-    if (current.ok()) expect((await page.request.delete(`/api/schedule/${entry.id}?revision=${(await current.json()).revision}`)).status()).toBe(204)
+    const current = await page.request.get(`/api/timeline/${entry.id}`)
+    if (current.ok()) expect((await page.request.delete(`/api/timeline/${entry.id}?revision=${(await current.json()).revision}`)).status()).toBe(204)
   }
 })
 
 test('unmatched legacy slots keep meal actions without offering removal of a nonexistent override', async ({ page }) => {
   await login(page)
-  expect((await page.request.post('/api/schedule', {data:{date:day(),meal_type:'Late Snack!',entry_type:'note',title:'Legacy snack'}})).status()).toBe(201)
+  expect((await page.request.post('/api/timeline', {data:{date:day(),meal_type:'Late Snack!',entry_type:'note',title:'Legacy snack'}})).status()).toBe(201)
   await page.goto('/timeline')
   const slot = page.locator('.day-card.is-today [data-slot-id="Late Snack!"]')
   await expect(slot).toContainText('Legacy snack')
@@ -97,7 +97,7 @@ test('one-off slots, skip undo and exact notes persist through the real Timeline
   await dialog.getByRole('button',{name:'Add meal',exact:true}).click()
   await expect(dialog).not.toBeVisible()
   await expect(brunch).toContainText('Dining with neighbours')
-  const entries = (await (await page.request.get(`/api/schedule?from=${day()}&to=${day()}`)).json())
+  const entries = (await (await page.request.get(`/api/timeline?from=${day()}&to=${day()}`)).json())
   expect(entries.find((entry:any)=>entry.meal_type==='brunch').title).toBe('Dining with neighbours')
   await brunch.getByRole('button',{name:'Slot actions',exact:true}).click()
   await page.getByRole('menuitem',{name:'Remove slot',exact:true}).click()
@@ -111,16 +111,16 @@ test('another_devices_schedule_write_updates_the_visible_feed', async ({ page, r
   await login(page); await page.goto('/timeline')
   expect((await request.patch('/api/household',{data:{meal_types:[{id:'breakfast',label:'Breakfast'},{id:'lunch',label:'Lunch'},{id:'dinner',label:'Dinner'}]}})).ok()).toBe(true)
   await page.reload()
-  const created = await request.post('/api/schedule',{data:{date:day(),meal_type:'Dinner',entry_type:'note',title:'Live device meal'}})
+  const created = await request.post('/api/timeline',{data:{date:day(),meal_type:'Dinner',entry_type:'note',title:'Live device meal'}})
   expect(created.status()).toBe(201)
   const entry = await created.json()
   const card = page.locator('.schedule-card').filter({hasText:'Live device meal'})
   await expect(card).toBeVisible()
-  const updated = await request.patch(`/api/schedule/${entry.id}`,{data:{revision:entry.revision,title:'Renamed live meal'}})
+  const updated = await request.patch(`/api/timeline/${entry.id}`,{data:{revision:entry.revision,title:'Renamed live meal'}})
   expect(updated.ok()).toBe(true)
   const current = await updated.json()
   await expect(page.locator('.schedule-card').filter({hasText:'Renamed live meal'})).toBeVisible()
-  expect((await request.delete(`/api/schedule/${entry.id}?revision=${current.revision}`)).status()).toBe(204)
+  expect((await request.delete(`/api/timeline/${entry.id}?revision=${current.revision}`)).status()).toBe(204)
   await expect(page.locator('.schedule-card').filter({hasText:'Renamed live meal'})).toHaveCount(0)
   expect((await request.put(`/api/x/core-timeline/days/${day(1)}/slots/lunch`,{data:{kind:'skip'}})).ok()).toBe(true)
   await expect(page.locator(`.day-card[data-timeline-date="${day(1)}"] [data-slot-id=lunch]`)).toContainText('Skipped this day')
@@ -147,7 +147,7 @@ test('add meal uses the real shortlist, servings and an exact quick-note title',
   await dialog.locator('.recipe-result').filter({hasText:'Shortlisted Timeline soup'}).getByRole('button', {name:'Schedule',exact:true}).click()
   await expect(dialog).not.toBeVisible()
   await expect(slot).toContainText('Shortlisted Timeline soup')
-  const scheduled = (await (await page.request.get(`/api/schedule?from=${day()}&to=${day()}`)).json()).find((row:any) => row.recipe_id===recipe.id)
+  const scheduled = (await (await page.request.get(`/api/timeline?from=${day()}&to=${day()}`)).json()).find((row:any) => row.recipe_id===recipe.id)
   expect(scheduled.servings_override).toBe(4.5)
   await trigger.scrollIntoViewIfNeeded(); await trigger.click()
   await page.getByRole('menuitem', {name:'Add another meal',exact:true}).click()
@@ -183,12 +183,12 @@ test('planner acceptance resolves one-off choices outside its initial loaded dat
     const response = await accepted
     expect(response.ok()).toBe(true)
     entryId = (await response.json()).schedule_entry_id
-    const entry = await (await page.request.get(`/api/schedule/${entryId}`)).json()
+    const entry = await (await page.request.get(`/api/timeline/${entryId}`)).json()
     expect(entry.date).toBe(date); expect(entry.meal_type).toBe('far-brunch')
   } finally {
     if (entryId) {
-      const entry = await (await page.request.get(`/api/schedule/${entryId}`)).json()
-      await page.request.delete(`/api/schedule/${entryId}?revision=${entry.revision}`)
+      const entry = await (await page.request.get(`/api/timeline/${entryId}`)).json()
+      await page.request.delete(`/api/timeline/${entryId}?revision=${entry.revision}`)
     }
     expect((await page.request.delete(`/api/x/core-timeline/days/${date}/slots/far-brunch`)).ok()).toBe(true)
   }
@@ -216,9 +216,9 @@ test('returning to Timeline and disabling reenabling it keeps one live feed subs
       const url = new URL(req.url())
       if (url.searchParams.get('from') !== day(-2)) return
       if (url.pathname === '/api/x/core-timeline/slots' && url.searchParams.get('to') === day(6)) feedReads.push(req.url())
-      if (url.pathname === '/api/schedule' && url.searchParams.get('to') === day(14)) warmReads.push(req.url())
+      if (url.pathname === '/api/timeline' && url.searchParams.get('to') === day(14)) warmReads.push(req.url())
     })
-    expect((await request.post('/api/schedule', {data:{date:day(),meal_type:'dinner',entry_type:'note',title:'Single subscription meal'}})).status()).toBe(201)
+    expect((await request.post('/api/timeline', {data:{date:day(),meal_type:'dinner',entry_type:'note',title:'Single subscription meal'}})).status()).toBe(201)
     await expect(page.locator('.day-card.is-today')).toContainText('Single subscription meal')
     expect(feedReads).toHaveLength(1)
     expect(warmReads).toHaveLength(1)
@@ -230,7 +230,7 @@ test.describe('browser-local cache window', () => {
   test('cache warming covers the local horizon just after midnight, not the UTC day', async ({page}) => {
     await page.clock.install({time:new Date('2026-10-04T00:30:00+02:00')})
     const queries:URL[]=[]
-    page.on('request',req=>{const url=new URL(req.url());if(url.pathname==='/api/schedule')queries.push(url)})
+    page.on('request',req=>{const url=new URL(req.url());if(url.pathname==='/api/timeline')queries.push(url)})
     await login(page)
     await expect(page.locator('.day-card.is-today')).toHaveAttribute('data-timeline-date','2026-10-04')
     await expect.poll(()=>queries.some(url=>url.searchParams.get('from')==='2026-10-02'&&url.searchParams.get('to')==='2026-10-18')).toBe(true)
@@ -241,8 +241,8 @@ test('phone sidebar precedes the feed, widgets start collapsed, and two meal slo
   await page.setViewportSize({width:390,height:844})
   await login(page)
   expect((await request.patch('/api/household',{data:{meal_types:[{id:'breakfast',label:'Breakfast'},{id:'lunch',label:'Lunch'},{id:'dinner',label:'Dinner'}]}})).ok()).toBe(true)
-  const createdLunch = await request.post('/api/schedule',{data:{date:day(),meal_type:'lunch',entry_type:'note',title:'Quick noodle bowl',servings_override:2}})
-  const createdDinner = await request.post('/api/schedule',{data:{date:day(),meal_type:'dinner',entry_type:'note',title:'Roasted vegetables',servings_override:2}})
+  const createdLunch = await request.post('/api/timeline',{data:{date:day(),meal_type:'lunch',entry_type:'note',title:'Quick noodle bowl',servings_override:2}})
+  const createdDinner = await request.post('/api/timeline',{data:{date:day(),meal_type:'dinner',entry_type:'note',title:'Roasted vegetables',servings_override:2}})
   expect(createdLunch.status()).toBe(201)
   expect(createdDinner.status()).toBe(201)
   const lunchEntry = await createdLunch.json()
@@ -262,8 +262,8 @@ test('phone sidebar precedes the feed, widgets start collapsed, and two meal slo
     expect(secondSlotBox.y + secondSlotBox.height).toBeLessThanOrEqual(600)
     expect(thirdSlotBox.y + thirdSlotBox.height).toBeLessThanOrEqual(660)
   } finally {
-    await request.delete(`/api/schedule/${lunchEntry.id}?revision=${lunchEntry.revision}`)
-    await request.delete(`/api/schedule/${dinnerEntry.id}?revision=${dinnerEntry.revision}`)
+    await request.delete(`/api/timeline/${lunchEntry.id}?revision=${lunchEntry.revision}`)
+    await request.delete(`/api/timeline/${dinnerEntry.id}?revision=${dinnerEntry.revision}`)
   }
 })
 

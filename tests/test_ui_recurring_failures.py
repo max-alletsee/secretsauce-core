@@ -34,7 +34,7 @@ async def test_skipped_slots_hide_suggestions_and_block_approval_while_occupied_
         # Occupying WEDNESDAY_2 does NOT hide the suggestion or block approving it
         manual = (
             await client.post(
-                '/api/schedule',
+                '/api/timeline',
                 json={'date': WEDNESDAY_2, 'meal_type': 'Dinner', 'entry_type': 'note', 'title': 'Manual occupied meal'},
             )
         ).json()

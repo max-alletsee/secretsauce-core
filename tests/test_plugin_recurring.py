@@ -56,8 +56,8 @@ async def test_recurring_plugin_rules_suggestions_approve_dismiss_and_edit(tmp_p
         assert rule_data["servings"] == 2.5
         rule_id = rule_data["id"]
 
-        # 2. Creating a rule does NOT automatically materialize schedule entries!
-        sched_initial = await k.schedule.list_entries(
+        # 2. Creating a rule does NOT automatically materialize timeline entries!
+        sched_initial = await k.timeline.list_entries(
             from_date=today.isoformat(),
             to_date=(today + timedelta(days=14)).isoformat(),
         )
@@ -128,9 +128,9 @@ async def test_recurring_plugin_rules_suggestions_approve_dismiss_and_edit(tmp_p
         ).json()
         assert sug_after_dismiss == []
 
-        # 7. Deleting the approved schedule entry from the timeline does NOT resurrect the ghost suggestion
+        # 7. Deleting the approved timeline entry from the timeline does NOT resurrect the ghost suggestion
         del_entry_res = await k.client.delete(
-            f"/api/schedule/{approved_entry['id']}?revision={approved_entry['revision']}"
+            f"/api/timeline/{approved_entry['id']}?revision={approved_entry['revision']}"
         )
         assert del_entry_res.status_code == 204
         sug_after_delete_entry = (
@@ -179,7 +179,7 @@ async def test_recurring_plugin_rules_suggestions_approve_dismiss_and_edit(tmp_p
 
         del_rule_res = await k.client.delete(f"/api/x/core-recurring/rules/{rule_id}")
         assert del_rule_res.status_code == 200
-        surviving = await k.client.get(f"/api/schedule/{next_entry_id}")
+        surviving = await k.client.get(f"/api/timeline/{next_entry_id}")
         assert surviving.status_code == 200
         assert surviving.json()["id"] == next_entry_id
 

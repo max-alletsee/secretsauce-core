@@ -11,7 +11,7 @@ async def test_ratings_upvote_downvote_and_attribute_mirroring(tmp_path: Path):
         assert p["state"] == "active"
         assert p["name"] == "core-ratings"
 
-        # Create member, recipe, and journal entry
+        # Create member, recipe, and cooked timeline entry
         mem_res = await client.post("/api/members", json={"name": "Alice", "preferred_language": "en"})
         assert mem_res.status_code == 201
         member_id = mem_res.json()["id"]
@@ -28,22 +28,27 @@ async def test_ratings_upvote_downvote_and_attribute_mirroring(tmp_path: Path):
         recipe_id = recipe["id"]
         group_id = recipe["group_id"]
 
-        journ_res = await client.post("/api/journal", json={
+        tl_res = await client.post("/api/timeline", json={
             "date": "2026-09-13",
             "meal_type": "dinner",
             "recipe_id": recipe_id,
-            "servings": 4,
+            "servings_override": 4,
+            "status": "cooked",
         })
-        assert journ_res.status_code == 201
-        journal_id = journ_res.json()["id"]
+        assert tl_res.status_code == 201
+        timeline_entry_id = tl_res.json()["id"]
 
         # Cast an upvote (+1)
         vote_res = await client.put(
             "/api/x/core-ratings",
-            json={"journal_id": journal_id, "member_id": member_id, "score": 1},
+            json={"timeline_entry_id": timeline_entry_id, "member_id": member_id, "score": 1},
         )
         assert vote_res.status_code == 200
         assert vote_res.json()["net_score"] == 1
+
+        get_res = await client.get(f"/api/x/core-ratings?timeline_entry_id={timeline_entry_id}")
+        assert get_res.status_code == 200
+        assert get_res.json() == {"scores": [{"member_id": member_id, "score": 1}], "net_score": 1}
 
         # Check attribute mirrored to recipe group
         attrs = await k.attributes.get_attributes("recipe", group_id)
@@ -51,7 +56,7 @@ async def test_ratings_upvote_downvote_and_attribute_mirroring(tmp_path: Path):
 
         # Delete vote
         del_res = await client.delete(
-            f"/api/x/core-ratings?journal_id={journal_id}&member_id={member_id}"
+            f"/api/x/core-ratings?timeline_entry_id={timeline_entry_id}&member_id={member_id}"
         )
         assert del_res.status_code == 200
 

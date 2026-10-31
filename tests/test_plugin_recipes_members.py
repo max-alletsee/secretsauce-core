@@ -24,7 +24,9 @@ async def test_plugin_ui_bundle_serving(tmp_path: Path):
     async with make_kernel(tmp_path, auto_setup=True) as k:
         client = k.client
 
-        for pid in ["core-members", "core-recipes", "core-shortlist", "core-timeline", "core-cook-tracker", "core-ratings"]:
+        assert await k.plugins.get_plugin("core-cook-tracker") is None
+
+        for pid in ["core-members", "core-recipes", "core-shortlist", "core-timeline", "core-ratings"]:
             res = await client.get(f"/api/plugins/{pid}/ui.js")
             assert res.status_code == 200
             assert "javascript" in res.headers["content-type"].lower()

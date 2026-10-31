@@ -73,7 +73,7 @@ Generates and downloads a complete system backup as a zip file.
 ### `GET /api/export/json`
 Exports all kernel nouns as a JSON payload for interop.
 - **Status:** `200 OK`
-- **Response Keys:** `recipes`, `schedule_entries`, `cook_journal`, `household_members`, `assets`, `household_config`.
+- **Response Keys:** `recipes`, `timeline_entries`, `household_members`, `assets`, `household_config`.
 
 ---
 
@@ -234,50 +234,31 @@ Updates one row. Body: `{"revision": n, ...fields}`. `409 conflict` on a stale r
 
 ---
 
-## 7. Schedule & Cook Journal Endpoints
+## 7. Timeline Entries Endpoints (`/api/timeline`)
 
-### `GET /api/schedule`
-Entries between `from` and `to` (inclusive, `YYYY-MM-DD`, at most 62 days apart), ordered by date and position, each with its `recipe` embedded.
+### `GET /api/timeline`
+Timeline Entries between `from` and `to` (inclusive, `YYYY-MM-DD`, at most 62 days apart), ordered by date and position, each with its `recipe` embedded.
 
-### `POST /api/schedule`
+### `POST /api/timeline`
 - **Request:**
   ```json
   {
     "date": "2026-09-15",
     "meal_type": "dinner",
+    "entry_type": "recipe",
     "recipe_id": "rec-123_en",
     "title": null,
     "note": "Early dinner",
     "servings_override": 4,
     "position": 0,
     "assigned_cook_id": "mem_alex",
-    "participant_member_ids": ["mem_alex"]
+    "participant_member_ids": ["mem_alex"],
+    "status": "planned",
+    "cooked_by_member_id": null
   }
   ```
-  `date` and `meal_type` are required.
-- **Status:** `201 Created`. `PATCH /api/schedule/{id}` takes `{"revision", ...fields}`; `DELETE /api/schedule/{id}?revision=` deletes.
-
-### `GET /api/journal`
-- **Query Parameters:** `from` (default 30 days ago), `to` (default today), `lang`, `sort`.
-- **Response:** Array of journal entries with `recipe` embedded.
-
-### `POST /api/journal`
-Logs a cooked meal, optionally for a schedule entry (one journal entry per schedule entry).
-- **Request:**
-  ```json
-  {
-    "date": "2026-09-15",
-    "meal_type": "dinner",
-    "recipe_id": "rec-123_en",
-    "schedule_entry_id": "sched_456",
-    "status": "cooked",
-    "servings_cooked": 4,
-    "servings_left": 1,
-    "cooked_by_member_id": "mem_alex",
-    "notes": "Great"
-  }
-  ```
-- **Status:** `201 Created`; `409 conflict` if the schedule entry already has one. `PATCH` and `DELETE` work as for the schedule.
+  `date` and `meal_type` are required; `status` is `'planned'` (default) or `'cooked'`.
+- **Status:** `201 Created`. `GET /api/timeline/{id}` returns one entry with its embedded `recipe`; `PATCH /api/timeline/{id}` takes `{"revision", ...fields}` (including `status` transitions between `'planned'` and `'cooked'`); `DELETE /api/timeline/{id}?revision=` deletes and returns `204 No Content`.
 
 ---
 
@@ -400,19 +381,19 @@ Removes an entry from the shortlist by shortlist entry ID.
 
 ### Ratings Plugin (`/api/x/core-ratings`)
 
-#### `GET /api/x/core-ratings?journal_id=<id>`
-The votes on one journal entry.
+#### `GET /api/x/core-ratings?timeline_entry_id=<id>`
+The votes on one cooked Timeline Entry.
 - **Response:** `{"scores": [{"member_id": "mem_4d5e6f", "score": 1}], "net_score": 1}`
 
 #### `PUT /api/x/core-ratings`
-Records or changes a member's vote on a journal entry.
-- **Body:** `{"journal_id": "jrn_1a2b3c", "member_id": "mem_4d5e6f", "score": 1}` (`score` is `1` or `-1`).
+Records or changes a member's vote on a Timeline Entry.
+- **Body:** `{"timeline_entry_id": "tl_1a2b3c", "member_id": "mem_4d5e6f", "score": 1}` (`score` is `1` or `-1`).
 - **Response:** `{"status": "ok", "net_score": 1}`
 
-#### `DELETE /api/x/core-ratings?journal_id=<id>&member_id=<id>`
+#### `DELETE /api/x/core-ratings?timeline_entry_id=<id>&member_id=<id>`
 Removes a member's vote. **Response:** `{"status": "ok"}`
 
-**Attribute mirroring:** every change recomputes the net score of the recipe behind the journal entry and stores it as the attribute `core-ratings.score` on the recipe group (removed when no votes remain), so `GET /api/recipes?sort=-core-ratings.score` lists the favourites first. The `rebuild` command recomputes every score.
+**Attribute mirroring:** every change recomputes the net score of the recipe behind the Timeline Entry and stores it as the attribute `core-ratings.score` on the recipe group (removed when no votes remain), so `GET /api/recipes?sort=-core-ratings.score` lists the favourites first. The `rebuild` command recomputes every score.
 
 ---
 
@@ -523,7 +504,7 @@ There is **no `/materialize` route or `materialize` command**, and no manual Mat
 
 A client that stops reading is disconnected once 1,000 frames are queued for it; it resumes with `Last-Event-ID` and replays what it missed.
 
-Event names: `recipe:*`, `schedule:*`, `journal:*`, `member:*` (`created`, `updated`, `deleted`), `asset:created|deleted`, `plugin:activated|deactivated`, `job:started|finished`, and plugin events `<plugin_id>:<verb>`.
+Event names: `recipe:*`, `timeline:*`, `member:*` (`created`, `updated`, `deleted`), `asset:created|deleted`, `plugin:activated|deactivated`, `job:started|finished`, and plugin events `<plugin_id>:<verb>`.
 
 ---
 

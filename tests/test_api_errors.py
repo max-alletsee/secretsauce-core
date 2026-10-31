@@ -14,7 +14,7 @@ async def test_body_validation_uses_the_error_envelope(tmp_path):
         assert no_revision.status_code == 422
         assert "revision" in no_revision.json()["error"]["details"]["fields"]
 
-        bad_date = await k.client.post("/api/schedule", json={"date": "tomorrow", "meal_type": "dinner"})
+        bad_date = await k.client.post("/api/timeline", json={"date": "tomorrow", "meal_type": "dinner"})
         assert bad_date.status_code == 422
         assert "date" in bad_date.json()["error"]["details"]["fields"]
 
@@ -56,7 +56,7 @@ async def test_rest_writes_cannot_spoof_origin_or_actor(tmp_path):
         assert res.json()["actor_member_id"] == member["id"]
 
         unknown_actor = await k.client.post(
-            "/api/schedule",
+            "/api/timeline",
             json={"date": "2026-09-24", "meal_type": "dinner"},
             headers={"X-Actor-Member": "ghost"},
         )
@@ -70,12 +70,12 @@ async def test_export_json_decodes_json_columns(tmp_path):
             json={"title": "Soup", "language": "en", "tags": ["warm"], "ingredients": [{"name": "leek"}]},
         )
         await k.client.post(
-            "/api/schedule",
+            "/api/timeline",
             json={"date": "2026-09-24", "meal_type": "dinner", "participant_member_ids": ["a"]},
         )
         data = (await k.client.get("/api/export/json")).json()
         assert data["recipes"][0]["tags"] == ["warm"]
         assert data["recipes"][0]["ingredients"][0]["name"] == "leek"
-        assert data["schedule_entries"][0]["participant_member_ids"] == ["a"]
+        assert data["timeline_entries"][0]["participant_member_ids"] == ["a"]
         assert isinstance(data["household_members"][0]["allergies"], list)
         assert "passphrase_version" not in data["household_config"]

@@ -107,8 +107,8 @@ async def test_generate_meal_plan_candidate_pool_and_accept(tmp_path: Path):
         assert acc_data["status"] == "accepted"
         assert acc_data.get("schedule_entry_id") is not None
 
-        # Verify entry exists in schedule
-        sched_entries = await k.schedule.list_entries(from_date="2026-09-21", to_date="2026-09-21")
+        # Verify entry exists in timeline
+        sched_entries = await k.timeline.list_entries(from_date="2026-09-21", to_date="2026-09-21")
         assert len(sched_entries) == 1
         assert sched_entries[0]["recipe_id"] == rec["id"]
 
@@ -171,7 +171,7 @@ async def test_accept_is_atomic_and_only_once(tmp_path: Path):
         assert (await k.client.post(url, json={"date": "2026-09-21"})).status_code == 200
         again = await k.client.post(url, json={"date": "2026-09-22"})
         assert again.status_code == 409
-        entries = await k.schedule.list_entries(from_date="2026-09-21", to_date="2026-09-22")
+        entries = await k.timeline.list_entries(from_date="2026-09-21", to_date="2026-09-22")
         assert len(entries) == 1
 
 

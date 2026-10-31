@@ -62,9 +62,9 @@ test('Timeline recurring widget creates, edits, approves, and dismisses recipe a
     expect(createdRule).toBeTruthy()
     recipeRuleId = createdRule.id
 
-    // Verify no schedule entry was auto-created yet
+    // Verify no timeline entry was auto-created yet
     const beforeApprove = (
-      await (await request.get(`/api/schedule?from=${localDay()}&to=${localDay(13)}`)).json()
+      await (await request.get(`/api/timeline?from=${localDay()}&to=${localDay(13)}`)).json()
     ).filter((e: any) => e.recipe_id === recipe.id)
     expect(beforeApprove).toHaveLength(0)
 

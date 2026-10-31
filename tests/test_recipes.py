@@ -139,33 +139,33 @@ async def test_recipe_delete_repoints_references(tmp_path):
         {"group_id": group_id, "title": "Pfannkuchen", "language": "de"}
     )
 
-    # Create schedule entry referencing r_de
+    # Create timeline entry referencing r_de
     async with db.transaction() as conn:
         await conn.execute(
             """
-            INSERT INTO schedule_entries (
+            INSERT INTO timeline_entries (
                 id, revision, date, meal_type, entry_type,
                 recipe_id, created_at, updated_at, origin
             ) VALUES (?, 1, '2026-09-10', 'breakfast', 'recipe', ?, '2026-09-09T12:00:00Z', '2026-09-09T12:00:00Z', 'member');
             """,
-            ("sched-pancakes", r_de["id"]),
+            ("tl-pancakes", r_de["id"]),
         )
 
     # Delete r_de row
     await repo.delete_recipe_row(r_de["id"], revision=1)
 
-    # Verify schedule entry re-pointed to r_en
+    # Verify timeline entry re-pointed to r_en
     row = await db.read_one(
-        "SELECT recipe_id FROM schedule_entries WHERE id = 'sched-pancakes';"
+        "SELECT recipe_id FROM timeline_entries WHERE id = 'tl-pancakes';"
     )
     assert row["recipe_id"] == r_en["id"]
 
     # Now delete the last remaining row (r_en)
     await repo.delete_recipe_row(r_en["id"], revision=1)
 
-    # Verify schedule entry was set to NULL by foreign key
+    # Verify timeline entry was set to NULL by foreign key
     row2 = await db.read_one(
-        "SELECT recipe_id FROM schedule_entries WHERE id = 'sched-pancakes';"
+        "SELECT recipe_id FROM timeline_entries WHERE id = 'tl-pancakes';"
     )
     assert row2["recipe_id"] is None
 

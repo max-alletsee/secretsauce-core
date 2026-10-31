@@ -3,6 +3,10 @@ export type ResolvedSlot = { id: string; label: string; kind: 'default' | 'extra
 export type ScheduleEntry = { id: string; revision: number; date: string; meal_type: string; recipe_id?: string | null; title?: string | null; [key: string]: any }
 export type SlotVM = ResolvedSlot & { entries: ScheduleEntry[]; synthetic?: boolean }
 export type DayVM = { date: string; isPast: boolean; isToday: boolean; slots: SlotVM[] }
+export function localToday(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 export function shiftDate(date: string, days: number): string {
   const d = new Date(`${date}T12:00:00`)
   d.setDate(d.getDate() + days)

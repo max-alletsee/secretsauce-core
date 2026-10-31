@@ -15,10 +15,14 @@ function reason(provider: IntentProvider) {
   return provider.disabledReason?.(props.context) || ''
 }
 function title(provider: IntentProvider) { return provider.titleFor?.(props.context) || provider.title }
-const menuModel = computed(() => availableProviders.value.map(provider => ({
-  label: title(provider), icon: provider.icon ? `pi pi-${provider.icon}` : undefined,
-  disabled: !!reason(provider), reason: reason(provider), command: () => runProvider(provider),
-})))
+function iconName(provider: IntentProvider) { return provider.iconFor?.(props.context) || provider.icon }
+const menuModel = computed(() => availableProviders.value.map(provider => {
+  const icon = iconName(provider)
+  return {
+    label: title(provider), icon: icon ? `pi pi-${icon}` : undefined,
+    disabled: !!reason(provider), reason: reason(provider), command: () => runProvider(provider),
+  }
+}))
 async function open(event: Event) {
   if (busy.value) return
   error.value = ''

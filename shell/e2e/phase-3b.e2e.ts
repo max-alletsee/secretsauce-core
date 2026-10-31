@@ -23,7 +23,7 @@ test.describe('Phase 3B End-to-End Browser Tests', () => {
 
     // 3. Authenticated session lands; navigate to /recipes
     await page.waitForURL(/(timeline|recipes)/, { timeout: 10_000 })
-    await page.locator('nav a', { hasText: 'Recipes' }).click()
+    await page.getByRole('link', { name: 'Recipes', exact: true }).first().click()
     await expect(page).toHaveURL(/.*\/recipes/, { timeout: 10_000 })
     await expect(page.locator('.household-title')).toHaveText('SecretSauce E2E House')
 
