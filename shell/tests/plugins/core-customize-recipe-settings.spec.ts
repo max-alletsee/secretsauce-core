@@ -1,12 +1,12 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { pluginHarness } from '../helpers/pluginHarness'
 import { mountWithUi } from '../helpers/mountWithUi'
-import MagicSettings from '../../../secretsauce/plugins/core/core-recipe-magic/ui/src/MagicSettings.vue'
-import MagicPluginSettings from '../../../secretsauce/plugins/core/core-recipe-magic/ui/src/MagicPluginSettings.vue'
+import CustomizeSettings from '../../../secretsauce/plugins/core/core-customize-recipe/ui/src/CustomizeSettings.vue'
+import CustomizePluginSettings from '../../../secretsauce/plugins/core/core-customize-recipe/ui/src/CustomizePluginSettings.vue'
 
-describe('MagicSettings Component', () => {
-  it('loads actions, allows editing and saving', async () => {
+describe('CustomizeSettings Component', () => {
+  it('loads actions, allows editing, reordering, adding, saving, and resetting', async () => {
     const initialActions = [
       { id: 'act_1', title: 'Action 1', description: 'Desc 1', prompt: 'Prompt 1' },
       { id: 'act_2', title: 'Action 2', description: 'Desc 2', prompt: 'Prompt 2' },
@@ -16,18 +16,18 @@ describe('MagicSettings Component', () => {
 
     const mockApi = {
       get: async (path: string) => {
-        if (path === '/api/x/core-recipe-magic/actions') return initialActions
+        if (path === '/api/x/core-customize-recipe/actions') return initialActions
         return {}
       },
       put: async (path: string, body: any) => {
-        if (path === '/api/x/core-recipe-magic/actions') {
+        if (path === '/api/x/core-customize-recipe/actions') {
           savedPayload = body
           return body
         }
         return {}
       },
       post: async (path: string) => {
-        if (path === '/api/x/core-recipe-magic/actions/reset') {
+        if (path === '/api/x/core-customize-recipe/actions/reset') {
           resetCalled = true
           return initialActions
         }
@@ -36,59 +36,50 @@ describe('MagicSettings Component', () => {
     } as any
 
     const harness = pluginHarness(mockApi)
-    const wrapper = mountWithUi(MagicSettings, {
+    const wrapper = mountWithUi(CustomizeSettings, {
       global: {
         plugins: [harness.pinia],
         provide: {
           ...harness.provide,
-          __SS_UI__: harness.ss('core-recipe-magic'),
+          __SS_UI__: harness.ss('core-customize-recipe'),
         },
       },
     })
 
     await flushPromises()
 
-    // Check actions rendered
     const actionCards = wrapper.findAll('.action-card')
     expect(actionCards.length).toBe(2)
 
-    // Reorder: click move down on first item
     const moveDownBtn = actionCards[0].find('.btn-move-down')
-    expect(moveDownBtn.exists()).toBe(true)
     await moveDownBtn.trigger('click')
     await flushPromises()
 
-    // Add new action
     const addBtn = wrapper.find('.btn-add-action')
-    expect(addBtn.exists()).toBe(true)
     await addBtn.trigger('click')
     await flushPromises()
 
     expect(wrapper.findAll('.action-card').length).toBe(3)
 
-    // Save actions
     const saveBtn = wrapper.find('.btn-save-settings')
-    expect(saveBtn.exists()).toBe(true)
     await saveBtn.trigger('click')
     await flushPromises()
 
     expect(savedPayload).toBeDefined()
     expect(savedPayload.length).toBe(3)
-    expect(savedPayload[0].id).toBe('act_2') // verified reorder
+    expect(savedPayload[0].id).toBe('act_2')
 
-    // Reset actions
     const resetBtn = wrapper.find('.btn-reset-actions')
-    expect(resetBtn.exists()).toBe(true)
     await resetBtn.trigger('click')
     await flushPromises()
 
     expect(resetCalled).toBe(true)
   })
 
-  it('renders inline expandable toggle in plugin card actions and toggles settings view', async () => {
+  it('renders inline expandable toggle in plugin card actions for core-customize-recipe', async () => {
     const mockApi = {
       get: async (path: string) => {
-        if (path === '/api/x/core-recipe-magic/actions') {
+        if (path === '/api/x/core-customize-recipe/actions') {
           return [{ id: 'a1', title: 'Act 1', description: 'Desc 1', prompt: 'Prompt 1' }]
         }
         return {}
@@ -97,8 +88,7 @@ describe('MagicSettings Component', () => {
 
     const harness = pluginHarness(mockApi)
 
-    // 1. Should not render for other plugins
-    const otherWrapper = mountWithUi(MagicPluginSettings, {
+    const otherWrapper = mountWithUi(CustomizePluginSettings, {
       props: {
         context: {
           plugin: { id: 'other-plugin', state: 'active', enabled: true },
@@ -108,66 +98,63 @@ describe('MagicSettings Component', () => {
         plugins: [harness.pinia],
         provide: {
           ...harness.provide,
-          __SS_UI__: harness.ss('core-recipe-magic'),
+          __SS_UI__: harness.ss('core-customize-recipe'),
         },
       },
     })
-    expect(otherWrapper.find('.btn-magic-settings-toggle').exists()).toBe(false)
+    expect(otherWrapper.find('.btn-customize-settings-toggle').exists()).toBe(false)
 
-    // 2. Should render for core-recipe-magic
-    const wrapper = mountWithUi(MagicPluginSettings, {
+    const wrapper = mountWithUi(CustomizePluginSettings, {
       props: {
         context: {
-          plugin: { id: 'core-recipe-magic', state: 'active', enabled: true },
+          plugin: { id: 'core-customize-recipe', state: 'active', enabled: true },
         },
       },
       global: {
         plugins: [harness.pinia],
         provide: {
           ...harness.provide,
-          __SS_UI__: harness.ss('core-recipe-magic'),
+          __SS_UI__: harness.ss('core-customize-recipe'),
         },
       },
     })
 
-    const toggleBtn = wrapper.find('.btn-magic-settings-toggle')
+    const toggleBtn = wrapper.find('.btn-customize-settings-toggle')
     expect(toggleBtn.exists()).toBe(true)
     expect(toggleBtn.text()).toContain('Settings')
-    expect(wrapper.find('.magic-inline-settings').exists()).toBe(false)
+    expect(wrapper.find('.customize-inline-settings').exists()).toBe(false)
 
-    // 3. Click Settings to expand inline panel
     await toggleBtn.trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('.magic-inline-settings').exists()).toBe(true)
+    expect(wrapper.find('.customize-inline-settings').exists()).toBe(true)
     expect(toggleBtn.text()).toContain('Close Settings')
     expect(wrapper.findAll('.action-card').length).toBe(1)
 
-    // 4. Click again to collapse
     await toggleBtn.trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('.magic-inline-settings').exists()).toBe(false)
+    expect(wrapper.find('.customize-inline-settings').exists()).toBe(false)
     expect(toggleBtn.text()).toContain('Settings')
   })
 
-  it('loads and saves adapt_model_key alongside actions in MagicSettings', async () => {
+  it('loads and saves adapt_model_key alongside actions in CustomizeSettings', async () => {
     let savedConfig: any = null
     const mockApi = {
       get: async (path: string) => {
-        if (path === '/api/x/core-recipe-magic/actions') {
+        if (path === '/api/x/core-customize-recipe/actions') {
           return [{ id: 'a1', title: 'Act 1', description: 'Desc 1', prompt: 'Prompt 1' }]
         }
         if (path === '/api/x/core-ai-provider/settings') {
           return { models: { default: 'gpt-4o-mini', chef: 'gpt-4o' } }
         }
-        if (path === '/api/plugins/core-recipe-magic/config') {
+        if (path === '/api/plugins/core-customize-recipe/config') {
           return { adapt_model_key: 'chef' }
         }
         return {}
       },
       put: async (path: string, body: any) => {
-        if (path === '/api/plugins/core-recipe-magic/config') {
+        if (path === '/api/plugins/core-customize-recipe/config') {
           savedConfig = body
           return body
         }
@@ -176,23 +163,21 @@ describe('MagicSettings Component', () => {
     } as any
 
     const harness = pluginHarness(mockApi)
-    const wrapper = mountWithUi(MagicSettings, {
+    const wrapper = mountWithUi(CustomizeSettings, {
       global: {
         plugins: [harness.pinia],
         provide: {
           ...harness.provide,
-          __SS_UI__: harness.ss('core-recipe-magic'),
+          __SS_UI__: harness.ss('core-customize-recipe'),
         },
       },
     })
     await flushPromises()
 
-    expect(wrapper.find('#magic-adapt-model-key').exists()).toBe(true)
+    expect(wrapper.find('#customize-adapt-model-key').exists()).toBe(true)
     await wrapper.find('.btn-save-settings').trigger('click')
     await flushPromises()
 
     expect(savedConfig).toEqual(expect.objectContaining({ adapt_model_key: 'chef' }))
   })
 })
-
-

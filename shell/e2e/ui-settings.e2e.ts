@@ -94,15 +94,15 @@ test('denied device storage still permits household editing and saving', async (
   expect(failures).toEqual([])
 })
 
-test('recipe magic settings are inline in the plugin card and not a top-level settings section', async ({ page }) => {
+test('customize recipe settings are inline in the plugin card and not a top-level settings section', async ({ page }) => {
   await login(page)
   await page.goto('/settings?section=plugins')
 
-  // 1. Verify Recipe Magic is not a top-level accordion panel in settings
-  await expect(page.locator('#settings-core-recipe-magic')).toHaveCount(0)
+  // 1. Verify Customize Recipe is not a top-level accordion panel in settings
+  await expect(page.locator('#settings-core-customize-recipe')).toHaveCount(0)
 
-  // 2. Find core-recipe-magic card in plugins manager
-  const pluginCard = page.locator('.plugin-card[data-plugin-id="core-recipe-magic"]')
+  // 2. Find core-customize-recipe card in plugins manager
+  const pluginCard = page.locator('.plugin-card[data-plugin-id="core-customize-recipe"]')
   await expect(pluginCard).toBeVisible()
 
   // 3. Toggle settings inline
@@ -111,15 +111,15 @@ test('recipe magic settings are inline in the plugin card and not a top-level se
   await settingsBtn.click()
 
   // 4. Verify inline settings expanded inside plugin card
-  await expect(pluginCard.locator('.magic-inline-settings')).toBeVisible()
-  await expect(pluginCard.getByText('Magic Actions & Prompts')).toBeVisible()
-  await expect(pluginCard.locator('.action-card')).toHaveCount(5)
+  await expect(pluginCard.locator('.customize-inline-settings')).toBeVisible()
+  await expect(pluginCard.getByText('Customize Recipe Shorthands & Prompts')).toBeVisible()
+  await expect(pluginCard.locator('.action-card')).toHaveCount(8)
 
   // 5. Toggle collapse
   const closeBtn = pluginCard.getByRole('button', { name: 'Close Settings', exact: true })
   await expect(closeBtn).toBeVisible()
   await closeBtn.click()
-  await expect(pluginCard.locator('.magic-inline-settings')).toHaveCount(0)
+  await expect(pluginCard.locator('.customize-inline-settings')).toHaveCount(0)
 })
 
 test('custom model key/value pairs defined in AI settings can be assigned to plugin tasks', async ({ page }) => {

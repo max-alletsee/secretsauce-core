@@ -63,6 +63,8 @@ class UnitsService:
 def _convert_single_ingredient(
     item: Any, target_system: str, lang: str = "en"
 ) -> dict[str, Any]:
+    if isinstance(item, dict) and item.get("preserve_units"):
+        return dict(item)
     if isinstance(item, str):
         parsed = parse(item, lang=lang)
     elif isinstance(item, dict):
@@ -97,8 +99,8 @@ async def setup(ctx: PluginContext) -> None:
     async def process_recipe_ingredients(
         draft: dict[str, Any], current: Any = None, hook_ctx: Any = None
     ) -> dict[str, Any]:
-        # If origin is plugin:core-units (e.g. reconvert-all), bypass to avoid double conversion
-        if draft.get("origin") == "plugin:core-units":
+        # If origin is plugin:core-units or plugin:core-customize-recipe, bypass to avoid overwriting custom units
+        if draft.get("origin") in ("plugin:core-units", "plugin:core-customize-recipe"):
             return draft
 
         ingredients = draft.get("ingredients")

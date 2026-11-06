@@ -19,3 +19,7 @@ _Avoid_: Meal Type, Time Slot
 **Rating**:
 A household member's positive or negative vote on a completed Timeline Entry, reflecting how that meal turned out.
 _Avoid_: Review, Star Rating, Recipe Vote
+
+**Recipe Customization**:
+A user-requested transformation of a recipe—such as dietary swaps, ingredient substitutions, unit conversions, or technique adjustments—that produces a modified version of the recipe highlighting the changes against the original.
+_Avoid_: Recipe Magic, Make it Magic, Recipe Adaptation

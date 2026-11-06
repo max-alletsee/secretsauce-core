@@ -24,9 +24,9 @@ async function loadActions() {
   error.value = ''
   try {
     const [loadedActions, aiSettings, cfg] = await Promise.all([
-      ss.api.get<any[]>('/api/x/core-recipe-magic/actions'),
+      ss.api.get<any[]>('/api/x/core-customize-recipe/actions'),
       ss.api.get<any>('/api/x/core-ai-provider/settings').catch(() => ({ models: { default: 'gemini-3.8-flash' } })),
-      ss.api.get<any>('/api/plugins/core-recipe-magic/config').catch(() => ({ adapt_model_key: 'default' })),
+      ss.api.get<any>('/api/plugins/core-customize-recipe/config').catch(() => ({ adapt_model_key: 'default' })),
     ])
     actions.value = Array.isArray(loadedActions) ? loadedActions : []
     const models = aiSettings?.models && typeof aiSettings.models === 'object' ? Object.keys(aiSettings.models) : ['default']
@@ -55,8 +55,8 @@ function addAction() {
   actions.value.push({
     id: newId,
     title: 'New Custom Action',
-    description: 'Custom adaptation rule',
-    prompt: 'Adapt this recipe to...',
+    description: 'Custom recipe customization rule',
+    prompt: 'Customize this recipe to...',
   })
 }
 
@@ -65,14 +65,14 @@ async function saveSettings() {
   error.value = ''
   try {
     const [savedActions] = await Promise.all([
-      ss.api.put<any[]>('/api/x/core-recipe-magic/actions', actions.value),
-      ss.api.put<any>('/api/plugins/core-recipe-magic/config', {
+      ss.api.put<any[]>('/api/x/core-customize-recipe/actions', actions.value),
+      ss.api.put<any>('/api/plugins/core-customize-recipe/config', {
         actions: actions.value,
         adapt_model_key: adaptModelKey.value,
       }),
     ])
     if (Array.isArray(savedActions)) actions.value = savedActions
-    ss.notify({ level: 'success', message: 'Magic actions saved' })
+    ss.notify({ level: 'success', message: 'Customization shorthands saved' })
   } catch (failure: any) {
     error.value = failure?.message || 'Failed to save actions'
   } finally {
@@ -84,8 +84,8 @@ async function resetActions() {
   saving.value = true
   error.value = ''
   try {
-    actions.value = await ss.api.post<any[]>('/api/x/core-recipe-magic/actions/reset')
-    ss.notify({ level: 'success', message: 'Reset actions to Ottolenghi SIMPLE defaults' })
+    actions.value = await ss.api.post<any[]>('/api/x/core-customize-recipe/actions/reset')
+    ss.notify({ level: 'success', message: 'Reset shorthands to defaults' })
   } catch (failure: any) {
     error.value = failure?.message || 'Failed to reset actions'
   } finally {
@@ -99,11 +99,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="magic-settings">
+  <div class="customize-settings">
     <div class="settings-header">
       <div>
-        <h4 class="settings-title">Magic Actions & Prompts</h4>
-        <p class="subtitle">Configure Ottolenghi SIMPLE actions or create custom recipe transformation prompts.</p>
+        <h4 class="settings-title">Customize Recipe Shorthands & Prompts</h4>
+        <p class="subtitle">Configure built-in shorthand prompts for unit conversion, ingredient substitution, and culinary transformations.</p>
       </div>
       <div class="header-actions">
         <Button
@@ -130,11 +130,11 @@ onMounted(() => {
     <Message v-if="error" severity="error">{{ error }}</Message>
 
     <div class="model-key-row">
-      <label for="magic-adapt-model-key">Recipe adaptation model key</label>
+      <label for="customize-adapt-model-key">Recipe customization model key</label>
       <Select
-        id="magic-adapt-model-key"
-        inputId="magic-adapt-model-key"
-        aria-label="Recipe adaptation model key"
+        id="customize-adapt-model-key"
+        inputId="customize-adapt-model-key"
+        aria-label="Recipe customization model key"
         v-model="adaptModelKey"
         :options="optionsFor(adaptModelKey)"
         optionLabel="label"
@@ -221,7 +221,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.magic-settings { display: grid; gap: 1rem; }
+.customize-settings { display: grid; gap: 1rem; }
 .settings-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
 .settings-title { margin: 0; font-size: 1rem; font-weight: 600; color: var(--p-text-color); }
 .subtitle { margin: .25rem 0 0 0; color: var(--p-text-muted-color); font-size: .85rem; }

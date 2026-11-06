@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import MagicSettings from './MagicSettings.vue'
+import CustomizeSettings from './CustomizeSettings.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -23,27 +23,27 @@ function toggleExpand() {
 </script>
 
 <template>
-  <template v-if="context?.plugin?.id === 'core-recipe-magic'">
+  <template v-if="context?.plugin?.id === 'core-customize-recipe'">
     <Button
       :label="expanded ? 'Close Settings' : 'Settings'"
       :icon="expanded ? 'pi pi-chevron-up' : 'pi pi-cog'"
       size="small"
       :outlined="!expanded"
       :disabled="context?.plugin?.state !== 'active'"
-      class="btn-magic-settings-toggle"
+      class="btn-customize-settings-toggle"
       @click="toggleExpand"
     />
     <div
       v-if="expanded && context?.plugin?.state === 'active'"
-      class="magic-inline-settings"
+      class="customize-inline-settings"
     >
-      <MagicSettings />
+      <CustomizeSettings />
     </div>
   </template>
 </template>
 
 <style scoped>
-.magic-inline-settings {
+.customize-inline-settings {
   flex-basis: 100%;
   width: 100%;
   margin-top: 0.75rem;

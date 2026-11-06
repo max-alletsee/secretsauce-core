@@ -1,5 +1,5 @@
 {
-  "name": "@secretsauce/plugin-core-recipe-magic",
+  "name": "@secretsauce/plugin-core-customize-recipe",
   "version": "1.0.0",
   "private": true,
   "type": "module"
