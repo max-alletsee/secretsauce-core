@@ -235,7 +235,7 @@ The kernel includes a localized culinary units parsing, conversion, and formatti
 An hourly background task, started with the app, cleans lazy references:
 1. **Unlinked uploads**: Walks `uploads/` recursively (files live in `uploads/<yyyy>/<mm>/`) and deletes files with no matching `assets.storage_path`. Files younger than one hour are kept, since they may belong to an upload whose row has not committed yet.
 2. **Orphaned sub-id assets**: Deletes, in bulk, recipe assets whose `sub_id` no longer appears in the ingredients or steps of any language row of the recipe.
-3. **Event pruning**: Deletes events older than 30 days that are at or below the cursor of every *active* plugin. Disabled plugins do not hold the log back (see cursors in section 5).
+3. **Event pruning**: Deletes events older than the household's `event_retention_days` setting (default `60` days, configurable `1..3650` via `/api/household`) that are at or below the cursor of every *active* plugin. Disabled plugins do not hold the log back (see cursors in section 5).
 
 ---
 

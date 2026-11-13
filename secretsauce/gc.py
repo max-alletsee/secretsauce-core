@@ -1,14 +1,16 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
+import json
 import logging
 from pathlib import Path
 import time
 
 from secretsauce.db import Database
+from secretsauce.nouns.household import DEFAULT_EVENT_RETENTION_DAYS
 
 logger = logging.getLogger(__name__)
 
-EVENT_RETENTION = timedelta(days=30)
+EVENT_RETENTION = timedelta(days=DEFAULT_EVENT_RETENTION_DAYS)
 # A file younger than this may belong to an upload whose row has not committed yet.
 ORPHAN_GRACE_SECONDS = 3600.0
 
@@ -74,6 +76,21 @@ async def _delete_unreferenced_recipe_assets(db: Database, uploads_dir: Path) ->
     return len(doomed)
 
 
+async def _event_retention_days(db: Database) -> int:
+    raw = await db.read_val(
+        "SELECT value FROM household_config WHERE key = 'event_retention_days';"
+    )
+    if raw is None:
+        return DEFAULT_EVENT_RETENTION_DAYS
+    try:
+        parsed = json.loads(raw) if isinstance(raw, str) else raw
+        if isinstance(parsed, int) and not isinstance(parsed, bool) and parsed >= 1:
+            return parsed
+    except (json.JSONDecodeError, TypeError, ValueError):
+        pass
+    return DEFAULT_EVENT_RETENTION_DAYS
+
+
 async def _prune_events(db: Database) -> int:
     """Events below every active plugin's cursor and older than the retention window.
 
@@ -89,7 +106,8 @@ async def _prune_events(db: Database) -> int:
     )
     if min_seq is None:
         min_seq = await db.read_val("SELECT COALESCE(MAX(seq), 0) FROM events;")
-    cutoff = _iso(datetime.now(timezone.utc) - EVENT_RETENTION)
+    retention_days = await _event_retention_days(db)
+    cutoff = _iso(datetime.now(timezone.utc) - timedelta(days=retention_days))
     cursor = await db.write(
         "DELETE FROM events WHERE seq <= ? AND created_at < ?;", (min_seq, cutoff)
     )

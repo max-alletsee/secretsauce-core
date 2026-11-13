@@ -118,6 +118,7 @@ export interface Household {
   languages: { primary: string; translations?: string[] }
   units: 'metric' | 'us_customary'
   predefined_notes?: string[]
+  event_retention_days?: number
 }
 
 export interface IntentHub {

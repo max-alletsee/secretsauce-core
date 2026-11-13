@@ -70,8 +70,8 @@ export const test = base.extend<{ isolatedState: void }>({
         if (row.source_type === 'manual' && !manualIds.has(row.id)) await request.delete(`/api/x/core-shopping-list/items/${row.id}`)
       }
       for (const row of shopping.items) await request.post('/api/x/core-shopping-list/toggle', { data: { key: row.key, checked: row.checked } })
-      const { household_name, meal_types, languages, units } = household
-      expect((await request.patch('/api/household', { data: { household_name, meal_types, languages, units } })).ok()).toBe(true)
+      const { household_name, meal_types, languages, units, event_retention_days } = household
+      expect((await request.patch('/api/household', { data: { household_name, meal_types, languages, units, event_retention_days } })).ok()).toBe(true)
       // GET masks credentials; this child server's only configured key is our known fixture value.
       expect((await request.put('/api/x/core-ai-provider/settings', { data: { ...ai, openai_api_key: ai.openai_api_key ? 'e2e-test-key' : '' } })).ok()).toBe(true)
     }

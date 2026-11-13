@@ -126,3 +126,118 @@ async def test_predefined_notes_validation(tmp_path):
         assert res.status_code == 200
         assert res.json()["predefined_notes"] == ["take-out", "Takeout"]
         assert res.json()["meal_types"][0]["predefined_notes"] == ["take-out"]
+
+
+@pytest.mark.parametrize(
+    "bad_value",
+    [
+        pytest.param(0, id="zero"),
+        pytest.param(-5, id="negative"),
+        pytest.param(3651, id="above-max"),
+        pytest.param(None, id="null"),
+        pytest.param("30", id="string"),
+        pytest.param(True, id="boolean"),
+        pytest.param(14.5, id="float"),
+    ],
+)
+async def test_event_retention_validation_and_persistence(tmp_path, bad_value):
+    async with runtime(tmp_path) as (app, client):
+        kernel = app.state.kernel
+        initial = (await client.get("/api/household")).json()
+        assert initial["event_retention_days"] == 60
+
+        res = await client.patch("/api/household", json={"event_retention_days": bad_value})
+        assert res.status_code == 422, res.text
+        assert res.json()["error"]["code"] == "validation"
+        assert (await kernel.household.get_config())["event_retention_days"] == 60
+
+
+async def test_event_retention_update_and_gc_pruning_runtime(tmp_path):
+    import asyncio
+    from datetime import datetime, timedelta, timezone
+    from secretsauce.gc import run_garbage_collection
+
+    async with runtime(tmp_path) as (app, client):
+        kernel = app.state.kernel
+
+        # Create real events via HTTP API
+        r1 = await client.post("/api/recipes", json={"title": "Soup", "language": "en"})
+        assert r1.status_code == 201
+        r2 = await client.post("/api/recipes", json={"title": "Salad", "language": "en"})
+        assert r2.status_code == 201
+
+        head_seq = await kernel.events.get_head_seq()
+        # Wait for all active plugins' cursors to reach head through the live EventPump
+        deadline = asyncio.get_running_loop().time() + 5.0
+        while True:
+            min_seq = await kernel.db.read_val(
+                "SELECT MIN(c.last_seq) FROM event_cursors c "
+                "JOIN plugins p ON p.id = c.plugin_id WHERE p.state = 'active';"
+            )
+            if min_seq is None or min_seq >= head_seq:
+                break
+            if asyncio.get_running_loop().time() > deadline:
+                raise AssertionError(f"Active plugins did not drain to {head_seq} (min_seq={min_seq})")
+            await asyncio.sleep(0.02)
+
+        evts = await kernel.db.read_all(
+            "SELECT seq FROM events WHERE name = 'recipe:created' ORDER BY seq;"
+        )
+        assert len(evts) == 2
+        seq_old, seq_mid = evts[0]["seq"], evts[1]["seq"]
+
+        now = datetime.now(timezone.utc)
+        ts_70d = (now - timedelta(days=70)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        ts_45d = (now - timedelta(days=45)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        await kernel.db.write("UPDATE events SET created_at = ? WHERE seq = ?;", (ts_70d, seq_old))
+        await kernel.db.write("UPDATE events SET created_at = ? WHERE seq = ?;", (ts_45d, seq_mid))
+
+        # Default 60 days: prunes 70-day-old event, keeps 45-day-old event
+        await run_garbage_collection(kernel.db, tmp_path)
+        assert await kernel.db.read_one("SELECT seq FROM events WHERE seq = ?;", (seq_old,)) is None
+        assert await kernel.db.read_one("SELECT seq FROM events WHERE seq = ?;", (seq_mid,)) is not None
+
+        # Shortening retention to 30 days does not prune synchronously inside PATCH
+        patch_res = await client.patch("/api/household", json={"event_retention_days": 30})
+        assert patch_res.status_code == 200, patch_res.text
+        assert patch_res.json()["event_retention_days"] == 30
+        assert await kernel.db.read_one("SELECT seq FROM events WHERE seq = ?;", (seq_mid,)) is not None
+
+        # Omitting event_retention_days on subsequent PATCH preserves 30
+        patch2 = await client.patch("/api/household", json={"household_name": "Updated Home"})
+        assert patch2.status_code == 200
+        assert patch2.json()["event_retention_days"] == 30
+
+        # Next GC run prunes the 45-day-old event under the 30-day setting
+        await run_garbage_collection(kernel.db, tmp_path)
+        assert await kernel.db.read_one("SELECT seq FROM events WHERE seq = ?;", (seq_mid,)) is None
+
+        # Active-plugin cursor guard: an active plugin lagging behind prevents pruning even past retention,
+        # while a disabled plugin does not block pruning.
+        r3 = await client.post("/api/recipes", json={"title": "Pasta", "language": "en"})
+        assert r3.status_code == 201
+        seq_guarded = (
+            await kernel.db.read_one(
+                "SELECT seq FROM events WHERE entity_id = ? AND name = 'recipe:created';",
+                (r3.json()["id"],),
+            )
+        )["seq"]
+        ts_90d = (now - timedelta(days=90)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        await kernel.db.write("UPDATE events SET created_at = ? WHERE seq = ?;", (ts_90d, seq_guarded))
+
+        active_plugin = await kernel.db.read_val(
+            "SELECT id FROM plugins WHERE state = 'active' LIMIT 1;"
+        )
+        assert active_plugin is not None
+        await kernel.db.write(
+            "UPDATE event_cursors SET last_seq = ? WHERE plugin_id = ?;",
+            (seq_guarded - 1, active_plugin),
+        )
+        await run_garbage_collection(kernel.db, tmp_path)
+        assert await kernel.db.read_one("SELECT seq FROM events WHERE seq = ?;", (seq_guarded,)) is not None
+
+        # Disabling that plugin lets GC prune the 90-day-old event
+        disable_res = await client.post(f"/api/plugins/{active_plugin}/disable")
+        assert disable_res.status_code == 200
+        await run_garbage_collection(kernel.db, tmp_path)
+        assert await kernel.db.read_one("SELECT seq FROM events WHERE seq = ?;", (seq_guarded,)) is None

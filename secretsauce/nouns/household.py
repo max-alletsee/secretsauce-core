@@ -20,8 +20,11 @@ DEFAULT_PREDEFINED_NOTES = [
 DEFAULT_LANGUAGES = {"primary": "en"}
 DEFAULT_UNITS = "metric"
 DEFAULT_HOUSEHOLD_NAME = "Our Household"
+DEFAULT_EVENT_RETENTION_DAYS = 60
 
-CONFIG_KEYS = frozenset({"household_name", "meal_types", "languages", "units", "predefined_notes"})
+CONFIG_KEYS = frozenset(
+    {"household_name", "meal_types", "languages", "units", "predefined_notes", "event_retention_days"}
+)
 
 _UPSERT = """
 INSERT INTO household_config (key, value, updated_at)
@@ -73,6 +76,7 @@ class HouseholdRepo:
             "languages": raw.get("languages", DEFAULT_LANGUAGES),
             "units": raw.get("units", DEFAULT_UNITS),
             "predefined_notes": raw.get("predefined_notes", list(DEFAULT_PREDEFINED_NOTES)),
+            "event_retention_days": raw.get("event_retention_days", DEFAULT_EVENT_RETENTION_DAYS),
             "passphrase_version": raw.get("passphrase_version", 1),
         }
 

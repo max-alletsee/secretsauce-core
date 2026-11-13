@@ -20,6 +20,7 @@ export function createFakeSecretSauceUI(pluginId: string = 'test-plugin'): Secre
     meal_types: [{ id: 'dinner', label: 'Dinner' }],
     languages: { primary: 'en' },
     units: 'metric',
+    event_retention_days: 60,
   })
   const online = ref(true)
 

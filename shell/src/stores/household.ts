@@ -8,6 +8,7 @@ export const useHouseholdStore = defineStore('household', () => {
     meal_types: [],
     languages: { primary: 'en' },
     units: 'metric',
+    event_retention_days: 60,
   })
 
   async function fetchHousehold(api: ApiClient) {

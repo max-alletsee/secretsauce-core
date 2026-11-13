@@ -14,7 +14,7 @@ afterEach(() => { wrappers.splice(0).forEach(wrapper => wrapper.unmount()); docu
 
 async function renderSettings(api: any = { get: vi.fn(async () => []), patch: vi.fn() }, path = '/settings', prepare?: (harness: any) => Promise<any> | void) {
   const harness = pluginHarness(api)
-  harness.householdStore.household = { household_name: 'Family', meal_types: [{ id: 'dinner', label: 'Dinner' }], languages: { primary: 'en', translations: ['de'] }, units: 'metric' }
+  harness.householdStore.household = { household_name: 'Family', meal_types: [{ id: 'dinner', label: 'Dinner' }], languages: { primary: 'en', translations: ['de'] }, units: 'metric', event_retention_days: 60 }
   registerShellSettings(harness.settings)
   const loader = await prepare?.(harness)
   harness.router.addRoute({ path: '/settings', component: SettingsPage })
@@ -46,7 +46,29 @@ describe('Settings through real sections and global controls (API boundary doubl
     expect(header(wrapper, 'plugins').attributes('aria-expanded')).toBe('true')
     expect(JSON.parse(localStorage.getItem('ss-settings-open')!)).toEqual(['device', 'plugins'])
     await harness.router.push('/settings?section=unknown'); await flushPromises()
-    expect(wrapper.findAll('[data-pc-name=accordionpanel]')).toHaveLength(3)
+    expect(wrapper.findAll('[data-pc-name=accordionpanel]')).toHaveLength(4)
+    expect(header(wrapper, 'advanced').attributes('aria-expanded')).toBe('false')
+  })
+  it('saves event log retention in the collapsed-by-default Advanced section', async () => {
+    const api = { get: vi.fn(async () => []), patch: vi.fn(async (_: string, body: any) => ({ household_name: 'Family', meal_types: [{ id: 'dinner', label: 'Dinner' }], languages: { primary: 'en', translations: ['de'] }, units: 'metric', event_retention_days: body.event_retention_days, passphrase_version: 1 })) }
+    const { wrapper, harness } = await renderSettings(api)
+    expect(header(wrapper, 'advanced').attributes('aria-expanded')).toBe('false')
+    await harness.router.push('/settings?section=advanced'); await flushPromises()
+    expect(header(wrapper, 'advanced').attributes('aria-expanded')).toBe('true')
+    const input = wrapper.find('#event-retention-days')
+    expect((input.element as HTMLInputElement).value).toBe('60')
+    await input.setValue('90')
+    await clickButton('Save advanced')
+    expect(api.patch).toHaveBeenCalledWith('/api/household', { event_retention_days: 90 })
+    expect(harness.householdStore.household.event_retention_days).toBe(90)
+  })
+  it('retains the advanced draft and explains a failed save', async () => {
+    const { wrapper, harness } = await renderSettings({ get: vi.fn(async () => []), patch: vi.fn(async () => { throw new Error('Retention write failed') }) }, '/settings?section=advanced')
+    await wrapper.find('#event-retention-days').setValue('45')
+    await clickButton('Save advanced')
+    expect(wrapper.text()).toContain('Retention write failed')
+    expect((wrapper.find('#event-retention-days').element as HTMLInputElement).value).toBe('45')
+    expect(harness.householdStore.household.event_retention_days).toBe(60)
   })
   it('saves the complete household draft and updates the live store', async () => {
     const api = { get: vi.fn(async () => []), patch: vi.fn(async (_: string, body: any) => ({ ...body, passphrase_version: 1 })) }

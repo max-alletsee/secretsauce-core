@@ -129,12 +129,14 @@ Returns the household configuration.
     ],
     "languages": {"primary": "en"},
     "units": "metric",
+    "predefined_notes": ["Dining out", "Leftovers", "Takeout", "Quick meal"],
+    "event_retention_days": 60,
     "passphrase_version": 1
   }
   ```
 
 ### `PATCH /api/household`
-Updates any subset of `household_name`, `meal_types`, `languages`, `units` (`metric` or `us_customary`).
+Updates any subset of `household_name`, `meal_types`, `languages`, `units` (`metric` or `us_customary`), `predefined_notes`, and `event_retention_days` (integer `1..3650`, default `60`).
 - **Status:** `200 OK` with the full configuration.
 - **Meal-slot validation (also for setup):** if supplied, `meal_types` must be a non-null, nonempty array with unique ids. Ids match `^[a-z0-9][a-z0-9-]{0,63}$`; labels are 1–64 characters. Invalid values return `422 validation` with field details. Omitting `meal_types` preserves the current/default configuration. Order is display order; renaming a label does not change its stable id. Schedule/journal `meal_type` remains a free string for legacy entries.
 

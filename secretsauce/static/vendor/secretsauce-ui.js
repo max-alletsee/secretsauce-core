@@ -60,8 +60,8 @@ const ce = /* @__PURE__ */ P({
   },
   emits: ["resolve", "cancel"],
   setup(t, { emit: s }) {
-    const n = t, l = s, u = I("__SS_INTENT_REGISTRY__", { getProviders: () => [] }), r = d(), a = z(null), c = d(!1), f = d(""), i = C(() => u.getProviders(n.hub).filter((e) => !e.isAvailable || e.isAvailable(n.context)).slice().sort((e, o) => e.order - o.order));
-    function _(e) {
+    const n = t, l = s, u = I("__SS_INTENT_REGISTRY__", { getProviders: () => [] }), r = d(), a = z(null), c = d(!1), _ = d(""), i = C(() => u.getProviders(n.hub).filter((e) => !e.isAvailable || e.isAvailable(n.context)).slice().sort((e, o) => e.order - o.order));
+    function f(e) {
       var o;
       return ((o = e.disabledReason) == null ? void 0 : o.call(e, n.context)) || "";
     }
@@ -78,19 +78,19 @@ const ce = /* @__PURE__ */ P({
       return {
         label: x(e),
         icon: o ? `pi pi-${o}` : void 0,
-        disabled: !!_(e),
-        reason: _(e),
+        disabled: !!f(e),
+        reason: f(e),
         command: () => A(e)
       };
     }));
     async function T(e) {
       var o;
-      c.value || (f.value = "", i.value.length === 1 ? await A(i.value[0]) : (o = r.value) == null || o.toggle(e));
+      c.value || (_.value = "", i.value.length === 1 ? await A(i.value[0]) : (o = r.value) == null || o.toggle(e));
     }
     async function A(e) {
       var o;
-      if (!(c.value || _(e))) {
-        if ((o = r.value) == null || o.hide(), f.value = "", e.kind === "ui") {
+      if (!(c.value || f(e))) {
+        if ((o = r.value) == null || o.hide(), _.value = "", e.kind === "ui") {
           a.value = e;
           return;
         }
@@ -98,7 +98,7 @@ const ce = /* @__PURE__ */ P({
         try {
           l("resolve", await e.execute(n.context));
         } catch (g) {
-          f.value = (g == null ? void 0 : g.message) || "Action failed";
+          _.value = (g == null ? void 0 : g.message) || "Action failed";
         } finally {
           c.value = !1;
         }
@@ -122,14 +122,14 @@ const ce = /* @__PURE__ */ P({
                 class: "ss-intent-trigger",
                 label: t.label || x(i.value[0]),
                 loading: c.value,
-                disabled: c.value || i.value.length === 1 && !!_(i.value[0]),
+                disabled: c.value || i.value.length === 1 && !!f(i.value[0]),
                 icon: i.value.length > 1 ? "pi pi-chevron-down" : i.value[0].icon ? `pi pi-${i.value[0].icon}` : void 0,
                 iconPos: i.value.length > 1 ? "right" : "left",
                 "aria-haspopup": i.value.length > 1 ? "menu" : void 0,
                 onClick: T
               }, null, 8, ["label", "loading", "disabled", "icon", "iconPos", "aria-haspopup"])
             ])), [
-              [N, i.value.length === 1 ? _(i.value[0]) : ""]
+              [N, i.value.length === 1 ? f(i.value[0]) : ""]
             ])
           ], !0),
           E($, {
@@ -171,13 +171,13 @@ const ce = /* @__PURE__ */ P({
             _: 1
             /* STABLE */
           }, 8, ["model"]),
-          f.value ? (m(), w(Y, {
+          _.value ? (m(), w(Y, {
             key: 0,
             severity: "error"
           }, {
             default: k(() => [
               Z(
-                D(f.value),
+                D(_.value),
                 1
                 /* TEXT */
               )
@@ -234,7 +234,8 @@ function de(t = "test-plugin") {
     household_name: "Test House",
     meal_types: [{ id: "dinner", label: "Dinner" }],
     languages: { primary: "en" },
-    units: "metric"
+    units: "metric",
+    event_retention_days: 60
   }), u = d(!0), r = {
     get: async () => ({}),
     post: async () => ({}),

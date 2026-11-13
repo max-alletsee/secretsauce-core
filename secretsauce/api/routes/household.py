@@ -22,6 +22,14 @@ class HouseholdPatchPayload(MealTypesPayload):
     languages: dict[str, Any] | None = None
     units: str | None = Field(default=None, pattern="^(metric|us_customary)$")
     predefined_notes: list[str] | None = None
+    event_retention_days: int | None = Field(default=None, strict=True, ge=1, le=3650)
+
+    @field_validator("event_retention_days")
+    @classmethod
+    def check_event_retention_days(cls, value: int | None) -> int:
+        if value is None:
+            raise ValueError("event_retention_days cannot be null")
+        return value
 
     @field_validator("predefined_notes")
     @classmethod

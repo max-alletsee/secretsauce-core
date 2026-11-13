@@ -156,4 +156,23 @@ test('custom model key/value pairs defined in AI settings can be assigned to plu
   }
 })
 
+test('advanced settings section is collapsed by default and persists event log retention', async ({ page }) => {
+  await login(page)
+  await page.goto('/settings')
+  const panel = page.locator('#settings-advanced')
+  const toggle = panel.getByRole('button', { name: 'Advanced', exact: true })
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+
+  const input = panel.getByLabel('Event log retention (days)', { exact: true })
+  await expect(input).toHaveValue('60')
+  await input.fill('90')
+  await panel.getByRole('button', { name: 'Save advanced', exact: true }).click()
+
+  await expect.poll(async () => (await (await page.request.get('/api/household')).json()).event_retention_days).toBe(90)
+  await page.goto('/settings?section=advanced')
+  await expect(panel.getByLabel('Event log retention (days)', { exact: true })).toHaveValue('90')
+})
+
 
