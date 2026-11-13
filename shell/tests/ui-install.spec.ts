@@ -14,7 +14,7 @@ describe('production UI installation', () => {
       <Button/><SplitButton/><Menu/><Dialog/><ConfirmDialog/><Drawer/>
       <Accordion><AccordionPanel value="1"><AccordionHeader>Section</AccordionHeader><AccordionContent/></AccordionPanel></Accordion>
       <Tabs value="1"><TabList><Tab value="1">Tab</Tab></TabList><TabPanels><TabPanel value="1"/></TabPanels></Tabs>
-      <InputText/><Textarea/><InputNumber/><Select/><SelectButton/><AutoComplete/>
+      <InputText/><Textarea/><InputNumber/><Select/><SelectButton/><MultiSelect/><AutoComplete/>
       <ToggleSwitch/><Checkbox/><IconField><InputIcon/></IconField><Tag/><Avatar/>
       <Message/><ProgressSpinner/><Card/><Divider/>
     </div>` }), { global: { config: { warnHandler: message => warnings.push(message) } } })

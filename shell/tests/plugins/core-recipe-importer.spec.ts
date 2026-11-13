@@ -108,4 +108,43 @@ describe('registered importer component (API boundary double)', () => {
     })
     expect(harness.notifications).toContainEqual(expect.objectContaining({ level: 'success' }))
   })
+
+  it('pre-populates extracted source in ImportRecipeDialog and allows editing before saving', async () => {
+    const savedBodies: any[] = []
+    const draftWithSource = {
+      ...recipeDraft,
+      source: { type: 'website', name: 'Smitten Kitchen', url: 'https://smittenkitchen.com/cake' },
+    }
+    const api = {
+      post: async (path: string, body: any) => {
+        if (path === '/api/x/core-recipe-importer/parse-url') return draftWithSource
+        if (path === '/api/recipes') {
+          savedBodies.push(body)
+          return { ...savedRecipe, source: body.source }
+        }
+        throw new Error(`Unexpected POST ${path}`)
+      },
+    }
+    await open(api)
+    const urlInput = document.querySelector<HTMLInputElement>('#import-url')!
+    urlInput.value = 'https://smittenkitchen.com/cake'
+    urlInput.dispatchEvent(new Event('input'))
+    await clickButton('Extract recipe')
+
+    const srcNameInput = document.querySelector<HTMLInputElement>('#import-source-name')!
+    const srcUrlInput = document.querySelector<HTMLInputElement>('#import-source-url')!
+    expect(srcNameInput.value).toBe('Smitten Kitchen')
+    expect(srcUrlInput.value).toBe('https://smittenkitchen.com/cake')
+
+    srcNameInput.value = 'Smitten Kitchen Blog'
+    srcNameInput.dispatchEvent(new Event('input'))
+    await clickButton('Save recipe')
+
+    expect(savedBodies).toHaveLength(1)
+    expect(savedBodies[0].source).toEqual({
+      type: 'website',
+      name: 'Smitten Kitchen Blog',
+      url: 'https://smittenkitchen.com/cake',
+    })
+  })
 })

@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { Slot, IntentTrigger, useSecretSauce } from '@secretsauce/ui'
 import { fetchCoverId } from '../cover'
+import { pendingSourceFilter, sourceIcon, type RecipeSource } from '../sourceFilter'
 const props = defineProps<{ recipeId?: string; id?: string }>()
 const emit = defineEmits<{ switchLanguage: [string] }>()
 const ss = useSecretSauce(), recipe = ref<any>(null), currentServings = ref(2), checkedIngredients = ref<Record<string, boolean>>({}), error = ref(''), isShortlisted = ref(false)
@@ -24,6 +25,14 @@ watch(effectiveId, async id => {
   } catch (failure: any) { if (sequence === request) { recipe.value = null; error.value = failure?.message || 'Could not load recipe' } }
 }, { immediate: true })
 function switchLanguage(id: string) { emit('switchLanguage', id); ss.navigate?.(`/recipes/${id}`) }
+const activeSource = computed<RecipeSource | null>(() => {
+  const src = customizedRecipe.value?.source ?? recipe.value?.source
+  return src && src.name ? src : null
+})
+function filterBySource(name: string) {
+  pendingSourceFilter.value = [name]
+  ss.navigate?.('/recipes')
+}
 function scaledQuantity(quantity: number | null | undefined): string {
   if (quantity == null) return ''
   const value = quantity * currentServings.value / (recipe.value?.servings || 1)
@@ -64,7 +73,7 @@ const detailCustomizeContext = computed(() => ({
     <Message v-if="error" severity="error">{{ error }}</Message>
     <template v-if="recipe">
       <div v-if="recipe.languages?.length > 1" class="lang-bar"><span>Languages:</span><Button v-for="language in recipe.languages" :key="language" :label="language.toUpperCase()" size="small" :outlined="language !== recipe.language" @click="switchLanguage(`${recipe.group_id}_${language}`)" /></div>
-      <div class="detail-header"><div><h1>{{ customizedRecipe?.title || recipe.title }}</h1><p v-if="!customizedRecipe && recipe.description">{{ recipe.description }}</p></div><div class="detail-actions"><Slot name="recipe.detail.actions" :context="detailCustomizeContext" /><Slot name="recipe.card.actions" :context="{ recipe, isShortlisted }" /><IntentTrigger hub="recipe:actions" :context="{ recipe }" label="Actions" /></div></div>
+      <div class="detail-header"><div><h1>{{ customizedRecipe?.title || recipe.title }}</h1><div v-if="activeSource" class="recipe-source-attribution"><i :class="sourceIcon(activeSource.type)" aria-hidden="true" /><span class="source-prefix">From: </span><button type="button" class="source-filter-link" @click="filterBySource(activeSource.name)">{{ activeSource.name }}</button><span v-if="activeSource.type === 'cookbook' && activeSource.page" class="source-locator">, p. {{ activeSource.page }}</span><span v-if="activeSource.author" class="source-author"> by {{ activeSource.author }}</span><a v-if="activeSource.url" :href="activeSource.url" target="_blank" rel="noopener noreferrer" class="source-external-link" aria-label="Open source URL"><i class="pi pi-external-link" aria-hidden="true" /></a><span v-if="activeSource.notes" class="source-notes"> — {{ activeSource.notes }}</span></div><p v-if="!customizedRecipe && recipe.description">{{ recipe.description }}</p></div><div class="detail-actions"><Slot name="recipe.detail.actions" :context="detailCustomizeContext" /><Slot name="recipe.card.actions" :context="{ recipe, isShortlisted }" /><IntentTrigger hub="recipe:actions" :context="{ recipe }" label="Actions" /></div></div>
       <img v-if="coverId" :src="ss.url(`/api/assets/${coverId}/file`)" :alt="recipe.title" class="recipe-cover" />
       <div class="scaler-card"><span>Servings:</span><Button class="btn-scaler-minus" icon="pi pi-minus" aria-label="Decrease servings" rounded outlined :disabled="currentServings <= 1" @click="currentServings--" /><span class="servings-value">{{ currentServings }}</span><Button class="btn-scaler-plus" icon="pi pi-plus" aria-label="Increase servings" rounded outlined @click="currentServings++" /></div>
       <Slot name="recipe.detail.customize" :context="detailCustomizeContext" />
@@ -86,6 +95,9 @@ h1 { margin: 0; font-size: 1.35rem; line-height: 1.2; }
 h3 { margin: 0 0 .375rem; font-size: 1rem; }
 p, .notes { color: var(--p-text-muted-color); margin: .25rem 0 0; }
 .scaler-card { background: var(--p-surface-100); padding: .375rem .625rem; border-radius: var(--p-border-radius); margin-bottom: .625rem; }
+.recipe-source-attribution { display: flex; align-items: center; gap: .25rem; flex-wrap: wrap; margin-top: .35rem; font-size: .9rem; color: var(--p-text-muted-color); }
+.source-filter-link { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--p-primary-color); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.source-external-link { display: inline-flex; align-items: center; margin-left: .25rem; color: var(--p-primary-color); text-decoration: none; }
 .servings-value { font-weight: 600; min-width: 1.5rem; text-align: center; }
 .content-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.25rem; }
 .ingredient-checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: .375rem; }

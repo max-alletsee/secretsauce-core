@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, Request, Response
 
-from secretsauce.api.models import RecipeCreate, RecipePatch
+from secretsauce.api.models import RecipeCreate, RecipePatch, RecipeSourceRename
 from secretsauce.errors import ValidationError
 
 router = APIRouter(prefix="/api/recipes", tags=["recipes"])
@@ -12,13 +12,31 @@ async def list_recipes(
     lang: str | None = None,
     q: str | None = None,
     tag: list[str] | None = Query(default=None),
+    source: list[str] | None = Query(default=None),
     attr: list[str] | None = Query(default=None),
     sort: str = "title",
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
     return await request.app.state.kernel.recipes.list_recipes(
-        lang=lang, q=q, tags=tag, attrs=attr, sort=sort, limit=limit, offset=offset
+        lang=lang, q=q, tags=tag, sources=source, attrs=attr, sort=sort, limit=limit, offset=offset
+    )
+
+
+@router.get("/sources")
+async def list_recipe_sources(request: Request, lang: str | None = None):
+    return await request.app.state.kernel.recipes.list_sources(lang=lang)
+
+
+@router.post("/sources/rename")
+async def rename_recipe_source(payload: RecipeSourceRename, request: Request):
+    data = payload.data(request)
+    return await request.app.state.kernel.recipes.rename_source(
+        from_name=data["from_name"],
+        to_name=data["to_name"],
+        author=data.get("author"),
+        update_author="author" in data,
+        actor_member_id=data.get("actor_member_id"),
     )
 
 

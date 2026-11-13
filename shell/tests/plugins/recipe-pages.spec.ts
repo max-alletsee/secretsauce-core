@@ -99,4 +99,98 @@ describe('registered Recipe pages (API boundary double)', () => {
     expect(assetGetCalls.length).toBe(0)
     expect(wrapper.find('.cover-image').exists()).toBe(false)
   })
+
+  it('renders source attribution on detail page and filters recipe list when clicking source name', async () => {
+    const listQueries: any[] = []
+    const bookRecipe = {
+      ...savedRecipe,
+      id: 'eggplant_en',
+      group_id: 'eggplant',
+      title: 'Roasted Eggplant',
+      source: { type: 'cookbook', name: 'Simple', author: 'Yotam Ottolenghi', page: '142' },
+    }
+    const webRecipe = {
+      ...savedRecipe,
+      id: 'ravioli_en',
+      group_id: 'ravioli',
+      title: 'Skillet Ravioli',
+      source: { type: 'website', name: 'Smitten Kitchen', url: 'https://smittenkitchen.com/ravioli' },
+    }
+    const { wrapper, harness } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string, params: any) => {
+        if (path === '/api/recipes/eggplant_en') return bookRecipe
+        if (path === '/api/recipes/ravioli_en') return webRecipe
+        if (path === '/api/recipes/sources') {
+          return {
+            items: [
+              { name: 'Simple', type: 'cookbook', author: 'Yotam Ottolenghi', count: 1 },
+              { name: 'Smitten Kitchen', type: 'website', author: null, count: 1 },
+            ],
+          }
+        }
+        if (path === '/api/recipes') {
+          listQueries.push(params)
+          if (params?.source?.includes('Simple')) {
+            return { items: [bookRecipe], total: 1, limit: 50, offset: 0 }
+          }
+          return { items: [bookRecipe, webRecipe], total: 2, limit: 50, offset: 0 }
+        }
+        return []
+      },
+    } as any, '/recipes/eggplant_en')
+    wrappers.push(wrapper)
+
+    expect(wrapper.find('.recipe-source-attribution').text()).toContain('Simple')
+    expect(wrapper.find('.recipe-source-attribution').text()).toContain('p. 142')
+    expect(wrapper.find('.recipe-source-attribution').text()).toContain('Yotam Ottolenghi')
+
+    await harness.router.push('/recipes/ravioli_en')
+    await flushPromises()
+    const extLink = wrapper.find('.source-external-link')
+    expect(extLink.exists()).toBe(true)
+    expect(extLink.attributes('href')).toBe('https://smittenkitchen.com/ravioli')
+
+    await harness.router.push('/recipes/eggplant_en')
+    await flushPromises()
+    await wrapper.find('.source-filter-link').trigger('click')
+    await flushPromises()
+
+    expect(harness.router.currentRoute.value.path).toBe('/recipes')
+    expect(listQueries.at(-1)).toEqual({ q: '', source: ['Simple'] })
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(1)
+    expect(wrapper.text()).toContain('Roasted Eggplant')
+  })
+
+  it('saves structured source from RecipeEditPage and clears it when removed', async () => {
+    const patches: any[] = []
+    const existing = {
+      ...savedRecipe,
+      source: { type: 'cookbook', name: 'Simple', author: 'Yotam Ottolenghi', page: '142' },
+    }
+    const { wrapper } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string) => {
+        if (path === '/api/recipes/cake_en') return existing
+        if (path === '/api/recipes/sources') return { items: [{ name: 'Simple', type: 'cookbook', author: 'Yotam Ottolenghi', count: 1 }] }
+        return []
+      },
+      patch: async (path: string, body: any) => {
+        patches.push({ path, body })
+        return { ...existing, ...body }
+      },
+    } as any, '/recipes/cake_en/edit')
+    wrappers.push(wrapper)
+
+    expect((wrapper.find('#recipe-source-name').element as HTMLInputElement).value).toBe('Simple')
+    expect((wrapper.find('#recipe-source-page').element as HTMLInputElement).value).toBe('142')
+
+    await wrapper.find('#recipe-source-page').setValue('145')
+    await clickButton('Save Recipe')
+    expect(patches).toHaveLength(1)
+    expect(patches[0].body.source).toEqual({
+      type: 'cookbook',
+      name: 'Simple',
+      author: 'Yotam Ottolenghi',
+      page: '145',
+    })
+  })
 })

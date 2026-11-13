@@ -132,6 +132,7 @@ async def translate_recipe(
             "ingredients": translated.get("ingredients", []),
             "steps": translated.get("steps", []),
             "tags": translated.get("tags", []),
+            "source": source_recipe.get("source"),
             "origin": "plugin:core-translator",
         })
         saved_id = created["id"]

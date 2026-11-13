@@ -23,6 +23,7 @@ import Textarea from 'primevue/textarea'
 import InputNumber from 'primevue/inputnumber'
 import Select from 'primevue/select'
 import SelectButton from 'primevue/selectbutton'
+import MultiSelect from 'primevue/multiselect'
 import AutoComplete from 'primevue/autocomplete'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Checkbox from 'primevue/checkbox'
@@ -38,7 +39,7 @@ import type { createThemeRegistry } from '../theme'
 
 export const UI_COMPONENTS = { Button, SplitButton, Menu, Dialog, ConfirmDialog, Drawer,
   Accordion, AccordionPanel, AccordionHeader, AccordionContent, Tabs, TabList, Tab, TabPanels,
-  TabPanel, InputText, Textarea, InputNumber, Select, SelectButton, AutoComplete, ToggleSwitch,
+  TabPanel, InputText, Textarea, InputNumber, Select, SelectButton, MultiSelect, AutoComplete, ToggleSwitch,
   Checkbox, IconField, InputIcon, Tag, Avatar, Message, ProgressSpinner, Card, Divider }
 
 export function installUi(app: App, { themes }: { themes: ReturnType<typeof createThemeRegistry> }) {

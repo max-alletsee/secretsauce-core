@@ -1,13 +1,16 @@
 from datetime import datetime, timezone
+import html as html_lib
 import json
 import re
-from typing import Any
+from typing import Any, Literal
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import uuid
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from secretsauce import net
 from secretsauce.errors import SecretSauceError
+from secretsauce.nouns.recipes import normalize_source
 from secretsauce.plugins.context import PluginContext, current_ctx
 
 PLUGIN = {
@@ -53,6 +56,15 @@ class ImportedStep(BaseModel):
     instruction: str
 
 
+class ImportedSource(BaseModel):
+    type: Literal["website", "cookbook", "person", "other"] = "other"
+    name: str | None = None
+    author: str | None = None
+    page: str | None = None
+    url: str | None = None
+    notes: str | None = None
+
+
 class RecipeDraftSchema(BaseModel):
     title: str
     description: str | None = None
@@ -63,6 +75,7 @@ class RecipeDraftSchema(BaseModel):
     ingredients: list[ImportedIngredient] = Field(default_factory=list)
     steps: list[ImportedStep] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
+    source: ImportedSource | None = None
 
 
 class ParseUrlRequest(BaseModel):
@@ -115,7 +128,9 @@ async def _extract_recipe_with_ai(
     system_prompt = (
         "You are an expert culinary assistant. Extract the recipe from the provided input into the structured schema. "
         "Include title, description, servings, prep_time_minutes, cook_time_minutes, language (2-letter ISO), "
-        "ingredients (with name, quantity, unit, and raw_text), steps (with instruction string), and tags.\n\n"
+        "ingredients (with name, quantity, unit, and raw_text), steps (with instruction string), tags, "
+        "and source (if a cookbook title, author, page number, website name, or contributor person is mentioned or visible, "
+        "populate source with type 'cookbook'|'website'|'person'|'other', name, author, page, url, notes).\n\n"
         f"Input:\n{content_prompt}"
     )
 
@@ -143,12 +158,81 @@ async def _save_recipe_draft(ctx: PluginContext, draft: dict[str, Any]) -> str:
         "ingredients": draft.get("ingredients", []),
         "steps": draft.get("steps", []),
         "tags": draft.get("tags", []),
+        "source": normalize_source(draft.get("source")),
         "origin": "plugin:core-recipe-importer",
     })
     draft["id"] = saved["id"]
     draft["group_id"] = saved["group_id"]
     draft["recipe_id"] = saved["id"]
     return saved["id"]
+
+
+_TRACKING_QUERY_PARAMS = {
+    "fbclid",
+    "gclid",
+    "dclid",
+    "msclkid",
+    "igshid",
+    "mc_cid",
+    "mc_eid",
+    "ref",
+    "ref_src",
+    "_hsenc",
+    "_hsmi",
+    "si",
+    "s",
+}
+
+
+def _clean_source_url(url: str) -> str:
+    parts = urlsplit(url.strip())
+    kept = [
+        (k, v)
+        for k, v in parse_qsl(parts.query, keep_blank_values=True)
+        if not k.lower().startswith("utm_") and k.lower() not in _TRACKING_QUERY_PARAMS
+    ]
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(kept), ""))
+
+
+def _extract_meta_content(html: str, attr_name: str, attr_value: str) -> str | None:
+    pattern = re.compile(
+        rf"<meta\b[^>]*\b{attr_name}\s*=\s*['\"]{re.escape(attr_value)}['\"][^>]*>",
+        re.IGNORECASE | re.DOTALL,
+    )
+    for match in pattern.finditer(html):
+        tag = match.group(0)
+        c_match = re.search(r"\bcontent\s*=\s*['\"]([^'\"]*)['\"]", tag, re.IGNORECASE)
+        if c_match:
+            val = html_lib.unescape(c_match.group(1)).strip()
+            if val:
+                return val
+    return None
+
+
+def _extract_site_name(html: str, url: str) -> tuple[str, bool]:
+    """Returns (site_name, from_metadata)."""
+    for attr_name, attr_val in (
+        ("property", "og:site_name"),
+        ("name", "og:site_name"),
+        ("name", "application-name"),
+    ):
+        found = _extract_meta_content(html, attr_name, attr_val)
+        if found:
+            return found, True
+
+    title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    if title_match:
+        title_text = re.sub(r"\s+", " ", html_lib.unescape(title_match.group(1))).strip()
+        for sep in (" | ", " — ", " - "):
+            if sep in title_text:
+                suffix = title_text.rsplit(sep, 1)[-1].strip()
+                if 2 <= len(suffix) <= 40:
+                    return suffix, True
+
+    host = (urlsplit(url).hostname or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return host or url, False
 
 
 def _strip_html(html: str) -> str:
@@ -172,6 +256,8 @@ class RecipeImporterService:
         call_type: str,
         auto_save: bool,
         source_url: str | None = None,
+        site_name: str | None = None,
+        site_from_metadata: bool = False,
         images: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         source_Model_key = {
@@ -188,6 +274,22 @@ class RecipeImporterService:
                 call_type=call_type,
                 model_key=model_key,
             )
+            ai_source = normalize_source(draft.get("source"))
+            if source_url:
+                resolved_name = site_name
+                if not site_from_metadata and ai_source and ai_source.get("name"):
+                    resolved_name = ai_source["name"]
+                merged: dict[str, Any] = {
+                    "type": "website",
+                    "name": resolved_name or source_url,
+                    "url": source_url,
+                }
+                if ai_source and ai_source.get("author"):
+                    merged["author"] = ai_source["author"]
+                draft["source"] = normalize_source(merged)
+            else:
+                draft["source"] = ai_source
+
             recipe_id = await _save_recipe_draft(self.ctx, draft) if auto_save else None
             if recipe_id:
                 draft["recipe_id"] = recipe_id
@@ -204,19 +306,23 @@ class RecipeImporterService:
         return draft
 
     async def parse_url(self, url: str, auto_save: bool = False) -> dict[str, Any]:
+        clean_url = _clean_source_url(url)
         try:
             html = await net.fetch_public_text(url)
         except Exception as e:
             await _log_history(
-                self.ctx, source_type="url", source_url=url, status="failed", error_message=str(e)
+                self.ctx, source_type="url", source_url=clean_url, status="failed", error_message=str(e)
             )
             raise
+        site_name, from_meta = _extract_site_name(html, clean_url)
         return await self._import(
             "url",
-            f"Recipe URL: {url}\nWebpage text:\n{_strip_html(html)}",
+            f"Recipe URL: {clean_url}\nWebpage text:\n{_strip_html(html)}",
             "recipe_import_url",
             auto_save,
-            source_url=url,
+            source_url=clean_url,
+            site_name=site_name,
+            site_from_metadata=from_meta,
         )
 
     async def parse_text(self, text: str, auto_save: bool = False) -> dict[str, Any]:

@@ -242,6 +242,7 @@ async def customize_recipe(
                 "tags": list(recipe_data.get("tags") or []),
                 "ingredients": preconverted_ingredients,
                 "steps": list(recipe_data.get("steps") or []),
+                "source": recipe_data.get("source"),
                 "adaptation_summary": f"Converted ingredient units to {label} using core-units.",
             }
 
@@ -301,6 +302,9 @@ async def customize_recipe(
         for ing in adapted.get("ingredients", []):
             if isinstance(ing, dict):
                 ing["preserve_units"] = True
+
+    if recipe_data.get("source") is not None:
+        adapted["source"] = recipe_data.get("source")
 
     return adapted
 

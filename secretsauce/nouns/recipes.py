@@ -17,6 +17,39 @@ from secretsauce.util import now_iso
 # told apart from group ids by that character.
 GROUP_ID_PATTERN = re.compile(r"^[A-Za-z0-9-]{1,64}$")
 LANGUAGE_PATTERN = re.compile(r"^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$")
+SOURCE_TYPES = {"website", "cookbook", "person", "other"}
+
+
+def normalize_source(raw: Any) -> dict[str, Any] | None:
+    if raw is None:
+        return None
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            text = raw.strip()
+            return {"type": "other", "name": text} if text else None
+    if not isinstance(raw, dict):
+        return None
+
+    name = str(raw.get("name") or "").strip()
+    if not name:
+        return None
+
+    raw_type = str(raw.get("type") or "other").strip().lower()
+    source_type = raw_type if raw_type in SOURCE_TYPES else "other"
+
+    cleaned: dict[str, Any] = {
+        "type": source_type,
+        "name": name,
+    }
+    for key in ("author", "page", "url", "notes"):
+        val = raw.get(key)
+        if val is not None:
+            s = str(val).strip()
+            if s:
+                cleaned[key] = s
+    return cleaned
 
 
 def _deserialize_recipe(row: dict[str, Any]) -> dict[str, Any]:
@@ -34,12 +67,15 @@ def _deserialize_recipe(row: dict[str, Any]) -> dict[str, Any]:
         elif val is None and col in ("ingredients", "steps", "tags"):
             res[col] = []
 
+    if res.get("source") is not None:
+        res["source"] = normalize_source(res["source"])
+
     if "servings" in res and res["servings"] is not None:
         res["servings"] = float(res["servings"])
     return res
 
 
-def _extract_fts_data(data: dict[str, Any]) -> tuple[str, str, str, str]:
+def _extract_fts_data(data: dict[str, Any]) -> tuple[str, str, str, str, str]:
     title = data.get("title") or ""
     description = data.get("description") or ""
 
@@ -71,7 +107,16 @@ def _extract_fts_data(data: dict[str, Any]) -> tuple[str, str, str, str]:
         tags_list = [str(t) for t in tags_raw]
     tags_text = " ".join(tags_list)
 
-    return title, description, ingredients_text, tags_text
+    source_norm = normalize_source(data.get("source"))
+    source_parts: list[str] = []
+    if source_norm:
+        if source_norm.get("name"):
+            source_parts.append(source_norm["name"])
+        if source_norm.get("author"):
+            source_parts.append(source_norm["author"])
+    source_text = " ".join(source_parts)
+
+    return title, description, ingredients_text, tags_text, source_text
 
 
 def _validate_identity(draft: dict[str, Any]) -> None:
@@ -219,8 +264,57 @@ class RecipesRepo:
                 )
 
             now = now_iso()
-            source = draft.get("source")
+            source = normalize_source(draft.get("source"))
             actor_member_id = draft.get("actor_member_id")
+
+            # Keep Recipe Source synchronized across all rows in a recipe group.
+            existing_group_rows = await self.db.read_all(
+                "SELECT * FROM recipes WHERE group_id = ? ORDER BY created_at ASC;",
+                (group_id,),
+                conn=writer_conn,
+            )
+            if existing_group_rows:
+                if source is not None:
+                    for sib in existing_group_rows:
+                        sib_before = _deserialize_recipe(sib)
+                        if sib_before.get("source") != source:
+                            sib_rev = sib["revision"] + 1
+                            await writer_conn.execute(
+                                """
+                                UPDATE recipes SET
+                                    revision = ?,
+                                    source = ?,
+                                    updated_at = ?,
+                                    actor_member_id = ?,
+                                    origin = ?
+                                WHERE id = ?;
+                                """,
+                                (
+                                    sib_rev,
+                                    json.dumps(source),
+                                    now,
+                                    actor_member_id,
+                                    draft["origin"],
+                                    sib["id"],
+                                ),
+                            )
+                            sib_after = await self.get_recipe(sib["id"], conn=writer_conn)
+                            await self._rebuild_fts_row(writer_conn, sib_after)
+                            await emit_noun_event(
+                                self.events,
+                                writer_conn,
+                                "recipe:updated",
+                                "recipe",
+                                sib["id"],
+                                revision=sib_rev,
+                                before=sib_before,
+                                after=sib_after,
+                                actor_member_id=sib_after.get("actor_member_id"),
+                                origin=sib_after.get("origin"),
+                            )
+                else:
+                    source = normalize_source(_deserialize_recipe(existing_group_rows[0]).get("source"))
+
             await writer_conn.execute(
                 """
                 INSERT INTO recipes (
@@ -251,14 +345,16 @@ class RecipesRepo:
                     draft["origin"],
                 ),
             )
-            t_fts, d_fts, i_fts, tags_fts = _extract_fts_data(draft)
+            t_fts, d_fts, i_fts, tags_fts, src_fts = _extract_fts_data(
+                {**draft, "source": source}
+            )
             await writer_conn.execute(
                 """
                 INSERT INTO recipes_fts (
-                    id, group_id, language, title, description, ingredients, tags
-                ) VALUES (?, ?, ?, ?, ?, ?, ?);
+                    id, group_id, language, title, description, ingredients, tags, source
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
                 """,
-                (row_id, group_id, language, t_fts, d_fts, i_fts, tags_fts),
+                (row_id, group_id, language, t_fts, d_fts, i_fts, tags_fts, src_fts),
             )
             created = await self.get_recipe(row_id, conn=writer_conn)
             await emit_noun_event(
@@ -302,7 +398,9 @@ class RecipesRepo:
             ingredients = draft.get("ingredients", current.get("ingredients", []))
             tags = draft.get("tags", current.get("tags", []))
             description = draft.get("description")
-            source = draft.get("source")
+            old_source = normalize_source(current.get("source"))
+            source = normalize_source(draft.get("source"))
+            updated_at = now_iso()
 
             await writer_conn.execute(
                 """
@@ -337,39 +435,25 @@ class RecipesRepo:
                     draft.get("total_time_minutes"),
                     json.dumps(tags),
                     json.dumps(source) if source is not None else None,
-                    now_iso(),
+                    updated_at,
                     draft.get("actor_member_id"),
                     draft.get("origin") or "member",
                     recipe_id,
                 ),
             )
 
-            t_fts, d_fts, i_fts, tags_fts = _extract_fts_data(
+            await self._rebuild_fts_row(
+                writer_conn,
                 {
+                    "id": recipe_id,
+                    "group_id": current["group_id"],
+                    "language": current["language"],
                     "title": title,
                     "description": description,
                     "ingredients": ingredients,
                     "tags": tags,
-                }
-            )
-            await writer_conn.execute(
-                "DELETE FROM recipes_fts WHERE id = ?;", (recipe_id,)
-            )
-            await writer_conn.execute(
-                """
-                INSERT INTO recipes_fts (
-                    id, group_id, language, title, description, ingredients, tags
-                ) VALUES (?, ?, ?, ?, ?, ?, ?);
-                """,
-                (
-                    recipe_id,
-                    current["group_id"],
-                    current["language"],
-                    t_fts,
-                    d_fts,
-                    i_fts,
-                    tags_fts,
-                ),
+                    "source": source,
+                },
             )
 
             updated = await self.get_recipe(recipe_id, conn=writer_conn)
@@ -385,9 +469,80 @@ class RecipesRepo:
                 actor_member_id=updated.get("actor_member_id"),
                 origin=updated.get("origin"),
             )
+
+            if "source" in data and source != old_source:
+                siblings = await self.db.read_all(
+                    "SELECT * FROM recipes WHERE group_id = ? AND id != ?;",
+                    (current["group_id"], recipe_id),
+                    conn=writer_conn,
+                )
+                for sib in siblings:
+                    sib_before = _deserialize_recipe(sib)
+                    if sib_before.get("source") == source:
+                        continue
+                    sib_rev = sib["revision"] + 1
+                    await writer_conn.execute(
+                        """
+                        UPDATE recipes SET
+                            revision = ?,
+                            source = ?,
+                            updated_at = ?,
+                            actor_member_id = ?,
+                            origin = ?
+                        WHERE id = ?;
+                        """,
+                        (
+                            sib_rev,
+                            json.dumps(source) if source is not None else None,
+                            updated_at,
+                            draft.get("actor_member_id"),
+                            draft.get("origin") or "member",
+                            sib["id"],
+                        ),
+                    )
+                    sib_after = await self.get_recipe(sib["id"], conn=writer_conn)
+                    await self._rebuild_fts_row(writer_conn, sib_after)
+                    await emit_noun_event(
+                        self.events,
+                        writer_conn,
+                        "recipe:updated",
+                        "recipe",
+                        sib["id"],
+                        revision=sib_rev,
+                        before=sib_before,
+                        after=sib_after,
+                        actor_member_id=sib_after.get("actor_member_id"),
+                        origin=sib_after.get("origin"),
+                    )
+
             return updated
 
         return await in_transaction(self.db, conn, _do_update)
+
+    async def _rebuild_fts_row(
+        self, writer_conn: aiosqlite.Connection, rec: dict[str, Any]
+    ) -> None:
+        t_fts, d_fts, i_fts, tags_fts, src_fts = _extract_fts_data(rec)
+        await writer_conn.execute(
+            "DELETE FROM recipes_fts WHERE id = ?;", (rec["id"],)
+        )
+        await writer_conn.execute(
+            """
+            INSERT INTO recipes_fts (
+                id, group_id, language, title, description, ingredients, tags, source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            (
+                rec["id"],
+                rec["group_id"],
+                rec["language"],
+                t_fts,
+                d_fts,
+                i_fts,
+                tags_fts,
+                src_fts,
+            ),
+        )
 
     async def _emit_deleted(
         self, writer_conn: aiosqlite.Connection, rows: list[dict[str, Any]]
@@ -504,6 +659,7 @@ class RecipesRepo:
         lang: str | None = None,
         q: str | None = None,
         tags: Sequence[str] | None = None,
+        sources: Sequence[str] | None = None,
         attrs: Sequence[str] | None = None,
         sort: str = "title",
         limit: int = 50,
@@ -550,6 +706,24 @@ class RecipesRepo:
         for tag in tags or []:
             where.append("EXISTS (SELECT 1 FROM json_each(r.tags) WHERE value = ?)")
             where_params.append(tag)
+
+        if sources:
+            include_none = any(s == "none" for s in sources)
+            named_sources = [s for s in sources if s != "none"]
+            source_clauses: list[str] = []
+            if named_sources:
+                placeholders = ",".join("?" * len(named_sources))
+                source_clauses.append(
+                    f"json_extract(r.source, '$.name') IN ({placeholders})"
+                )
+                where_params.extend(named_sources)
+            if include_none:
+                source_clauses.append(
+                    "(r.source IS NULL OR json_extract(r.source, '$.name') IS NULL OR TRIM(json_extract(r.source, '$.name')) = '')"
+                )
+            if source_clauses:
+                where.append(f"({' OR '.join(source_clauses)})")
+
         if attrs:
             attr_sql, attr_params = attribute_filter_sql("recipe", attrs)
             where.append(f"r.group_id IN ({attr_sql})")
@@ -591,6 +765,143 @@ class RecipesRepo:
             rec["languages"] = languages.get(row["group_id"], [])
             items.append(rec)
         return {"items": items, "total": total, "limit": limit, "offset": offset}
+
+    async def list_sources(
+        self,
+        lang: str | None = None,
+        conn: aiosqlite.Connection | None = None,
+    ) -> dict[str, Any]:
+        """Distinct recipe sources aggregated across recipe groups."""
+        cfg = await self.household_repo.get_config()
+        primary_lang = cfg.get("languages", {}).get("primary", "en")
+        target_lang = lang or primary_lang
+
+        rows = await self.db.read_all(
+            """
+            WITH r AS (
+                SELECT recipes.*, ROW_NUMBER() OVER (
+                    PARTITION BY group_id
+                    ORDER BY CASE language WHEN ? THEN 0 WHEN ? THEN 1 ELSE 2 END,
+                             created_at, rowid
+                ) AS rn
+                FROM recipes
+            )
+            SELECT
+                json_extract(r.source, '$.name') AS name,
+                COALESCE(MAX(NULLIF(json_extract(r.source, '$.type'), '')), 'other') AS type,
+                MAX(NULLIF(json_extract(r.source, '$.author'), '')) AS author,
+                COUNT(*) AS count
+            FROM r
+            WHERE r.rn = 1
+              AND r.source IS NOT NULL
+              AND TRIM(COALESCE(json_extract(r.source, '$.name'), '')) != ''
+            GROUP BY json_extract(r.source, '$.name')
+            ORDER BY name COLLATE NOCASE ASC;
+            """,
+            (target_lang, primary_lang),
+            conn=conn,
+        )
+        items = [
+            {
+                "name": row["name"],
+                "type": row["type"] or "other",
+                "author": row["author"],
+                "count": int(row["count"]),
+            }
+            for row in rows
+        ]
+        return {"items": items}
+
+    async def rename_source(
+        self,
+        from_name: str,
+        to_name: str,
+        author: str | None = None,
+        update_author: bool = False,
+        actor_member_id: str | None = None,
+        origin: str | None = None,
+        conn: aiosqlite.Connection | None = None,
+    ) -> dict[str, Any]:
+        """Atomically rename a recipe source across all matching recipe rows."""
+        clean_from = (from_name or "").strip()
+        clean_to = (to_name or "").strip()
+        if not clean_from or not clean_to:
+            raise ValidationError(
+                "Source names cannot be blank",
+                fields={"from_name": "Required", "to_name": "Required"},
+            )
+        clean_author = author.strip() if isinstance(author, str) and author.strip() else None
+
+        async def _do_rename(writer_conn: aiosqlite.Connection) -> dict[str, Any]:
+            rows = await self.db.read_all(
+                "SELECT * FROM recipes WHERE json_extract(source, '$.name') = ?;",
+                (clean_from,),
+                conn=writer_conn,
+            )
+            if not rows:
+                return {"updated_count": 0, "updated_rows": 0}
+
+            updated_at = now_iso()
+            resolved_origin = resolve_origin(origin)
+            updated_groups: set[str] = set()
+            updated_rows = 0
+
+            for row in rows:
+                before = _deserialize_recipe(row)
+                current_source = before.get("source")
+                if not isinstance(current_source, dict):
+                    continue
+                next_source = dict(current_source)
+                next_source["name"] = clean_to
+                if update_author:
+                    if clean_author is not None:
+                        next_source["author"] = clean_author
+                    else:
+                        next_source.pop("author", None)
+                next_source = normalize_source(next_source)
+                if next_source == current_source:
+                    continue
+
+                new_rev = row["revision"] + 1
+                await writer_conn.execute(
+                    """
+                    UPDATE recipes SET
+                        revision = ?,
+                        source = ?,
+                        updated_at = ?,
+                        actor_member_id = ?,
+                        origin = ?
+                    WHERE id = ?;
+                    """,
+                    (
+                        new_rev,
+                        json.dumps(next_source) if next_source is not None else None,
+                        updated_at,
+                        actor_member_id,
+                        resolved_origin,
+                        row["id"],
+                    ),
+                )
+                after = await self.get_recipe(row["id"], conn=writer_conn)
+                await self._rebuild_fts_row(writer_conn, after)
+                await emit_noun_event(
+                    self.events,
+                    writer_conn,
+                    "recipe:updated",
+                    "recipe",
+                    row["id"],
+                    revision=new_rev,
+                    before=before,
+                    after=after,
+                    actor_member_id=after.get("actor_member_id"),
+                    origin=after.get("origin"),
+                )
+                updated_groups.add(row["group_id"])
+                updated_rows += 1
+
+            return {"updated_count": len(updated_groups), "updated_rows": updated_rows}
+
+        return await in_transaction(self.db, conn, _do_rename)
 
     async def _languages_for(
         self, group_ids: list[str], conn: aiosqlite.Connection | None

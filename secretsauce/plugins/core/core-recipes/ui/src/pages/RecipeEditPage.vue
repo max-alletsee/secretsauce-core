@@ -3,13 +3,16 @@ import { ref, computed, watch } from 'vue'
 import { Slot, useSecretSauce } from '@secretsauce/ui'
 import IngredientRowList from '../components/IngredientRowList.vue'
 import StepList from '../components/StepList.vue'
+import SourceEditor from '../components/SourceEditor.vue'
 import { fetchCoverId } from '../cover'
+import type { RecipeSource } from '../sourceFilter'
 const props = defineProps<{ recipeId?: string; id?: string }>()
 const emit = defineEmits<{ saved: [any] }>()
 const ss = useSecretSauce(), targetId = computed(() => props.id || props.recipeId || '')
 const title = ref(''), description = ref(''), language = ref(ss.store.household.value?.languages.primary || 'en'), servings = ref(2)
 const groupId = ref('')
 const prepTime = ref<number | null>(null), cookTime = ref<number | null>(null), tags = ref<string[]>([]), coverAssetId = ref<string | null>(null)
+const source = ref<RecipeSource | null>(null)
 const ingredients = ref<any[]>([]), steps = ref<any[]>([]), revision = ref(1), busy = ref(false), error = ref('')
 watch(targetId, async id => {
   if (!id) return
@@ -17,6 +20,7 @@ watch(targetId, async id => {
     const existing = await ss.api.get<any>(`/api/recipes/${id}`)
     title.value = existing.title; description.value = existing.description || ''; language.value = existing.language; servings.value = existing.servings
     prepTime.value = existing.prep_time_minutes; cookTime.value = existing.cook_time_minutes; tags.value = [...existing.tags]
+    source.value = existing.source || null
     ingredients.value = existing.ingredients; steps.value = existing.steps; revision.value = existing.revision
     coverAssetId.value = await fetchCoverId(ss.api, existing.group_id)
     groupId.value = existing.group_id
@@ -37,7 +41,20 @@ async function onImageUpload(event: Event) {
 async function save() {
   if (!title.value.trim() || busy.value) return
   busy.value = true; error.value = ''
-  const payload = { title: title.value.trim(), description: description.value.trim(), language: language.value, servings: servings.value, prep_time_minutes: prepTime.value, cook_time_minutes: cookTime.value, tags: tags.value, ingredients: ingredients.value, steps: steps.value }
+  const payload: Record<string, any> = {
+    title: title.value.trim(),
+    description: description.value.trim(),
+    language: language.value,
+    servings: servings.value,
+    prep_time_minutes: prepTime.value,
+    cook_time_minutes: cookTime.value,
+    tags: tags.value,
+    ingredients: ingredients.value,
+    steps: steps.value,
+  }
+  if (source.value !== null || targetId.value) {
+    payload.source = source.value
+  }
   try {
     const result = targetId.value ? await ss.api.patch<any>(`/api/recipes/${targetId.value}`, { ...payload, revision: revision.value }) : await ss.api.post<any>('/api/recipes', payload)
     emit('saved', result); ss.notify({ level: 'success', message: 'Recipe saved' }); ss.navigate?.(`/recipes/${result.id}`)
@@ -51,6 +68,7 @@ function applyAdaptation(adapted: any) {
   if (adapted.prep_time_minutes !== undefined) prepTime.value = adapted.prep_time_minutes
   if (adapted.cook_time_minutes !== undefined) cookTime.value = adapted.cook_time_minutes
   if (adapted.tags) tags.value = [...adapted.tags]
+  if (adapted.source !== undefined) source.value = adapted.source || null
   if (adapted.ingredients) ingredients.value = [...adapted.ingredients]
   if (adapted.steps) steps.value = [...adapted.steps]
 }
@@ -65,6 +83,7 @@ const editContext = computed(() => ({
     prep_time_minutes: prepTime.value,
     cook_time_minutes: cookTime.value,
     tags: tags.value,
+    source: source.value,
     ingredients: ingredients.value,
     steps: steps.value,
   },
@@ -90,6 +109,7 @@ const editContext = computed(() => ({
       <div class="form-group"><label for="recipe-cook">Cook time (min)</label><InputNumber inputId="recipe-cook" v-model="cookTime" :min="0" fluid /></div>
     </div>
     <div class="form-group"><label for="recipe-tags">Tags</label><AutoComplete inputId="recipe-tags" v-model="tags" multiple :typeahead="false" fluid /></div>
+    <SourceEditor v-model="source" />
     <div class="form-group"><label for="recipe-cover">Cover image</label><input id="recipe-cover" type="file" accept="image/*" :disabled="busy || !groupId" @change="onImageUpload"><small v-if="!targetId">Save your recipe first to add a cover image.</small><small v-else>Cover uploads are saved immediately, separately from recipe edits.</small><img v-if="coverAssetId" :src="ss.url(`/api/assets/${coverAssetId}/file`)" alt="Recipe cover" class="cover-preview"></div>
     <section><h3>Ingredients</h3><IngredientRowList v-model="ingredients" /></section>
     <section><h3>Instructions</h3><StepList v-model="steps" /></section>

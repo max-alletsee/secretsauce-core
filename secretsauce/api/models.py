@@ -103,6 +103,53 @@ class MemberPatch(MemberFields, _Revisioned):
 # -- recipes -------------------------------------------------------------------
 
 
+class RecipeSource(_Body):
+    type: Literal["website", "cookbook", "person", "other"] = "other"
+    name: str = Field(min_length=1, max_length=300)
+    author: str | None = Field(default=None, max_length=200)
+    page: str | None = Field(default=None, max_length=64)
+    url: str | None = Field(default=None, max_length=2048)
+    notes: str | None = Field(default=None, max_length=1000)
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Source name cannot be blank")
+        return cleaned
+
+    @field_validator("author", "page", "url", "notes")
+    @classmethod
+    def strip_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class RecipeSourceRename(_Body):
+    from_name: str = Field(min_length=1, max_length=300)
+    to_name: str = Field(min_length=1, max_length=300)
+    author: str | None = Field(default=None, max_length=200)
+
+    @field_validator("from_name", "to_name")
+    @classmethod
+    def strip_names(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Source name cannot be blank")
+        return cleaned
+
+    @field_validator("author")
+    @classmethod
+    def strip_author(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+
 class RecipeFields(_Body):
     title: str | None = Field(default=None, min_length=1, max_length=500)
     description: str | None = None
@@ -114,7 +161,7 @@ class RecipeFields(_Body):
     cook_time_minutes: int | None = Field(default=None, ge=0)
     total_time_minutes: int | None = Field(default=None, ge=0)
     tags: list[str] | None = None
-    source: dict[str, Any] | None = None
+    source: RecipeSource | None = None
 
 
 class RecipeCreate(RecipeFields):

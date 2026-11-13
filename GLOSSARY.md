@@ -20,6 +20,14 @@ _Avoid_: Meal Type, Time Slot
 A household member's positive or negative vote on a completed Timeline Entry, reflecting how that meal turned out.
 _Avoid_: Review, Star Rating, Recipe Vote
 
+**Recipe**:
+A dish's structured ingredients, steps, metadata, and media managed by the household as a single logical item across one or more language versions.
+_Avoid_: Dish, Recipe Group
+
+**Recipe Translation**:
+A single language-specific version of a Recipe, holding its localized title, description, ingredients, and steps.
+_Avoid_: Recipe Row, Language Variant, Language Copy
+
 **Recipe Customization**:
 A user-requested transformation of a recipe—such as dietary swaps, ingredient substitutions, unit conversions, or technique adjustments—that produces a modified version of the recipe highlighting the changes against the original.
 _Avoid_: Recipe Magic, Make it Magic, Recipe Adaptation
