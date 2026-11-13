@@ -62,7 +62,6 @@ function openSettings() { emit('cancel'); ss.navigate('/settings?section=core-ai
     <Message v-if="unavailable" severity="warn">AI isn’t set up yet. <Button label="Open AI settings" severity="secondary" @click="openSettings" /></Message>
     <Message v-else-if="error" severity="error">{{ error }}</Message>
     <Button label="Extract recipe" icon="pi pi-sparkles" :loading="extracting" :disabled="!ready || saving" @click="extract" />
-    <div v-if="extracting" role="status"><ProgressSpinner aria-label="Extracting recipe" /></div>
     <Card v-if="draft" class="draft-preview">
       <template #title>{{ draft.title }}</template>
       <template #content>
