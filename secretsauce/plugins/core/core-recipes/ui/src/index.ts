@@ -1,6 +1,7 @@
 import RecipeListPage from './pages/RecipeListPage.vue'
 import RecipeDetailPage from './pages/RecipeDetailPage.vue'
 import RecipeEditPage from './pages/RecipeEditPage.vue'
+import { confirmAndDeleteRecipe, recipeGroupId } from './deleteRecipe'
 
 export default function activate(ss: any) {
   // Routes
@@ -35,6 +36,27 @@ export default function activate(ss: any) {
       if (ctx?.recipe?.id) {
         if (ss.navigate) ss.navigate(`/recipes/${ctx.recipe.id}/edit`)
         else window.location.href = ss.url ? ss.url(`/recipes/${ctx.recipe.id}/edit`) : `/recipes/${ctx.recipe.id}/edit`
+      }
+    },
+  })
+  ss.intent.provider({
+    hub: 'recipe:actions',
+    id: 'delete',
+    title: 'Delete',
+    icon: 'trash',
+    order: 999,
+    kind: 'headless',
+    isAvailable: (ctx: any) => !!recipeGroupId(ctx?.recipe || {}),
+    execute: async (ctx: any) => {
+      if (!ctx?.recipe) return false
+      ctx.onBeforeDelete?.()
+      try {
+        const deleted = await confirmAndDeleteRecipe(ss, ctx.recipe)
+        if (!deleted) ctx.onDeleteAborted?.()
+        return deleted
+      } catch (err) {
+        ctx.onDeleteAborted?.()
+        throw err
       }
     },
   })

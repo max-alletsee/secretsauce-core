@@ -628,6 +628,19 @@ class RecipesRepo:
             (group_id,),
             conn=writer_conn,
         )
+        if not rows:
+            raise NotFoundError(f"Recipe group '{group_id}' not found")
+        # Preserve each linked recipe translation's title on Timeline Entries
+        # that did not specify a custom title before ON DELETE SET NULL unlinks them.
+        for row in rows:
+            await writer_conn.execute(
+                """
+                UPDATE timeline_entries
+                SET title = ?
+                WHERE recipe_id = ? AND (title IS NULL OR TRIM(title) = '');
+                """,
+                (row["title"], row["id"]),
+            )
         # Section 4.4: Delete assets and attributes for group
         await writer_conn.execute(
             "DELETE FROM assets WHERE entity_type = 'recipe' AND entity_id = ?;",

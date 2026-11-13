@@ -769,7 +769,7 @@ const Ne = { class: "add-entry" }, qe = { key: 0 }, Fe = { class: "quick-notes" 
     function N() {
       clearTimeout(S), S = setTimeout(o, 300);
     }
-    const P = ["timeline:created", "timeline:updated", "timeline:deleted", "core-timeline:slots-changed"].map((y) => b.on(y, N));
+    const P = ["timeline:created", "timeline:updated", "timeline:deleted", "core-timeline:slots-changed", "recipe:deleted"].map((y) => b.on(y, N));
     function M() {
       T.value = window.innerWidth < 768;
     }
@@ -964,7 +964,7 @@ const Ne = { class: "add-entry" }, qe = { key: 0 }, Fe = { class: "quick-notes" 
       ]);
     };
   }
-}), Ze = /* @__PURE__ */ K(Xe, [["__scopeId", "data-v-89d84527"]]);
+}), Ze = /* @__PURE__ */ K(Xe, [["__scopeId", "data-v-d1583cd8"]]);
 function at(t) {
   t.route({ path: "/timeline", component: Ze, nav: { label: "Timeline", icon: "calendar", order: 5 } }), t.slot("timeline.entry.badge", _e, { order: 10 }), t.intent.hub({ id: "entry:create", title: "Add entry to timeline" }), t.intent.hub({ id: "entry:interact", title: "Meal actions" }), t.intent.hub({ id: "timeline:assist", title: "Timeline planning assistance" }), t.intent.provider({
     hub: "entry:interact",

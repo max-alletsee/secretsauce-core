@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import activate from '../../../secretsauce/plugins/core/core-timeline/ui/src/index'
 import { registeredRoute, savedRecipe, clickButton } from '../helpers/registeredPlugin'
@@ -108,5 +108,28 @@ describe('registered Timeline route (API boundary double)', () => {
     await clickButton('Add meal', document.querySelector('[role=dialog]')!)
     expect(document.querySelector('[role=dialog]')).toBeNull()
     expect(wrapper.text()).toContain('take-out')
+  })
+
+  it('refreshes timeline when a recipe:deleted stream event arrives', async () => {
+    vi.useFakeTimers()
+    try {
+      let timelineGets = 0
+      const { wrapper, harness } = await registeredRoute(activate, 'core-timeline', {
+        get: async (path: string, query: any) => {
+          if (path === '/api/x/core-timeline/slots') return resolved(query.from, query.to)
+          if (path.startsWith('/api/timeline')) { timelineGets++; return [] }
+          return []
+        },
+      } as any, '/timeline')
+      wrappers.push(wrapper)
+
+      const initialGets = timelineGets
+      harness.emitStream('recipe:deleted', { kind: 'event', seq: 99, name: 'recipe:deleted', entity_type: 'recipe', entity_id: 'cake_en', revision: 1, actor_member_id: null, origin: 'member', created_at: '2026-10-01T00:00:00Z' })
+      vi.advanceTimersByTime(350)
+      await flushPromises()
+      expect(timelineGets).toBeGreaterThan(initialGets)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

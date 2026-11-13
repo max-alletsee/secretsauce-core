@@ -29,7 +29,7 @@ async function load(){const n=++revision;const {from,to}=windowDates.value;error
   }catch(failure:any){if(n===revision&&!disposed)error.value=failure.message||'Could not load Timeline'}
 }
 function refresh(){clearTimeout(timer);timer=setTimeout(load,300)}
-const stops=['timeline:created','timeline:updated','timeline:deleted','core-timeline:slots-changed'].map(name=>ss.on(name,refresh))
+const stops=['timeline:created','timeline:updated','timeline:deleted','core-timeline:slots-changed','recipe:deleted'].map(name=>ss.on(name,refresh))
 function resize(){phone.value=window.innerWidth<768}
 function earlier(){windowDates.value={...windowDates.value,from:shiftDate(windowDates.value.from,-4)};load()}
 function more(){windowDates.value={...windowDates.value,to:shiftDate(windowDates.value.to,5)};load()}

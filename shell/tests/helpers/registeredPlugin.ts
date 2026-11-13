@@ -1,4 +1,4 @@
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, resolveComponent } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { IntentTrigger, Slot } from '@secretsauce/ui'
 import { pluginHarness } from './pluginHarness'
@@ -33,7 +33,7 @@ export async function registeredRoute(activate: (ss: any) => void, pluginId: str
   await harness.router.push(path)
   await harness.router.isReady()
   const { RouterView } = await import('vue-router')
-  const wrapper = mountWithUi(defineComponent({ setup: () => () => h(RouterView) }), { attachTo: document.body, global: { provide: harness.provide, plugins: [harness.pinia, harness.router] } })
+  const wrapper = mountWithUi(defineComponent({ setup: () => () => h('div', [h(resolveComponent('ConfirmDialog')), h(RouterView)]) }), { attachTo: document.body, global: { provide: harness.provide, plugins: [harness.pinia, harness.router] } })
   await flushPromises()
   return { harness, wrapper }
 }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { Slot, IntentTrigger, useSecretSauce } from '@secretsauce/ui'
 import { fetchCoverId } from '../cover'
+import { matchesDeletedRecipe } from '../deleteRecipe'
 import { pendingSourceFilter, sourceIcon, type RecipeSource } from '../sourceFilter'
 const props = defineProps<{ recipeId?: string; id?: string }>()
 const emit = defineEmits<{ switchLanguage: [string] }>()
@@ -9,7 +10,18 @@ const ss = useSecretSauce(), recipe = ref<any>(null), currentServings = ref(2), 
 const customizedRecipe = ref<any>(null), customizeOpen = ref(false)
 const effectiveId = computed(() => props.id || props.recipeId || '')
 const coverId = ref<string | null>(null)
+const deleting = ref(false)
 let request = 0
+const stopDeleted = ss.on('recipe:deleted', (event: any) => {
+  if (deleting.value || !recipe.value) return
+  if (matchesDeletedRecipe(event, recipe.value)) {
+    ss.notify({ level: 'info', message: 'This recipe was deleted' })
+    ss.navigate?.('/recipes')
+  }
+})
+onBeforeUnmount(() => {
+  if (typeof stopDeleted === 'function') stopDeleted()
+})
 watch(effectiveId, async id => {
   if (!id) return
   const sequence = ++request
@@ -73,7 +85,7 @@ const detailCustomizeContext = computed(() => ({
     <Message v-if="error" severity="error">{{ error }}</Message>
     <template v-if="recipe">
       <div v-if="recipe.languages?.length > 1" class="lang-bar"><span>Languages:</span><Button v-for="language in recipe.languages" :key="language" :label="language.toUpperCase()" size="small" :outlined="language !== recipe.language" @click="switchLanguage(`${recipe.group_id}_${language}`)" /></div>
-      <div class="detail-header"><div><h1>{{ customizedRecipe?.title || recipe.title }}</h1><div v-if="activeSource" class="recipe-source-attribution"><i :class="sourceIcon(activeSource.type)" aria-hidden="true" /><span class="source-prefix">From: </span><button type="button" class="source-filter-link" @click="filterBySource(activeSource.name)">{{ activeSource.name }}</button><span v-if="activeSource.type === 'cookbook' && activeSource.page" class="source-locator">, p. {{ activeSource.page }}</span><span v-if="activeSource.author" class="source-author"> by {{ activeSource.author }}</span><a v-if="activeSource.url" :href="activeSource.url" target="_blank" rel="noopener noreferrer" class="source-external-link" aria-label="Open source URL"><i class="pi pi-external-link" aria-hidden="true" /></a><span v-if="activeSource.notes" class="source-notes"> — {{ activeSource.notes }}</span></div><p v-if="!customizedRecipe && recipe.description">{{ recipe.description }}</p></div><div class="detail-actions"><Slot name="recipe.detail.actions" :context="detailCustomizeContext" /><Slot name="recipe.card.actions" :context="{ recipe, isShortlisted }" /><IntentTrigger hub="recipe:actions" :context="{ recipe }" label="Actions" /></div></div>
+      <div class="detail-header"><div><h1>{{ customizedRecipe?.title || recipe.title }}</h1><div v-if="activeSource" class="recipe-source-attribution"><i :class="sourceIcon(activeSource.type)" aria-hidden="true" /><span class="source-prefix">From: </span><button type="button" class="source-filter-link" @click="filterBySource(activeSource.name)">{{ activeSource.name }}</button><span v-if="activeSource.type === 'cookbook' && activeSource.page" class="source-locator">, p. {{ activeSource.page }}</span><span v-if="activeSource.author" class="source-author"> by {{ activeSource.author }}</span><a v-if="activeSource.url" :href="activeSource.url" target="_blank" rel="noopener noreferrer" class="source-external-link" aria-label="Open source URL"><i class="pi pi-external-link" aria-hidden="true" /></a><span v-if="activeSource.notes" class="source-notes"> — {{ activeSource.notes }}</span></div><p v-if="!customizedRecipe && recipe.description">{{ recipe.description }}</p></div><div class="detail-actions"><Slot name="recipe.detail.actions" :context="detailCustomizeContext" /><Slot name="recipe.card.actions" :context="{ recipe, isShortlisted }" /><IntentTrigger hub="recipe:actions" :context="{ recipe, onBeforeDelete: () => { deleting = true }, onDeleteAborted: () => { deleting = false } }" label="Actions" /></div></div>
       <img v-if="coverId" :src="ss.url(`/api/assets/${coverId}/file`)" :alt="recipe.title" class="recipe-cover" />
       <div class="scaler-card"><span>Servings:</span><Button class="btn-scaler-minus" icon="pi pi-minus" aria-label="Decrease servings" rounded outlined :disabled="currentServings <= 1" @click="currentServings--" /><span class="servings-value">{{ currentServings }}</span><Button class="btn-scaler-plus" icon="pi pi-plus" aria-label="Increase servings" rounded outlined @click="currentServings++" /></div>
       <Slot name="recipe.detail.customize" :context="detailCustomizeContext" />

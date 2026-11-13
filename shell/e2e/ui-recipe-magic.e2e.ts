@@ -27,22 +27,23 @@ test('recipe magic adapts recipe and applies to editor', async ({ page, request 
   await page.goto(`/recipes/${recipe.id}/edit`)
   await expect(page.getByLabel('Title', { exact: true })).toHaveValue('Bolognese Pasta')
 
-  // 2. Click Make it Magic
-  const magicBtn = page.getByRole('button', { name: 'Make it Magic' })
-  await expect(magicBtn).toBeVisible()
-  await magicBtn.click()
+  // 2. Click Customize Recipe
+  const customizeBtn = page.getByRole('button', { name: 'Customize Recipe' })
+  await expect(customizeBtn).toBeVisible()
+  await customizeBtn.click()
 
   // 3. Dialog opens and actions are visible
-  await expect(page.getByText('Make it Magic: Adapt Recipe')).toBeVisible()
+  await expect(page.locator('.customize-recipe-dialog').getByText('Customize Recipe')).toBeVisible()
   const vegAction = page.getByRole('button', { name: /Make it vegetarian/i })
   await expect(vegAction).toBeVisible()
 
   // 4. Trigger adaptation
   await vegAction.click()
+  await page.locator('.customize-recipe-dialog').getByRole('button', { name: 'Customize', exact: true }).click()
 
-  // 5. Preview appears with AI adaptation summary
-  await expect(page.getByText(/AI Adaptation Summary:/i)).toBeVisible()
-  await expect(page.getByText(/Replaced ground meat with sautéed mushrooms/i)).toBeVisible()
+  // 5. Preview appears with customization summary
+  await expect(page.getByText(/Customization Summary:/i)).toBeVisible()
+  await expect(page.locator('.customized-recipe-preview').getByText(/Replaced ground meat with sautéed mushrooms/i)).toBeVisible()
 
   // 6. Apply to editor
   const applyBtn = page.getByRole('button', { name: 'Apply to Editor' })
@@ -73,10 +74,11 @@ test('recipe magic saves directly as a new recipe variation', async ({ page, req
   const recipe = await response.json()
 
   await page.goto(`/recipes/${recipe.id}/edit`)
-  await page.getByRole('button', { name: 'Make it Magic' }).click()
+  await page.getByRole('button', { name: 'Customize Recipe' }).click()
   await page.getByRole('button', { name: /Make it vegetarian/i }).click()
+  await page.locator('.customize-recipe-dialog').getByRole('button', { name: 'Customize', exact: true }).click()
 
-  await expect(page.getByText(/AI Adaptation Summary:/i)).toBeVisible()
+  await expect(page.getByText(/Customization Summary:/i)).toBeVisible()
   const forkBtn = page.getByRole('button', { name: 'Save as New Recipe' })
   await expect(forkBtn).toBeVisible()
   await forkBtn.click()

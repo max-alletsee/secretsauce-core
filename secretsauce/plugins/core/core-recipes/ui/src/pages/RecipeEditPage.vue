@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { Slot, useSecretSauce } from '@secretsauce/ui'
 import IngredientRowList from '../components/IngredientRowList.vue'
 import StepList from '../components/StepList.vue'
 import SourceEditor from '../components/SourceEditor.vue'
 import { fetchCoverId } from '../cover'
+import { confirmAndDeleteRecipe, matchesDeletedRecipe } from '../deleteRecipe'
 import type { RecipeSource } from '../sourceFilter'
 const props = defineProps<{ recipeId?: string; id?: string }>()
 const emit = defineEmits<{ saved: [any] }>()
@@ -13,8 +14,18 @@ const title = ref(''), description = ref(''), language = ref(ss.store.household.
 const groupId = ref('')
 const prepTime = ref<number | null>(null), cookTime = ref<number | null>(null), tags = ref<string[]>([]), coverAssetId = ref<string | null>(null)
 const source = ref<RecipeSource | null>(null)
-const ingredients = ref<any[]>([]), steps = ref<any[]>([]), revision = ref(1), busy = ref(false), error = ref('')
+const ingredients = ref<any[]>([]), steps = ref<any[]>([]), revision = ref(1), languages = ref<string[]>([]), busy = ref(false), deleting = ref(false), deletedRemotely = ref(false), error = ref('')
+const stopDeleted = ss.on('recipe:deleted', (event: any) => {
+  if (deleting.value || !targetId.value) return
+  if (matchesDeletedRecipe(event, { id: targetId.value, group_id: groupId.value })) {
+    deletedRemotely.value = true
+  }
+})
+onBeforeUnmount(() => {
+  if (typeof stopDeleted === 'function') stopDeleted()
+})
 watch(targetId, async id => {
+  deletedRemotely.value = false
   if (!id) return
   try {
     const existing = await ss.api.get<any>(`/api/recipes/${id}`)
@@ -22,6 +33,7 @@ watch(targetId, async id => {
     prepTime.value = existing.prep_time_minutes; cookTime.value = existing.cook_time_minutes; tags.value = [...existing.tags]
     source.value = existing.source || null
     ingredients.value = existing.ingredients; steps.value = existing.steps; revision.value = existing.revision
+    languages.value = existing.languages || []
     coverAssetId.value = await fetchCoverId(ss.api, existing.group_id)
     groupId.value = existing.group_id
   } catch (failure: any) { error.value = failure?.message || 'Could not load recipe' }
@@ -39,7 +51,7 @@ async function onImageUpload(event: Event) {
   finally { busy.value = false }
 }
 async function save() {
-  if (!title.value.trim() || busy.value) return
+  if (!title.value.trim() || busy.value || deletedRemotely.value) return
   busy.value = true; error.value = ''
   const payload: Record<string, any> = {
     title: title.value.trim(),
@@ -60,6 +72,26 @@ async function save() {
     emit('saved', result); ss.notify({ level: 'success', message: 'Recipe saved' }); ss.navigate?.(`/recipes/${result.id}`)
   } catch (failure: any) { error.value = failure?.message || 'Could not save recipe' }
   finally { busy.value = false }
+}
+async function removeRecipe() {
+  if (!targetId.value || busy.value || deletedRemotely.value) return
+  busy.value = true
+  deleting.value = true
+  error.value = ''
+  try {
+    const deleted = await confirmAndDeleteRecipe(ss, {
+      id: targetId.value,
+      group_id: groupId.value || undefined,
+      title: title.value.trim() || 'this recipe',
+      languages: languages.value,
+    })
+    if (!deleted) deleting.value = false
+  } catch (failure: any) {
+    deleting.value = false
+    error.value = failure?.message || 'Could not delete recipe'
+  } finally {
+    busy.value = false
+  }
 }
 function applyAdaptation(adapted: any) {
   if (adapted.title) title.value = adapted.title
@@ -99,6 +131,7 @@ const editContext = computed(() => ({
         <Button label="Cancel" class="btn-cancel" severity="secondary" :disabled="busy" @click="ss.navigate?.(targetId ? `/recipes/${targetId}` : '/recipes')" />
       </div>
     </div>
+    <Message v-if="deletedRemotely" severity="warn">This recipe was deleted in another session. Saving is disabled, or you can copy your changes before leaving.</Message>
     <Message v-if="error" severity="error">{{ error }}</Message>
     <div class="form-group"><label for="recipe-title">Title</label><InputText id="recipe-title" v-model="title" class="input-title" required fluid /></div>
     <div class="form-group"><label for="recipe-description">Description</label><Textarea id="recipe-description" v-model="description" class="textarea" rows="3" fluid /></div>
@@ -113,7 +146,10 @@ const editContext = computed(() => ({
     <div class="form-group"><label for="recipe-cover">Cover image</label><input id="recipe-cover" type="file" accept="image/*" :disabled="busy || !groupId" @change="onImageUpload"><small v-if="!targetId">Save your recipe first to add a cover image.</small><small v-else>Cover uploads are saved immediately, separately from recipe edits.</small><img v-if="coverAssetId" :src="ss.url(`/api/assets/${coverAssetId}/file`)" alt="Recipe cover" class="cover-preview"></div>
     <section><h3>Ingredients</h3><IngredientRowList v-model="ingredients" /></section>
     <section><h3>Instructions</h3><StepList v-model="steps" /></section>
-    <div class="actions-row"><Button type="submit" label="Save Recipe" class="btn-primary" icon="pi pi-check" :loading="busy" :disabled="!title.trim()" /></div>
+    <div class="actions-row">
+      <Button v-if="targetId" type="button" label="Delete Recipe" class="btn-delete-recipe" icon="pi pi-trash" severity="danger" outlined :loading="deleting && busy" :disabled="busy || deletedRemotely" @click="removeRecipe" />
+      <Button type="submit" label="Save Recipe" class="btn-primary" icon="pi pi-check" :loading="busy && !deleting" :disabled="!title.trim() || busy || deletedRemotely" />
+    </div>
   </form>
 </template>
 <style scoped>
@@ -125,5 +161,6 @@ h3 { margin: 0 0 .375rem; font-size: 1rem; }
 .form-group { display: grid; gap: .25rem; }label { color: var(--p-text-muted-color); font-size: .875rem; }
 .form-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; }.cover-preview { max-width: 15rem; max-height: 10rem; }
 .actions-row { justify-content: flex-end; }
+.btn-delete-recipe { margin-right: auto; }
 @media (max-width: 767px) { .recipe-edit-page { padding: .5rem .625rem; gap: .5rem; } .form-row { grid-template-columns: 1fr 1fr; } }
 </style>

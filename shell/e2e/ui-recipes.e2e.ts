@@ -100,3 +100,64 @@ test('failed cover upload retains the edited fields without changing the recipe'
   expect((await (await request.get(`/api/recipes/${recipe.id}`)).json()).title).toBe(recipe.title)
   expect(await (await request.get(`/api/assets?entity_type=recipe&entity_id=${recipe.group_id}`)).json()).toEqual([])
 })
+
+test('deletes a multi-language recipe from Detail Actions menu and preserves Timeline entry title', async ({ page, request }) => {
+  await login(page)
+  const d = new Date()
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+  const enRes = await request.post('/api/recipes', { data: { title: 'Deletable Curry', language: 'en' } })
+  expect(enRes.status()).toBe(201)
+  const enRec = await enRes.json()
+
+  const deRes = await request.post('/api/recipes', { data: { group_id: enRec.group_id, title: 'Löschbares Curry', language: 'de' } })
+  expect(deRes.status()).toBe(201)
+  const deRec = await deRes.json()
+
+  const tlRes = await request.post('/api/timeline', {
+    data: { date: today, meal_type: 'dinner', entry_type: 'recipe', recipe_id: deRec.id },
+  })
+  expect(tlRes.status()).toBe(201)
+
+  await page.goto(`/recipes/${enRec.id}`)
+  await page.getByRole('button', { name: 'Actions', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Delete', exact: true }).click()
+
+  const dialog = page.getByRole('alertdialog')
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toContainText("Delete 'Deletable Curry' and all 2 language versions (EN, DE)?")
+  await expect(dialog).toContainText('Timeline history')
+
+  await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(page).toHaveURL(/\/recipes$/)
+  await expect(page.locator('.recipe-card', { hasText: 'Deletable Curry' })).toHaveCount(0)
+  expect((await request.get(`/api/recipes/${enRec.group_id}`)).status()).toBe(404)
+
+  await page.goto('/timeline')
+  await expect(page.locator(`[data-timeline-date="${today}"]`)).toContainText('Löschbares Curry')
+})
+
+test('deletes an existing recipe from RecipeEditPage after confirmation and keeps on Cancel', async ({ page, request }) => {
+  await login(page)
+  const res = await request.post('/api/recipes', { data: { title: 'Edit Page Delete Target', language: 'en' } })
+  expect(res.status()).toBe(201)
+  const recipe = await res.json()
+
+  await page.goto('/recipes/new')
+  await expect(page.getByRole('button', { name: 'Delete Recipe', exact: true })).toHaveCount(0)
+
+  await page.goto(`/recipes/${recipe.id}/edit`)
+  await expect(page.getByRole('button', { name: 'Delete Recipe', exact: true })).toBeVisible()
+
+  // Cancel keeps the recipe
+  await page.getByRole('button', { name: 'Delete Recipe', exact: true }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(page).toHaveURL(new RegExp(`/recipes/${recipe.id}/edit$`))
+  expect((await request.get(`/api/recipes/${recipe.id}`)).status()).toBe(200)
+
+  // Confirm deletes the recipe
+  await page.getByRole('button', { name: 'Delete Recipe', exact: true }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(page).toHaveURL(/\/recipes$/)
+  expect((await request.get(`/api/recipes/${recipe.group_id}`)).status()).toBe(404)
+})

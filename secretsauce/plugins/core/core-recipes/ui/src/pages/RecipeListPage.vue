@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { Slot, IntentTrigger, useSecretSauce } from '@secretsauce/ui'
 import RecipeCard from '../components/RecipeCard.vue'
 import { fetchCoverId } from '../cover'
@@ -48,6 +48,13 @@ async function loadRecipes() {
   catch (failure: any) { if (sequence === request) error.value = failure?.message || 'Could not load recipes' }
 }
 function openRecipe(id: string) { emit('openRecipe', id); ss.navigate?.(`/recipes/${id}`) }
+const stopDeleted = ss.on('recipe:deleted', () => {
+  loadRecipes()
+  loadSources()
+})
+onBeforeUnmount(() => {
+  if (typeof stopDeleted === 'function') stopDeleted()
+})
 onMounted(() => {
   showImages.value = readShowImages()
   if (pendingSourceFilter.value) {

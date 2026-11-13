@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import activate from '../../../secretsauce/plugins/core/core-recipes/ui/src/index'
-import { registeredRoute, savedRecipe, clickButton } from '../helpers/registeredPlugin'
+import { registeredRoute, savedRecipe, clickButton, openProvider } from '../helpers/registeredPlugin'
 const wrappers: VueWrapper[] = []
 afterEach(() => { wrappers.splice(0).forEach(w => w.unmount()); document.body.innerHTML = '' })
 describe('registered Recipe pages (API boundary double)', () => {
@@ -192,5 +192,133 @@ describe('registered Recipe pages (API boundary double)', () => {
       author: 'Yotam Ottolenghi',
       page: '145',
     })
+  })
+
+  it('deletes a recipe from RecipeDetailPage Actions menu after confirmation and cancels cleanly', async () => {
+    const deletes: string[] = []
+    let listed = [savedRecipe]
+    const { wrapper, harness } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string) => {
+        if (path === '/api/recipes/cake_en') return savedRecipe
+        if (path === '/api/recipes') return { items: listed, total: listed.length, limit: 50, offset: 0 }
+        return []
+      },
+      delete: async (path: string) => {
+        deletes.push(path)
+        listed = []
+      },
+    } as any, '/recipes/cake_en')
+    wrappers.push(wrapper)
+
+    // Cancel leaves recipe untouched
+    await openProvider(wrapper, 'Delete')
+    const dialog = document.querySelector('[role=alertdialog], .p-confirmdialog')!
+    expect(dialog).not.toBeNull()
+    expect(dialog.textContent).toContain("Delete 'Chocolate cake'?")
+    expect(dialog.textContent).toContain('Timeline history')
+    await clickButton('Cancel', document)
+    expect(deletes).toEqual([])
+    expect(harness.router.currentRoute.value.path).toBe('/recipes/cake_en')
+
+    // Accept deletes the entire recipe group and navigates to /recipes
+    await openProvider(wrapper, 'Delete')
+    await clickButton('Delete', document)
+    await flushPromises()
+    expect(deletes).toEqual(['/api/recipes/cake'])
+    expect(harness.router.currentRoute.value.path).toBe('/recipes')
+    expect(harness.notifications).toContainEqual({ level: 'success', message: 'Recipe deleted' })
+  })
+
+  it('mentions all language versions in confirmation when deleting a multi-language recipe', async () => {
+    const multiLang = { ...savedRecipe, languages: ['en', 'de'] }
+    const { wrapper } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string) => path === '/api/recipes/cake_en' ? multiLang : [],
+      delete: async () => {},
+    } as any, '/recipes/cake_en')
+    wrappers.push(wrapper)
+
+    await openProvider(wrapper, 'Delete')
+    const dialog = document.querySelector('[role=alertdialog], .p-confirmdialog')!
+    expect(dialog.textContent).toContain("Delete 'Chocolate cake' and all 2 language versions (EN, DE)?")
+    await clickButton('Cancel', document)
+  })
+
+  it('shows Delete Recipe button only on existing recipes in RecipeEditPage and handles errors', async () => {
+    const deletes: string[] = []
+    let failDelete = true
+    const { wrapper, harness } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string) => {
+        if (path === '/api/recipes/cake_en') return savedRecipe
+        if (path === '/api/recipes') return { items: [], total: 0, limit: 50, offset: 0 }
+        return []
+      },
+      delete: async (path: string) => {
+        if (failDelete) throw new Error('Network unavailable')
+        deletes.push(path)
+      },
+    } as any, '/recipes/new')
+    wrappers.push(wrapper)
+
+    expect(wrapper.findAll('button').some(b => b.text().includes('Delete Recipe'))).toBe(false)
+
+    await harness.router.push('/recipes/cake_en/edit')
+    await flushPromises()
+    expect(wrapper.findAll('button').some(b => b.text().includes('Delete Recipe'))).toBe(true)
+
+    // Failed delete keeps user on edit page and displays error
+    await clickButton('Delete Recipe')
+    await clickButton('Delete', document)
+    await flushPromises()
+    expect(harness.router.currentRoute.value.path).toBe('/recipes/cake_en/edit')
+    expect(wrapper.text()).toContain('Network unavailable')
+
+    // Successful delete navigates to /recipes
+    failDelete = false
+    await clickButton('Delete Recipe')
+    await clickButton('Delete', document)
+    await flushPromises()
+    expect(deletes).toEqual(['/api/recipes/cake'])
+    expect(harness.router.currentRoute.value.path).toBe('/recipes')
+  })
+
+  it('reacts to remote recipe:deleted events on list, detail, and edit pages', async () => {
+    let listCalls = 0
+    let sourceCalls = 0
+    const { wrapper, harness } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string) => {
+        if (path === '/api/recipes') { listCalls++; return { items: [savedRecipe], total: 1, limit: 50, offset: 0 } }
+        if (path === '/api/recipes/sources') { sourceCalls++; return { items: [] } }
+        if (path === '/api/recipes/cake_en') return savedRecipe
+        return []
+      },
+    } as any, '/recipes')
+    wrappers.push(wrapper)
+
+    const initialListCalls = listCalls
+    const initialSourceCalls = sourceCalls
+    harness.emitStream('recipe:deleted', { kind: 'event', seq: 10, name: 'recipe:deleted', entity_type: 'recipe', entity_id: 'cake_en', revision: 1, actor_member_id: null, origin: 'member', created_at: '2026-10-01T00:00:00Z' })
+    await flushPromises()
+    expect(listCalls).toBeGreaterThan(initialListCalls)
+    expect(sourceCalls).toBeGreaterThan(initialSourceCalls)
+
+    // Detail view redirects away on remote deletion
+    await harness.router.push('/recipes/cake_en')
+    await flushPromises()
+    harness.emitStream('recipe:deleted', { kind: 'event', seq: 11, name: 'recipe:deleted', entity_type: 'recipe', entity_id: 'cake_en', revision: 1, actor_member_id: null, origin: 'member', created_at: '2026-10-01T00:00:00Z' })
+    await flushPromises()
+    expect(harness.router.currentRoute.value.path).toBe('/recipes')
+    expect(harness.notifications).toContainEqual({ level: 'info', message: 'This recipe was deleted' })
+
+    // Edit view keeps user on page with warning banner and disables Save/Delete
+    await harness.router.push('/recipes/cake_en/edit')
+    await flushPromises()
+    await wrapper.find('.input-title').setValue('Unsaved edits')
+    harness.emitStream('recipe:deleted', { kind: 'event', seq: 12, name: 'recipe:deleted', entity_type: 'recipe', entity_id: 'cake_en', revision: 1, actor_member_id: null, origin: 'member', created_at: '2026-10-01T00:00:00Z' })
+    await flushPromises()
+    expect(harness.router.currentRoute.value.path).toBe('/recipes/cake_en/edit')
+    expect(wrapper.text()).toContain('This recipe was deleted in another session')
+    expect((wrapper.find('.input-title').element as HTMLInputElement).value).toBe('Unsaved edits')
+    const saveBtn = wrapper.findAll('button').find(b => b.text().includes('Save Recipe'))!
+    expect(saveBtn.attributes('disabled')).toBeDefined()
   })
 })
