@@ -39,9 +39,9 @@ MOCK_TRANSLATION_ES = {
 
 
 @pytest.mark.asyncio
-async def test_stage_7_full_lifecycle_integration(tmp_path: Path):
+async def test_ai_shopping_full_lifecycle_integration(tmp_path: Path):
     """
-    End-to-end multi-plugin lifecycle test across all 5 Stage 7 plugins:
+    End-to-end multi-plugin lifecycle test across the AI and shopping plugins:
     1. core-ai-provider: service booted & operational
     2. core-recipe-importer: extract recipe from text and auto-save to library
     3. core-translator: translate recipe to Spanish within the same group

@@ -56,10 +56,10 @@ pnpm --prefix shell build
 ### Running Tests
 Execute the complete automated test suite:
 ```bash
-# Run backend kernel & plugin tests (214 tests)
+# Run backend kernel & plugin tests
 uv run pytest
 
-# Run frontend shell & plugin tests (85 tests across 31 suites)
+# Run frontend shell & plugin tests
 pnpm --prefix shell test
 
 # Run browser end-to-end Playwright tests
@@ -94,15 +94,12 @@ uv run secretsauce serve --host 0.0.0.0 --port 8080 --data-dir ./data
 ## Documentation
 
 - [Podman VPS Deployment](docs/DEPLOY_PODMAN.md) - Two isolated family instances, systemd restart/boot behavior, HTTPS proxy, releases, backups, and rollback.
+- [Core Plugins Reference](docs/CORE_PLUGINS.md) - Built-in core plugins, capabilities, and UI/scheduling contracts.
 - [Frontend Shell & PWA Architecture](docs/SHELL_ARCHITECTURE.md) - Deep-dive into Vue 3 shell, service worker caching, outbox queue, slot & intent registries, and theming.
 - [Kernel Architecture Guide](docs/KERNEL_ARCHITECTURE.md) - Deep-dive into database concurrency, cryptographic derivation, entity models, event dispatching, and background jobs.
 - [REST API Reference](docs/API_REFERENCE.md) - Endpoints, request/response models, authentication headers, error codes, and SSE stream framing.
 - [Plugin Developer Guide](docs/PLUGIN_DEVELOPER_GUIDE.md) - Backend Python plugins and frontend `ui.js` ES module development with `@secretsauce/ui`.
-- [Phase 1: Kernel Implementation Plan](docs/superpowers/plans/2026-09-09-kernel-implementation-plan.md) - Phase 1 build steps and status (21/21 completed).
-- [Phase 2: Frontend Shell Implementation Plan](docs/superpowers/plans/2026-09-10-frontend-shell-implementation-plan.md) - Phase 2 SPA shell, service worker, and PWA serving plan (13/13 completed).
-- [Phase 3A: Units Engine & Initial Plugins](docs/superpowers/plans/2026-09-11-phase-3a-units-and-stage-6-plugins.md) - Units parser/converter, `units` and `recurring` core plugins (8/8 completed).
-- [Phase 3B: Core Recipe & Member Domain](docs/superpowers/plans/2026-09-12-phase-3b-core-recipe-and-member-domain.md) - `core-members`, `core-recipes`, `shortlist` plugins (8/8 completed).
-- [Phase 3C: Timeline & Cooking Workflow](docs/superpowers/plans/2026-09-13-phase-3c-timeline-and-cooking-workflow.md) - `core-timeline`, `cook-tracker`, `ratings` plugins (9/9 completed).
+- [Local Testing Guide](docs/LOCAL_TESTING_GUIDE.md) - Workflows for running and verifying the app locally.
 
 ---
 
@@ -127,7 +124,7 @@ secretsauce-core/
 │   ├── testing.py               # Test harness over the real boot (`make_kernel`)
 │   ├── api/models.py            # Request bodies for the noun endpoints
 │   ├── api/routes/              # REST API & PWA routes (auth, recipes, pwa, ...)
-│   ├── nouns/                   # Domain repositories (recipes, schedule, journal, ...)
+│   ├── nouns/                   # Domain repositories (recipes, timeline, members, ...)
 │   ├── plugins/                 # Plugin loader, manifest validator, & context SDK
 │   └── static/                  # Built shell assets, sw.js, vendor libraries, icons
 │
@@ -140,7 +137,7 @@ secretsauce-core/
 │   │   ├── stream.ts            # Reconnecting SSE client with wildcard events
 │   │   ├── theme.ts             # PrimeVue dynamic preset switcher
 │   │   ├── components/          # AppHeader, AppNav, OfflineBar, ConfigForm
-│   │   ├── pages/               # SetupPage, LoginPage, SettingsPage, Plugins, Share
+│   │   ├── pages/               # SetupPage, LoginPage, SettingsPage, SharePage
 │   │   ├── registries/          # Dynamic route, slot, intent, settings registries
 │   │   ├── stores/              # Pinia stores (member, household, app)
 │   │   ├── sw/                  # Service Worker engine & pure URL classifier
@@ -151,7 +148,7 @@ secretsauce-core/
 │   ├── vite.sw.config.ts        # Vite Service Worker IIFE build config
 │   └── package.json
 │
-├── tests/                       # Pytest test suite (75 automated test cases)
+├── tests/                       # Pytest test suite
 └── docs/                        # Architecture guides, API reference, & developer guides
 ```
 

@@ -1,7 +1,7 @@
 import { test, expect } from './helpers/state'
 import { chooseMember } from './helpers/ui'
 
-test.describe('Phase 3B End-to-End Browser Tests', () => {
+test.describe('Recipes & Members End-to-End Browser Tests', () => {
   test('authenticates, boots plugins, verifies member picker, recipe scaling, shortlisting, and creation', async ({
     page,
   }) => {

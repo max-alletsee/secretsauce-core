@@ -23,3 +23,13 @@ _Avoid_: Review, Star Rating, Recipe Vote
 **Recipe Customization**:
 A user-requested transformation of a recipe—such as dietary swaps, ingredient substitutions, unit conversions, or technique adjustments—that produces a modified version of the recipe highlighting the changes against the original.
 _Avoid_: Recipe Magic, Make it Magic, Recipe Adaptation
+
+**Recipe Source**:
+The publication, website, or person from which a recipe originated, along with optional locator information such as a page number or web address.
+_Avoid_: Attribution, Origin, Recipe Origin, Provider
+
+**Source Locator**:
+The specific reference indicating where inside a Recipe Source the recipe is found, such as a page number or web address (URL).
+_Avoid_: Page Reference, Anchor, Bookmark
+
+

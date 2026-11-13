@@ -64,7 +64,7 @@ worktrees/
 my-test-data/
 dev-data/
 test-data/
-pi-session-*.html
+*pi-session-*.html
 tmp_claudecode/
 pi resume.txt
 docs/pi-sessions/

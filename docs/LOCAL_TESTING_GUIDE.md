@@ -1,6 +1,6 @@
-# SecretSauce Local Testing Guide (Pre-Containerization)
+# SecretSauce Local Testing Guide
 
-This guide walks through testing the SecretSauce meal planning application on bare metal before building or deploying Docker containers.
+This guide walks through running and testing the SecretSauce meal planning application locally during development.
 
 ---
 
@@ -90,35 +90,31 @@ Provides instantaneous feedback when editing Vue components or plugin interfaces
 
 ---
 
-## 3. Meal Planning Feature Verification Checklist
+## 3. Manual Feature Verification
 
-Use this checklist to verify meal planning flows during manual testing:
+Use these flows to verify core meal planning features during manual testing:
 
-### 1. Timeline & Schedule (`/timeline`)
-- [ ] **Rolling Window:** Verify the 9-day calendar grid (2 compact past days, Today highlighted with badge, and 6 upcoming days).
-- [ ] **Schedule a Meal:** Click `+` on Today or an upcoming day, search for a recipe (e.g. "Grandma's Tomato Pasta"), and click **Schedule**.
-- [ ] **Meal Card Actions:** Click a scheduled meal to view actions (view recipe, remove from plan).
-- [ ] **Member Assignment:** Switch active household member in header picker and verify member-specific tags.
+### 1. Timeline & Meal Tracking (`/timeline`)
+- **Rolling Window:** Verify the rolling vertical day feed (compact past days, Today highlighted with badge, and upcoming days).
+- **Schedule a Meal:** Click `+` on Today or an upcoming day, search for a recipe (e.g. "Grandma's Tomato Pasta"), and click **Schedule**.
+- **Meal Card Actions:** Click a scheduled meal to view actions (view recipe, mark as cooked, remove from plan).
+- **Member Assignment:** Switch active household member in header picker and verify member-specific tags.
+- **Family Ratings:** Mark a meal as cooked and cast a vote directly on the Timeline Entry card.
 
 ### 2. AI Meal Plan Suggestions (`core-meal-planner-ai`)
-- [ ] **Candidate Pool:** Open the AI planner sidebar on the timeline.
-- [ ] **Generate Suggestions:** Enter prompt / target days and click generate.
-- [ ] **Candidate Acceptance:** Select an unassigned suggestion card and assign it to a date and meal slot (Dinner, Lunch, Breakfast).
+- **Candidate Pool:** Open the AI planner sidebar on the timeline.
+- **Generate Suggestions:** Enter prompt / target days and click generate.
+- **Candidate Acceptance:** Select an unassigned suggestion card and assign it to a date and meal slot (Dinner, Lunch, Breakfast).
 - *(Note: Requires AI provider API key configured under Settings -> AI, or test via pytest mock suite).*
 
 ### 3. Recipe Scaling & Shortlist (`/recipes`)
-- [ ] **Serving Scaler:** Open a recipe, toggle `+` / `-` servings, and confirm ingredient quantities and units scale dynamically.
-- [ ] **Shortlist:** Click the star (★) icon on a recipe card; verify the **★ Shortlist** filter toggle isolates favorited meals.
+- **Serving Scaler:** Open a recipe, toggle `+` / `-` servings, and confirm ingredient quantities and units scale dynamically.
+- **Shortlist:** Click the star (★) icon on a recipe card; verify the **★ Shortlist** filter toggle isolates favorited meals.
 
 ### 4. Dynamic Shopping List (`/shopping-list`)
-- [ ] **Aggregation:** Navigate to `/shopping-list`. Verify ingredients from all scheduled timeline meals are aggregated.
-- [ ] **Check Off Items:** Tap ingredients as purchased; confirm checked items move to the completed list.
-- [ ] **Add Staples / Manual Items:** Add manual items (e.g., milk, olive oil) and verify persistence.
-
-### 5. Cooking Tracker & Journal (`/journal`)
-- [ ] **Mark as Cooked:** Mark a scheduled meal as cooked from the timeline card.
-- [ ] **Cooking Journal:** Open `/journal` to verify the cook event log.
-- [ ] **Family Ratings:** Cast a star rating / vote on the cooked dish.
+- **Aggregation:** Navigate to `/shopping-list`. Verify ingredients from all scheduled timeline meals are aggregated.
+- **Check Off Items:** Tap ingredients as purchased; confirm checked items move to the completed list.
+- **Add Staples / Manual Items:** Add manual items (e.g., milk, olive oil) and verify persistence.
 
 ---
 

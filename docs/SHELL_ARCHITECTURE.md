@@ -1,6 +1,6 @@
 # SecretSauce Frontend Shell & PWA Architecture
 
-This document describes the design and runtime architecture of the SecretSauce frontend shell, Progressive Web App (PWA) engine, and `@secretsauce/ui` plugin integration package (Architecture Specification Stage 5).
+This document describes the design and runtime architecture of the SecretSauce frontend shell, Progressive Web App (PWA) engine, and `@secretsauce/ui` plugin integration package.
 
 ---
 
@@ -90,8 +90,7 @@ shell/
 │   ├── pages/                       # Built-in shell pages
 │   │   ├── SetupPage.vue            # Household onboarding wizard (`/setup`)
 │   │   ├── LoginPage.vue            # Passphrase authentication (`/login`)
-│   │   ├── SettingsPage.vue         # Appearance and plugin settings (`/settings`)
-│   │   ├── PluginManagerPage.vue    # Plugin list & toggles (`/plugins`)
+│   │   ├── SettingsPage.vue         # Appearance, household, and plugin settings (`/settings`)
 │   │   └── SharePage.vue            # Web Share Target receiver (`/share`)
 │   ├── registries/                  # Dynamic extension registries
 │   │   ├── routes.ts                # Route registry
@@ -145,7 +144,7 @@ const precache = {"build": "a1b2c3d4e5f6", "files": ["/static/assets/index.js", 
 ```
 
 ### Expiry and logout
-Plugin bundles (50), assets (200) and cached API responses (1,000) are capped with Workbox `CacheExpiration`: every cached response records its timestamp and then runs `expireEntries()`, which evicts the least recently used entries past the cap. On logout the shell posts `{type: 'clear'}` to the worker, which deletes the API and asset caches, so household data does not outlive the session on the device (spec 8.6).
+Plugin bundles (50), assets (200) and cached API responses (1,000) are capped with Workbox `CacheExpiration`: every cached response records its timestamp and then runs `expireEntries()`, which evicts the least recently used entries past the cap. On logout the shell posts `{type: 'clear'}` to the worker, which deletes the API and asset caches, so household data does not outlive the session on the device.
 
 ---
 
@@ -317,7 +316,7 @@ Prefixes `BASE_PATH`, sends `X-Actor-Member`, and aborts requests after 30 s (up
 
 ## 11. Testing & Verification
 
-The shell test suite uses Vitest with `@vue/test-utils` and HappyDOM for unit and component testing, and Playwright for real-browser end-to-end testing. Older stub-only mounts and manually drained event tests missed global component resolution, missing plugin injection, disconnected production background services and phone CSS specificity. Replacement registered-plugin/component harnesses exercise the host installer; `tests/test_ui_{household,timeline,recurring}_runtime.py` use real application lifespans/HTTP/background delivery. Browser suites `ui-foundation`, `ui-settings`, `ui-intents`, `ui-plugins`, `ui-timeline`, `ui-recurring` and `ui-theme-smoke` exercise compiled bundles, SSE and browser globals. The theme matrix captures labeled screenshots under `shell/test-results/` across four presets at 390px and 1280px, checks outer and inner horizontal overflow, and refuses page errors or authenticated console errors. Only the initial unauthenticated session-probe 401 is exempt. Setup smoke uses a separate disposable server, never the seeded household.
+The shell test suite uses Vitest with `@vue/test-utils` and HappyDOM for unit and component testing, and Playwright for real-browser end-to-end testing. Registered-plugin and component harnesses exercise the host installer (`mountWithUi` and `registeredPlugin` helpers), while `tests/test_ui_{household,timeline,recurring}_runtime.py` exercise real application lifespans, HTTP routes, and background delivery. Browser suites (`ui-foundation`, `ui-settings`, `ui-plugins`, `ui-timeline`, `ui-recurring`, `ui-import`, `ui-members`, `ui-recipe-magic`, and `ui-theme-smoke`) test compiled bundles, SSE, and browser globals. The theme matrix captures labeled screenshots under `shell/test-results/` across four presets at 390px and 1280px, checks outer and inner horizontal overflow, and fails on page errors or authenticated console errors (only the initial unauthenticated session-probe 401 is exempt). Setup smoke uses a separate disposable server rather than the seeded household.
 
 Verification commands:
 

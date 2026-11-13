@@ -426,5 +426,5 @@ describe('MyComponent', () => {
 })
 ```
 
-For behavior that crosses browser/kernel boundaries, add Playwright coverage against compiled bundles; `shell/e2e/helpers/ui.ts` shares login (never import another `.e2e.ts`). Backend runtime tests must use `build_app()` plus the real lifespan and HTTP, polling for eventual state, not manually draining events/running jobs. Only event-system tests may synthesize kernel noun events. The old stub-only mounts and manual materialization tests hid missing `ss` injection, unresolved globals, duplicated subscriptions and disconnected background services. See `tests/test_ui_timeline_runtime.py`, `tests/test_ui_recurring_runtime.py`, the registered-plugin suites and `shell/e2e/ui-theme-smoke.e2e.ts` for replacement coverage.
+For behavior that crosses browser/kernel boundaries, add Playwright coverage against compiled bundles; `shell/e2e/helpers/ui.ts` shares login (never import another `.e2e.ts`). Backend runtime tests should use `build_app()` plus the real lifespan and HTTP, polling for eventual state rather than manually draining events or running jobs. Only event-system tests should synthesize kernel noun events. See `tests/test_ui_timeline_runtime.py`, `tests/test_ui_recurring_runtime.py`, the registered-plugin suites, and `shell/e2e/ui-theme-smoke.e2e.ts` for examples of this coverage.
 

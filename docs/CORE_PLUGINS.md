@@ -31,6 +31,7 @@ All core plugins located at `secretsauce/plugins/core/` follow uniform architect
 | `core-recipe-importer` | AI-assisted extraction from Web URLs, raw text, or photos | `core-ai-provider` | `plugin_core_recipe_importer_history` |
 | `core-translator` | Multilingual recipe translation preserving measurements and terminology | `core-ai-provider` | `plugin_core_translator_history` |
 | `core-meal-planner-ai` | Smart meal candidate suggestion pool generation without locking schedule | `core-ai-provider` | `plugin_core_meal_planner_plans`, `plugin_core_meal_planner_suggestions` |
+| `core-customize-recipe` | Flexible AI and unit-aware recipe customization with inline diffing and customizable shorthand prompts | `core-ai-provider`, `core-units?` (optional) | None (plugin config) |
 | `core-shopping-list` | Dynamic shopping list aggregation with serving scaling, staples, and manual items | None | `plugin_core_shopping_list_staples`, `plugin_core_shopping_list_items`, `plugin_core_shopping_list_checked_state` |
 
 ---
@@ -45,11 +46,11 @@ Core UI plugins use the host's global PrimeVue controls and shared `ss` context 
 - **Day slots:** schema 1 stores overrides keyed by `(date, meal_type)`; defaults come from household configuration. `core-timeline` registers a `TimelineSlotsService` as `ctx.services.get('core-timeline')`, exposing `slots_for(from_date, to_date, conn=None)`. Slots are `{ id, label, kind: 'default' | 'extra', skipped }`. HTTP routes require a session cookie, validate strict ISO dates and ranges up to 92 inclusive days, and push `core-timeline:slots-changed` only after commit. See [API Reference](API_REFERENCE.md) for write conflicts and deletion semantics.
 - **Recurring:** schema 3 supports both recipe rules and note rules (`entry_type = 'recipe' | 'note'`) with customizable `servings` (defaulting to the total `serving_ratio` across household members). Rules do not automatically insert `schedule_entries` and there is no background loop. Instead, `core-recurring` mounts `RecurringMealsWidget` in `timeline.sidebar` (to view, create, edit, and delete rules) and renders pending occurrences as inline ghost suggestions in `timeline.slot.suggestions` for today and future unskipped slots (`GET /api/x/core-recurring/suggestions`). Users explicitly approve (`POST /api/x/core-recurring/rules/{id}/approve`) or dismiss (`POST /api/x/core-recurring/rules/{id}/dismiss`) each occurrence; approved entries keep `origin = 'plugin:core-recurring'` and the `pi-replay` badge, stay marked as handled if later removed from the timeline, and remain untouched if the rule is later edited or deleted. Editing a rule clears future dismissals (`date >= today`) so the updated rule is suggested on upcoming dates.
 
-These behaviors have real lifespan/HTTP/background tests and compiled-bundle browser tests; the theme matrix also checks page/console errors and 390px overflow. The overhaul does not add drag/drop slot reordering, phone bottom tabs, dark mode, a new-string i18n migration, or a kernel schedule/journal redesign.
+These behaviors are covered by real lifespan/HTTP/background tests and compiled-bundle browser tests; the theme matrix also checks page/console errors and 390px overflow.
 
 ---
 
-## 2. Stage 7 AI & Productivity Plugins
+## 2. AI & Productivity Plugins
 
 ### 2.1 `core-ai-provider`
 
