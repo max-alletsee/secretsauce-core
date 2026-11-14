@@ -1,6 +1,7 @@
 import RecipeListPage from './pages/RecipeListPage.vue'
 import RecipeDetailPage from './pages/RecipeDetailPage.vue'
 import RecipeEditPage from './pages/RecipeEditPage.vue'
+import RecipeTagSettings from './pages/RecipeTagSettings.vue'
 import { confirmAndDeleteRecipe, recipeGroupId } from './deleteRecipe'
 
 export default function activate(ss: any) {
@@ -9,6 +10,15 @@ export default function activate(ss: any) {
   ss.route({ path: '/recipes/new', component: RecipeEditPage })
   ss.route({ path: '/recipes/:id', component: RecipeDetailPage })
   ss.route({ path: '/recipes/:id/edit', component: RecipeEditPage })
+
+  if (ss.settings?.section) {
+    ss.settings.section({
+      id: 'recipe-tags',
+      title: 'Recipe Tags',
+      order: 30,
+      component: RecipeTagSettings,
+    })
+  }
 
   // Hubs
   ss.intent.hub({ id: 'recipe:create', title: 'Add or Import Recipe' })

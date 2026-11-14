@@ -480,6 +480,62 @@ describe('registered Recipe pages (API boundary double)', () => {
     expect(patches[0].body.tags).toEqual(['cake', 'Weeknight', 'Cozy'])
   })
 
+  it('configures per-device tag limit and pinned tag order in Settings and applies them on /recipes', async () => {
+    localStorage.clear()
+    const tags = [
+      { name: 'Weeknight', count: 10 },
+      { name: 'Quick', count: 5 },
+      { name: 'Pasta', count: 4 },
+      { name: 'Soup', count: 2 },
+    ]
+    const { wrapper, harness } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string) => {
+        if (path === '/api/recipes/tags') return { items: tags }
+        if (path === '/api/recipes/sources') return { items: [] }
+        if (path === '/api/x/core-shortlist') return []
+        if (path === '/api/recipes') return { items: [savedRecipe], total: 1, limit: 50, offset: 0 }
+        return []
+      },
+    } as any, '/settings')
+    wrappers.push(wrapper)
+
+    expect(wrapper.text()).toContain('Recipe Tags')
+    expect(wrapper.text()).toContain('This device')
+    expect(wrapper.text()).toContain('Weeknight (10)')
+    expect(wrapper.text()).toContain('Soup (2)')
+
+    // Toggle Show all tags on -> disables Top tags to show input, then toggle back off
+    const showAllSwitch = wrapper.getByRole ? null : wrapper.find('#tag-show-all input, input#tag-show-all')
+    expect(showAllSwitch!.exists()).toBe(true)
+    await showAllSwitch!.setValue(true)
+    await flushPromises()
+    const limitInput = wrapper.find('#tag-visible-count')
+    expect((limitInput.element as HTMLInputElement).disabled).toBe(true)
+
+    await showAllSwitch!.setValue(false)
+    await flushPromises()
+    expect((limitInput.element as HTMLInputElement).disabled).toBe(false)
+    await limitInput.setValue('1')
+    await limitInput.trigger('change')
+    await flushPromises()
+
+    // Pin Soup, then pin Quick, then move Quick up above Soup
+    await wrapper.find('button[aria-label="Pin Soup"]').trigger('click')
+    await wrapper.find('button[aria-label="Pin Quick"]').trigger('click')
+    await wrapper.find('button[aria-label="Move Quick up"]').trigger('click')
+    await flushPromises()
+
+    // Navigate to /recipes and verify pinned order (Quick, Soup) + top 1 unpinned (Weeknight) + More (1)
+    await harness.router.push('/recipes')
+    await flushPromises()
+    expect(wrapper.findAll('.tag-filter-btn').map(b => b.text())).toEqual([
+      'Quick (5)',
+      'Soup (2)',
+      'Weeknight (10)',
+    ])
+    expect(wrapper.find('.tag-more-btn').text()).toBe('More (1)')
+  })
+
   it('hides More button when all tags fit and supports visibleCount=0 with pinned tags', async () => {
     localStorage.clear()
     const fewTags = [

@@ -96,3 +96,48 @@ test('autocompletes existing tags sorted by usage in Recipe editor and allows ne
   await expect(page.getByRole('button', { name: 'Weeknight (3)', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'CozyBreakfast (1)', exact: true })).toBeVisible()
 })
+
+test('configures per-device tag limit, Show all, and pinned order in Settings across reloads', async ({ page, request }) => {
+  await login(page)
+
+  // Seed tags with distinct counts
+  for (let i = 0; i < 4; i++) {
+    await request.post('/api/recipes', { data: { title: `Popular ${i}`, language: 'en', tags: ['Popular'] } })
+  }
+  await request.post('/api/recipes', { data: { title: 'Special A', language: 'en', tags: ['MidnightSnack'] } })
+  await request.post('/api/recipes', { data: { title: 'Special B', language: 'en', tags: ['Brunch'] } })
+
+  await page.goto('/settings?section=recipe-tags')
+  const panel = page.locator('#settings-recipe-tags')
+  await expect(panel.getByRole('button', { name: 'Recipe Tags', exact: true })).toHaveAttribute('aria-expanded', 'true')
+  await expect(panel.getByText('Popular (4)')).toBeVisible()
+
+  await panel.getByLabel('Top tags to show', { exact: true }).fill('1')
+  await panel.getByLabel('Top tags to show', { exact: true }).press('Enter')
+  await panel.getByRole('button', { name: 'Pin Brunch', exact: true }).click()
+  await panel.getByRole('button', { name: 'Pin MidnightSnack', exact: true }).click()
+  await panel.getByRole('button', { name: 'Move MidnightSnack up', exact: true }).click()
+
+  await page.goto('/recipes')
+  await expect(page.locator('.tag-filter-btn')).toHaveText([
+    'MidnightSnack (1)',
+    'Brunch (1)',
+    'Popular (4)',
+  ])
+  await expect(page.locator('.tag-more-btn')).toContainText('More (')
+
+  // Survives browser reload
+  await page.reload()
+  await expect(page.locator('.tag-filter-btn')).toHaveText([
+    'MidnightSnack (1)',
+    'Brunch (1)',
+    'Popular (4)',
+  ])
+
+  // Show all disables cutoff and hides More
+  await page.goto('/settings?section=recipe-tags')
+  await panel.getByLabel('Show all tags', { exact: true }).check()
+  await expect(panel.getByLabel('Top tags to show', { exact: true })).toBeDisabled()
+  await page.goto('/recipes')
+  await expect(page.locator('.tag-more-btn')).toHaveCount(0)
+})
