@@ -28,6 +28,11 @@ async def list_recipe_sources(request: Request, lang: str | None = None):
     return await request.app.state.kernel.recipes.list_sources(lang=lang)
 
 
+@router.get("/tags")
+async def list_recipe_tags(request: Request, lang: str | None = None):
+    return await request.app.state.kernel.recipes.list_tags(lang=lang)
+
+
 @router.post("/sources/rename")
 async def rename_recipe_source(payload: RecipeSourceRename, request: Request):
     data = payload.data(request)

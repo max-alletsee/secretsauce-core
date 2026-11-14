@@ -40,4 +40,8 @@ _Avoid_: Attribution, Origin, Recipe Origin, Provider
 The specific reference indicating where inside a Recipe Source the recipe is found, such as a page number or web address (URL).
 _Avoid_: Page Reference, Anchor, Bookmark
 
+**Tag**:
+A lightweight, user-defined label attached to a Recipe for categorizing and filtering.
+_Avoid_: Category, Label, Keyword
+
 

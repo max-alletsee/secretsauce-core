@@ -825,6 +825,47 @@ class RecipesRepo:
         ]
         return {"items": items}
 
+    async def list_tags(
+        self,
+        lang: str | None = None,
+        conn: aiosqlite.Connection | None = None,
+    ) -> dict[str, Any]:
+        """Distinct recipe tags and group counts aggregated across recipe groups."""
+        cfg = await self.household_repo.get_config()
+        primary_lang = cfg.get("languages", {}).get("primary", "en")
+        target_lang = lang or primary_lang
+
+        rows = await self.db.read_all(
+            """
+            WITH r AS (
+                SELECT recipes.*, ROW_NUMBER() OVER (
+                    PARTITION BY group_id
+                    ORDER BY CASE language WHEN ? THEN 0 WHEN ? THEN 1 ELSE 2 END,
+                             created_at, rowid
+                ) AS rn
+                FROM recipes
+            )
+            SELECT
+                CAST(je.value AS TEXT) AS name,
+                COUNT(DISTINCT r.group_id) AS count
+            FROM r
+            JOIN json_each(COALESCE(r.tags, '[]')) AS je
+            WHERE r.rn = 1
+              AND je.value IS NOT NULL
+              AND TRIM(CAST(je.value AS TEXT)) != ''
+            GROUP BY CAST(je.value AS TEXT)
+            ORDER BY count DESC, name COLLATE NOCASE ASC;
+            """,
+            (target_lang, primary_lang),
+            conn=conn,
+        )
+        return {
+            "items": [
+                {"name": row["name"], "count": int(row["count"])}
+                for row in rows
+            ]
+        }
+
     async def rename_source(
         self,
         from_name: str,

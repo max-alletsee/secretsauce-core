@@ -321,4 +321,60 @@ describe('registered Recipe pages (API boundary double)', () => {
     const saveBtn = wrapper.findAll('button').find(b => b.text().includes('Save Recipe'))!
     expect(saveBtn.attributes('disabled')).toBeDefined()
   })
+
+  it('displays household tag counts from /api/recipes/tags, filters server-side, and refreshes on recipe events', async () => {
+    localStorage.clear()
+    const listQueries: any[] = []
+    let tagCalls = 0
+    let currentTags = [
+      { name: 'Weeknight', count: 55 },
+      { name: 'Quick', count: 12 },
+    ]
+    const weeknightRecipe = { ...savedRecipe, id: 'r1_en', group_id: 'r1', title: 'Weeknight Stir Fry', tags: ['Weeknight'] }
+    const quickRecipe = { ...savedRecipe, id: 'r2_en', group_id: 'r2', title: 'Quick Salad', tags: ['Quick'] }
+    const { wrapper, harness } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string, params: any) => {
+        if (path === '/api/recipes/tags') {
+          tagCalls++
+          return { items: currentTags }
+        }
+        if (path === '/api/recipes/sources') return { items: [] }
+        if (path === '/api/x/core-shortlist') return []
+        if (path === '/api/recipes') {
+          listQueries.push(params)
+          if (params?.tag === 'Quick') return { items: [quickRecipe], total: 1, limit: 50, offset: 0 }
+          return { items: [weeknightRecipe], total: 55, limit: 50, offset: 0 }
+        }
+        return []
+      },
+    } as any, '/recipes')
+    wrappers.push(wrapper)
+
+    const tagButtons = wrapper.findAll('.tag-filter-btn')
+    expect(tagButtons.map(b => b.text())).toEqual(['Weeknight (55)', 'Quick (12)'])
+    expect(tagButtons[0].attributes('aria-pressed')).toBe('false')
+
+    // Selecting a tag triggers server-side filtering and sets aria-pressed
+    await tagButtons[1].trigger('click')
+    await flushPromises()
+    expect(listQueries.at(-1)).toEqual({ q: '', tag: 'Quick' })
+    expect(wrapper.findAll('.tag-filter-btn')[1].attributes('aria-pressed')).toBe('true')
+    expect(wrapper.text()).toContain('Quick Salad')
+
+    // Clicking again clears the server-side tag filter
+    await wrapper.findAll('.tag-filter-btn')[1].trigger('click')
+    await flushPromises()
+    expect(listQueries.at(-1)).toEqual({ q: '' })
+
+    // Live recipe:created / recipe:updated events refresh tags & counts
+    const callsBefore = tagCalls
+    currentTags = [
+      { name: 'Weeknight', count: 56 },
+      { name: 'Quick', count: 12 },
+    ]
+    harness.emitStream('recipe:updated', { kind: 'event', seq: 20, name: 'recipe:updated', entity_type: 'recipe', entity_id: 'r1_en', revision: 2, actor_member_id: null, origin: 'member', created_at: '2026-10-01T00:00:00Z' })
+    await flushPromises()
+    expect(tagCalls).toBeGreaterThan(callsBefore)
+    expect(wrapper.findAll('.tag-filter-btn').map(b => b.text())).toEqual(['Weeknight (56)', 'Quick (12)'])
+  })
 })

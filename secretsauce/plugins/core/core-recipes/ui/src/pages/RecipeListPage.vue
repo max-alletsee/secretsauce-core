@@ -6,8 +6,13 @@ import { fetchCoverId } from '../cover'
 import { pendingSourceFilter, type SourceSummary } from '../sourceFilter'
 const emit = defineEmits<{ openRecipe: [string] }>()
 const ss = useSecretSauce()
+export interface TagSummary {
+  name: string
+  count: number
+}
 const recipes = ref<any[]>([]), search = ref(''), activeTag = ref<string | null>(null), sortBy = ref('title'), error = ref('')
 const selectedSources = ref<string[]>([]), householdSources = ref<SourceSummary[]>([])
+const householdTags = ref<TagSummary[]>([])
 const shortlistOnly = ref(false), shortlistedIds = ref(new Set<string>())
 function readShowImages(): boolean {
   try { return localStorage.getItem('secretsauce:show_recipe_images') !== 'false' }
@@ -26,6 +31,16 @@ async function loadSources() {
     else if (res && Array.isArray(res.items)) householdSources.value = res.items
   } catch { /* Sources endpoint optional offline. */ }
 }
+async function loadTags() {
+  try {
+    const res = await ss.api.get<{ items?: TagSummary[] } | TagSummary[]>('/api/recipes/tags')
+    const items = Array.isArray(res) ? res : (res && Array.isArray(res.items) ? res.items : [])
+    householdTags.value = items
+    if (activeTag.value && !items.some(t => t.name === activeTag.value)) {
+      activeTag.value = null
+    }
+  } catch { /* Tags endpoint optional offline. */ }
+}
 async function toggleShortlistFilter() { shortlistOnly.value = !shortlistOnly.value; if (shortlistOnly.value) await loadShortlist() }
 async function loadRecipes() {
   const sequence = ++request
@@ -34,6 +49,9 @@ async function loadRecipes() {
     const query: Record<string, any> = { q: search.value.trim() }
     if (selectedSources.value.length > 0) {
       query.source = selectedSources.value
+    }
+    if (activeTag.value) {
+      query.tag = activeTag.value
     }
     const result = await ss.api.get<any>('/api/recipes', query)
     if (sequence !== request) return
@@ -48,11 +66,17 @@ async function loadRecipes() {
   catch (failure: any) { if (sequence === request) error.value = failure?.message || 'Could not load recipes' }
 }
 function openRecipe(id: string) { emit('openRecipe', id); ss.navigate?.(`/recipes/${id}`) }
-const stopDeleted = ss.on('recipe:deleted', () => {
+function refreshAll() {
   loadRecipes()
   loadSources()
-})
+  loadTags()
+}
+const stopCreated = ss.on('recipe:created', refreshAll)
+const stopUpdated = ss.on('recipe:updated', refreshAll)
+const stopDeleted = ss.on('recipe:deleted', refreshAll)
 onBeforeUnmount(() => {
+  if (typeof stopCreated === 'function') stopCreated()
+  if (typeof stopUpdated === 'function') stopUpdated()
   if (typeof stopDeleted === 'function') stopDeleted()
 })
 onMounted(() => {
@@ -64,8 +88,9 @@ onMounted(() => {
   loadRecipes()
   loadShortlist()
   loadSources()
+  loadTags()
 })
-watch([search, selectedSources], loadRecipes)
+watch([search, selectedSources, activeTag], loadRecipes)
 const sourceOptions = computed(() => {
   const options: { value: string; label: string }[] = [
     { value: 'none', label: 'No source' },
@@ -87,11 +112,9 @@ const sourceOptions = computed(() => {
   }
   return options
 })
-const allTags = computed(() => [...new Set<string>(recipes.value.flatMap(recipe => recipe.tags || []))])
 const filteredRecipes = computed(() => {
   let list = recipes.value.map(recipe => ({ ...recipe, is_shortlisted: shortlistedIds.value.has(recipe.id) }))
   if (shortlistOnly.value) list = list.filter(recipe => shortlistedIds.value.has(recipe.id))
-  if (activeTag.value) list = list.filter(recipe => recipe.tags?.includes(activeTag.value))
   return list.sort(sortBy.value === 'title' ? (a, b) => a.title.localeCompare(b.title) : (a, b) => (a.prep_time_minutes || 0) - (b.prep_time_minutes || 0))
 })
 </script>
@@ -114,7 +137,16 @@ const filteredRecipes = computed(() => {
         :maxSelectedLabels="1"
         :showToggleAll="false"
       />
-      <Button v-for="tag in allTags" :key="tag" :label="tag" size="small" :outlined="activeTag !== tag" :aria-pressed="activeTag === tag" @click="activeTag = activeTag === tag ? null : tag" />
+      <Button
+        v-for="tag in householdTags"
+        :key="tag.name"
+        class="tag-filter-btn"
+        :label="`${tag.name} (${tag.count})`"
+        size="small"
+        :outlined="activeTag !== tag.name"
+        :aria-pressed="activeTag === tag.name"
+        @click="activeTag = activeTag === tag.name ? null : tag.name"
+      />
       <Select v-model="sortBy" aria-label="Sort recipes" :options="[{ id: 'title', label: 'Title (A–Z)' }, { id: 'prep', label: 'Prep time' }]" optionLabel="label" optionValue="id" />
     </div>
     <Message v-if="error" severity="error">{{ error }}</Message>
