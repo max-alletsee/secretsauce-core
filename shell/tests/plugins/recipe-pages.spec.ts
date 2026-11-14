@@ -377,4 +377,84 @@ describe('registered Recipe pages (API boundary double)', () => {
     expect(tagCalls).toBeGreaterThan(callsBefore)
     expect(wrapper.findAll('.tag-filter-btn').map(b => b.text())).toEqual(['Weeknight (56)', 'Quick (12)'])
   })
+
+  it('collapses tags past default top 8, toggles More/Less, and keeps an active hidden tag visible', async () => {
+    localStorage.clear()
+    const tags = Array.from({ length: 10 }, (_, idx) => ({
+      name: `Tag${String(idx + 1).padStart(2, '0')}`,
+      count: 20 - idx,
+    }))
+    const { wrapper } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string) => {
+        if (path === '/api/recipes/tags') return { items: tags }
+        if (path === '/api/recipes/sources') return { items: [] }
+        if (path === '/api/x/core-shortlist') return []
+        if (path === '/api/recipes') return { items: [savedRecipe], total: 1, limit: 50, offset: 0 }
+        return []
+      },
+    } as any, '/recipes')
+    wrappers.push(wrapper)
+
+    expect(wrapper.findAll('.tag-filter-btn').map(b => b.text())).toEqual(
+      tags.slice(0, 8).map(t => `${t.name} (${t.count})`),
+    )
+    const moreBtn = () => wrapper.find('.tag-more-btn')
+    expect(moreBtn().exists()).toBe(true)
+    expect(moreBtn().text()).toBe('More (2)')
+
+    // Expand inline
+    await moreBtn().trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.tag-filter-btn')).toHaveLength(10)
+    expect(moreBtn().text()).toBe('Less')
+
+    // Select 10th tag (outside top 8), then collapse
+    await wrapper.findAll('.tag-filter-btn')[9].trigger('click')
+    await flushPromises()
+    await moreBtn().trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.tag-filter-btn').map(b => b.text())).toEqual([
+      ...tags.slice(0, 8).map(t => `${t.name} (${t.count})`),
+      'Tag10 (11)',
+    ])
+    expect(moreBtn().text()).toBe('More (1)')
+
+    // Clearing active hidden tag returns it behind More (2)
+    await wrapper.findAll('.tag-filter-btn')[8].trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.tag-filter-btn')).toHaveLength(8)
+    expect(moreBtn().text()).toBe('More (2)')
+  })
+
+  it('hides More button when all tags fit and supports visibleCount=0 with pinned tags', async () => {
+    localStorage.clear()
+    const fewTags = [
+      { name: 'Dinner', count: 5 },
+      { name: 'Soup', count: 2 },
+    ]
+    const { wrapper: fewWrapper } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string) => {
+        if (path === '/api/recipes/tags') return { items: fewTags }
+        if (path === '/api/recipes') return { items: [], total: 0, limit: 50, offset: 0 }
+        return []
+      },
+    } as any, '/recipes')
+    wrappers.push(fewWrapper)
+    expect(fewWrapper.find('.tag-more-btn').exists()).toBe(false)
+
+    localStorage.setItem(
+      'secretsauce:recipe_tag_prefs',
+      JSON.stringify({ showAll: false, visibleCount: 0, pinnedTags: ['Missing', 'Soup'] }),
+    )
+    const { wrapper: zeroWrapper } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string) => {
+        if (path === '/api/recipes/tags') return { items: fewTags }
+        if (path === '/api/recipes') return { items: [], total: 0, limit: 50, offset: 0 }
+        return []
+      },
+    } as any, '/recipes')
+    wrappers.push(zeroWrapper)
+    expect(zeroWrapper.findAll('.tag-filter-btn').map(b => b.text())).toEqual(['Soup (2)'])
+    expect(zeroWrapper.find('.tag-more-btn').text()).toBe('More (1)')
+  })
 })

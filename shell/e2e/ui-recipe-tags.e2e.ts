@@ -30,3 +30,36 @@ test('displays household-wide tag counts and filters server-side past 50 recipes
   await expect(rareBtn).toHaveAttribute('aria-pressed', 'false')
   await expect(page.locator('.recipe-card')).toHaveCount(50)
 })
+
+test('collapses tags beyond top 8 behind More/Less and preserves active hidden tag when collapsed', async ({ page, request }) => {
+  await login(page)
+
+  // Seed 10 distinct tags in addition to existing seeded tags (> 8 total)
+  for (let i = 1; i <= 10; i++) {
+    const tag = `TopTag${String(i).padStart(2, '0')}`
+    const count = 12 - i
+    for (let c = 0; c < count; c++) {
+      const res = await request.post('/api/recipes', {
+        data: { title: `${tag} Dish ${c}`, language: 'en', tags: [tag] },
+      })
+      expect(res.status()).toBe(201)
+    }
+  }
+
+  await page.goto('/recipes')
+  await expect(page.locator('.tag-filter-btn')).toHaveCount(8)
+  const moreBtn = page.locator('.tag-more-btn')
+  await expect(moreBtn).toBeVisible()
+  await expect(moreBtn).toContainText('More (')
+
+  await moreBtn.click()
+  await expect(moreBtn).toHaveText('Less')
+  const hiddenTagBtn = page.getByRole('button', { name: 'TopTag10 (2)', exact: true })
+  await expect(hiddenTagBtn).toBeVisible()
+
+  await hiddenTagBtn.click()
+  await expect(hiddenTagBtn).toHaveAttribute('aria-pressed', 'true')
+  await moreBtn.click()
+  await expect(hiddenTagBtn).toBeVisible()
+  await expect(page.locator('.recipe-card')).toHaveCount(2)
+})

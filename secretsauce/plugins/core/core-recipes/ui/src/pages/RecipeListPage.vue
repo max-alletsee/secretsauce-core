@@ -4,15 +4,17 @@ import { Slot, IntentTrigger, useSecretSauce } from '@secretsauce/ui'
 import RecipeCard from '../components/RecipeCard.vue'
 import { fetchCoverId } from '../cover'
 import { pendingSourceFilter, type SourceSummary } from '../sourceFilter'
+import {
+  partitionVisibleTags,
+  readTagPrefs,
+  type RecipeTagPrefs,
+  type TagSummary,
+} from '../tagPreferences'
 const emit = defineEmits<{ openRecipe: [string] }>()
 const ss = useSecretSauce()
-export interface TagSummary {
-  name: string
-  count: number
-}
 const recipes = ref<any[]>([]), search = ref(''), activeTag = ref<string | null>(null), sortBy = ref('title'), error = ref('')
 const selectedSources = ref<string[]>([]), householdSources = ref<SourceSummary[]>([])
-const householdTags = ref<TagSummary[]>([])
+const householdTags = ref<TagSummary[]>([]), tagPrefs = ref<RecipeTagPrefs>(readTagPrefs()), tagsExpanded = ref(false)
 const shortlistOnly = ref(false), shortlistedIds = ref(new Set<string>())
 function readShowImages(): boolean {
   try { return localStorage.getItem('secretsauce:show_recipe_images') !== 'false' }
@@ -81,6 +83,7 @@ onBeforeUnmount(() => {
 })
 onMounted(() => {
   showImages.value = readShowImages()
+  tagPrefs.value = readTagPrefs()
   if (pendingSourceFilter.value) {
     selectedSources.value = [...pendingSourceFilter.value]
     pendingSourceFilter.value = null
@@ -112,6 +115,9 @@ const sourceOptions = computed(() => {
   }
   return options
 })
+const tagDisplay = computed(() =>
+  partitionVisibleTags(householdTags.value, tagPrefs.value, tagsExpanded.value, activeTag.value),
+)
 const filteredRecipes = computed(() => {
   let list = recipes.value.map(recipe => ({ ...recipe, is_shortlisted: shortlistedIds.value.has(recipe.id) }))
   if (shortlistOnly.value) list = list.filter(recipe => shortlistedIds.value.has(recipe.id))
@@ -138,7 +144,7 @@ const filteredRecipes = computed(() => {
         :showToggleAll="false"
       />
       <Button
-        v-for="tag in householdTags"
+        v-for="tag in tagDisplay.visible"
         :key="tag.name"
         class="tag-filter-btn"
         :label="`${tag.name} (${tag.count})`"
@@ -146,6 +152,15 @@ const filteredRecipes = computed(() => {
         :outlined="activeTag !== tag.name"
         :aria-pressed="activeTag === tag.name"
         @click="activeTag = activeTag === tag.name ? null : tag.name"
+      />
+      <Button
+        v-if="tagDisplay.showToggle"
+        class="tag-more-btn"
+        :label="tagsExpanded ? 'Less' : `More (${tagDisplay.hiddenCount})`"
+        size="small"
+        text
+        :aria-expanded="tagsExpanded"
+        @click="tagsExpanded = !tagsExpanded"
       />
       <Select v-model="sortBy" aria-label="Sort recipes" :options="[{ id: 'title', label: 'Title (A–Z)' }, { id: 'prep', label: 'Prep time' }]" optionLabel="label" optionValue="id" />
     </div>
