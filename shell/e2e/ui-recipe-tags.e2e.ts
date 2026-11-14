@@ -63,3 +63,36 @@ test('collapses tags beyond top 8 behind More/Less and preserves active hidden t
   await expect(hiddenTagBtn).toBeVisible()
   await expect(page.locator('.recipe-card')).toHaveCount(2)
 })
+
+test('autocompletes existing tags sorted by usage in Recipe editor and allows new custom tags', async ({ page, request }) => {
+  await login(page)
+
+  // Seed recipes so 'Weeknight' (2) ranks above 'Quick' (1)
+  await request.post('/api/recipes', { data: { title: 'Wk 1', language: 'en', tags: ['Weeknight', 'Quick'] } })
+  await request.post('/api/recipes', { data: { title: 'Wk 2', language: 'en', tags: ['Weeknight'] } })
+
+  await page.goto('/recipes/new')
+  await page.getByLabel('Title', { exact: true }).fill('Tagged Toast')
+
+  const tagInput = page.locator('#recipe-tags')
+  await tagInput.fill('k')
+  const options = page.locator('.p-autocomplete-option')
+  await expect(options).toHaveText(['Weeknight', 'Quick'])
+
+  // Pick existing tag from autocomplete
+  await options.first().click()
+  // Typing 'k' again should exclude already-selected 'Weeknight'
+  await tagInput.fill('k')
+  await expect(options).toHaveText(['Quick'])
+
+  // Add brand-new custom tag via Enter
+  await tagInput.fill('CozyBreakfast')
+  await tagInput.press('Enter')
+
+  await page.getByRole('button', { name: 'Save Recipe', exact: true }).click()
+  await expect(page.locator('.recipe-detail-page')).toBeVisible()
+
+  await page.goto('/recipes')
+  await expect(page.getByRole('button', { name: 'Weeknight (3)', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'CozyBreakfast (1)', exact: true })).toBeVisible()
+})

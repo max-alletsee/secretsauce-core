@@ -426,6 +426,60 @@ describe('registered Recipe pages (API boundary double)', () => {
     expect(moreBtn().text()).toBe('More (2)')
   })
 
+  it('suggests existing household tags sorted by usage in RecipeEditPage and still accepts new custom tags', async () => {
+    const patches: any[] = []
+    const { wrapper } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string) => {
+        if (path === '/api/recipes/cake_en') return savedRecipe
+        if (path === '/api/recipes/sources') return { items: [] }
+        if (path === '/api/recipes/tags') {
+          return {
+            items: [
+              { name: 'Weeknight', count: 12 },
+              { name: 'Quick', count: 8 },
+              { name: 'cake', count: 2 },
+              { name: 'Sweet', count: 1 },
+            ],
+          }
+        }
+        return []
+      },
+      patch: async (path: string, body: any) => {
+        patches.push({ path, body })
+        return { ...savedRecipe, ...body }
+      },
+    } as any, '/recipes/cake_en/edit')
+    wrappers.push(wrapper)
+
+    const input = wrapper.find('#recipe-tags')
+    expect(input.exists()).toBe(true)
+
+    // Typing 'k' matches 'Weeknight' (12) and 'Quick' (8), while excluding 'cake' which is already on the recipe
+    await input.setValue('k')
+    await input.trigger('input')
+    await new Promise(resolve => setTimeout(resolve, 20))
+    await flushPromises()
+    const options = Array.from(document.querySelectorAll<HTMLElement>('.p-autocomplete-option')).map(
+      el => el.textContent?.trim(),
+    )
+    expect(options).toEqual(['Weeknight', 'Quick'])
+
+    // Pick 'Weeknight' from suggestions
+    const firstOpt = document.querySelector<HTMLElement>('.p-autocomplete-option')!
+    firstOpt.click()
+    await flushPromises()
+
+    // Type a brand-new tag and press Enter
+    await input.setValue('Cozy')
+    await input.trigger('input')
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    await clickButton('Save Recipe')
+    expect(patches).toHaveLength(1)
+    expect(patches[0].body.tags).toEqual(['cake', 'Weeknight', 'Cozy'])
+  })
+
   it('hides More button when all tags fit and supports visibleCount=0 with pinned tags', async () => {
     localStorage.clear()
     const fewTags = [

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { Slot, useSecretSauce } from '@secretsauce/ui'
 import IngredientRowList from '../components/IngredientRowList.vue'
 import StepList from '../components/StepList.vue'
@@ -7,12 +7,14 @@ import SourceEditor from '../components/SourceEditor.vue'
 import { fetchCoverId } from '../cover'
 import { confirmAndDeleteRecipe, matchesDeletedRecipe } from '../deleteRecipe'
 import type { RecipeSource } from '../sourceFilter'
+import type { TagSummary } from '../tagPreferences'
 const props = defineProps<{ recipeId?: string; id?: string }>()
 const emit = defineEmits<{ saved: [any] }>()
 const ss = useSecretSauce(), targetId = computed(() => props.id || props.recipeId || '')
 const title = ref(''), description = ref(''), language = ref(ss.store.household.value?.languages.primary || 'en'), servings = ref(2)
 const groupId = ref('')
 const prepTime = ref<number | null>(null), cookTime = ref<number | null>(null), tags = ref<string[]>([]), coverAssetId = ref<string | null>(null)
+const householdTags = ref<TagSummary[]>([]), tagSuggestions = ref<string[]>([]), tagAutoComplete = ref<any>(null)
 const source = ref<RecipeSource | null>(null)
 const ingredients = ref<any[]>([]), steps = ref<any[]>([]), revision = ref(1), languages = ref<string[]>([]), busy = ref(false), deleting = ref(false), deletedRemotely = ref(false), error = ref('')
 const stopDeleted = ss.on('recipe:deleted', (event: any) => {
@@ -24,6 +26,37 @@ const stopDeleted = ss.on('recipe:deleted', (event: any) => {
 onBeforeUnmount(() => {
   if (typeof stopDeleted === 'function') stopDeleted()
 })
+onMounted(async () => {
+  try {
+    const res = await ss.api?.get?.<{ items?: TagSummary[] } | TagSummary[]>('/api/recipes/tags')
+    if (Array.isArray(res)) householdTags.value = res
+    else if (res && Array.isArray(res.items)) householdTags.value = res.items
+  } catch {
+    // Autocomplete is optional offline.
+  }
+})
+function searchTags(event: { query: string }) {
+  const q = (event.query || '').trim().toLowerCase()
+  const existing = new Set(tags.value)
+  tagSuggestions.value = householdTags.value
+    .map(t => t.name)
+    .filter(name => !existing.has(name) && (!q || name.toLowerCase().includes(q)))
+}
+function onTagEnter(event: KeyboardEvent) {
+  const target = event.target as HTMLInputElement | null
+  if (!target || target.tagName !== 'INPUT') return
+  if (target.getAttribute('aria-activedescendant')) return
+  const next = target.value.trim()
+  if (!next) return
+  event.preventDefault()
+  event.stopPropagation()
+  if (!tags.value.includes(next)) {
+    tags.value = [...tags.value, next]
+  }
+  target.value = ''
+  tagSuggestions.value = []
+  tagAutoComplete.value?.hide?.()
+}
 watch(targetId, async id => {
   deletedRemotely.value = false
   if (!id) return
@@ -141,7 +174,7 @@ const editContext = computed(() => ({
       <div class="form-group"><label for="recipe-prep">Prep time (min)</label><InputNumber inputId="recipe-prep" v-model="prepTime" :min="0" fluid /></div>
       <div class="form-group"><label for="recipe-cook">Cook time (min)</label><InputNumber inputId="recipe-cook" v-model="cookTime" :min="0" fluid /></div>
     </div>
-    <div class="form-group"><label for="recipe-tags">Tags</label><AutoComplete inputId="recipe-tags" v-model="tags" multiple :typeahead="false" fluid /></div>
+    <div class="form-group"><label for="recipe-tags">Tags</label><AutoComplete ref="tagAutoComplete" inputId="recipe-tags" v-model="tags" multiple :suggestions="tagSuggestions" :delay="0" @complete="searchTags" @keydown.enter="onTagEnter" fluid /></div>
     <SourceEditor v-model="source" />
     <div class="form-group"><label for="recipe-cover">Cover image</label><input id="recipe-cover" type="file" accept="image/*" :disabled="busy || !groupId" @change="onImageUpload"><small v-if="!targetId">Save your recipe first to add a cover image.</small><small v-else>Cover uploads are saved immediately, separately from recipe edits.</small><img v-if="coverAssetId" :src="ss.url(`/api/assets/${coverAssetId}/file`)" alt="Recipe cover" class="cover-preview"></div>
     <section><h3>Ingredients</h3><IngredientRowList v-model="ingredients" /></section>
