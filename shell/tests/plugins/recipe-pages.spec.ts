@@ -536,6 +536,69 @@ describe('registered Recipe pages (API boundary double)', () => {
     expect(wrapper.find('.tag-more-btn').text()).toBe('More (1)')
   })
 
+  it('renames/merges and deletes household tags in Settings and syncs local pinned tags', async () => {
+    localStorage.setItem(
+      'secretsauce:recipe_tag_prefs',
+      JSON.stringify({ showAll: false, visibleCount: 8, pinnedTags: ['veggie'] }),
+    )
+    let tags = [
+      { name: 'Weeknight', count: 4 },
+      { name: 'Quick', count: 2 },
+      { name: 'veggie', count: 2 },
+    ]
+    const posts: { path: string; body: any }[] = []
+    const { wrapper } = await registeredRoute(activate, 'core-recipes', {
+      get: async (path: string) => {
+        if (path === '/api/recipes/tags') return { items: tags }
+        return []
+      },
+      post: async (path: string, body: any) => {
+        posts.push({ path, body })
+        if (path === '/api/recipes/tags/rename') {
+          tags = [
+            { name: 'Weeknight', count: 4 },
+            { name: 'Quick', count: 3 },
+          ]
+          return { updated_count: 2, updated_rows: 2 }
+        }
+        if (path === '/api/recipes/tags/delete') {
+          tags = [{ name: 'Weeknight', count: 4 }]
+          return { updated_count: 3, updated_rows: 3 }
+        }
+        return {}
+      },
+    } as any, '/settings')
+    wrappers.push(wrapper)
+
+    // Rename 'veggie' -> 'Quick' (merge)
+    await wrapper.find('button[aria-label="Rename veggie"]').trigger('click')
+    await flushPromises()
+    const renameInput = document.querySelector<HTMLInputElement>('#tag-rename-input')!
+    expect(renameInput).not.toBeNull()
+    renameInput.value = 'Quick'
+    renameInput.dispatchEvent(new Event('input'))
+    await flushPromises()
+    expect(document.body.textContent).toContain('merge')
+    await clickButton('Save rename', document)
+    await flushPromises()
+
+    expect(posts[0]).toEqual({ path: '/api/recipes/tags/rename', body: { from_name: 'veggie', to_name: 'Quick' } })
+    expect(JSON.parse(localStorage.getItem('secretsauce:recipe_tag_prefs')!).pinnedTags).toEqual(['Quick'])
+    expect(wrapper.text()).toContain('Quick (3)')
+
+    // Delete 'Quick' with confirmation mentioning affected recipe count
+    await wrapper.find('button[aria-label="Delete Quick"]').trigger('click')
+    await flushPromises()
+    const confirm = document.querySelector('[role=alertdialog], .p-confirmdialog')!
+    expect(confirm.textContent).toContain('3')
+    await clickButton('Delete', confirm)
+    await flushPromises()
+
+    expect(posts[1]).toEqual({ path: '/api/recipes/tags/delete', body: { name: 'Quick' } })
+    expect(JSON.parse(localStorage.getItem('secretsauce:recipe_tag_prefs')!).pinnedTags).toEqual([])
+    expect(wrapper.text()).not.toContain('Quick (3)')
+  })
+
   it('hides More button when all tags fit and supports visibleCount=0 with pinned tags', async () => {
     localStorage.clear()
     const fewTags = [

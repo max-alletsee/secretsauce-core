@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, Request, Response
 
-from secretsauce.api.models import RecipeCreate, RecipePatch, RecipeSourceRename
+from secretsauce.api.models import RecipeCreate, RecipePatch, RecipeSourceRename, RecipeTagDelete, RecipeTagRename
 from secretsauce.errors import ValidationError
 
 router = APIRouter(prefix="/api/recipes", tags=["recipes"])
@@ -31,6 +31,25 @@ async def list_recipe_sources(request: Request, lang: str | None = None):
 @router.get("/tags")
 async def list_recipe_tags(request: Request, lang: str | None = None):
     return await request.app.state.kernel.recipes.list_tags(lang=lang)
+
+
+@router.post("/tags/rename")
+async def rename_recipe_tag(payload: RecipeTagRename, request: Request):
+    data = payload.data(request)
+    return await request.app.state.kernel.recipes.rename_tag(
+        from_name=data["from_name"],
+        to_name=data["to_name"],
+        actor_member_id=data.get("actor_member_id"),
+    )
+
+
+@router.post("/tags/delete")
+async def delete_recipe_tag(payload: RecipeTagDelete, request: Request):
+    data = payload.data(request)
+    return await request.app.state.kernel.recipes.delete_tag(
+        name=data["name"],
+        actor_member_id=data.get("actor_member_id"),
+    )
 
 
 @router.post("/sources/rename")

@@ -150,6 +150,31 @@ class RecipeSourceRename(_Body):
         return cleaned or None
 
 
+class RecipeTagRename(_Body):
+    from_name: str = Field(min_length=1, max_length=200)
+    to_name: str = Field(min_length=1, max_length=200)
+
+    @field_validator("from_name", "to_name")
+    @classmethod
+    def strip_names(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Tag name cannot be blank")
+        return cleaned
+
+
+class RecipeTagDelete(_Body):
+    name: str = Field(min_length=1, max_length=200)
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Tag name cannot be blank")
+        return cleaned
+
+
 class RecipeFields(_Body):
     title: str | None = Field(default=None, min_length=1, max_length=500)
     description: str | None = None

@@ -141,3 +141,41 @@ test('configures per-device tag limit, Show all, and pinned order in Settings ac
   await page.goto('/recipes')
   await expect(page.locator('.tag-more-btn')).toHaveCount(0)
 })
+
+test('renames/merges and deletes tags in Settings across recipes and syncs local pins', async ({ page, request }) => {
+  await login(page)
+
+  await request.post('/api/recipes', { data: { title: 'Veggie Bowl', language: 'en', tags: ['veggie', 'quick-snack'] } })
+  await request.post('/api/recipes', { data: { title: 'Veg Pasta', language: 'en', tags: ['vegetarian', 'veggie'] } })
+
+  await page.goto('/settings?section=recipe-tags')
+  const panel = page.locator('#settings-recipe-tags')
+  await expect(panel.getByText('veggie (2)')).toBeVisible()
+
+  // Pin 'veggie', then merge 'veggie' -> 'vegetarian'
+  await panel.getByRole('button', { name: 'Pin veggie', exact: true }).click()
+  await panel.getByRole('button', { name: 'Rename veggie', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.locator('#tag-rename-input').fill('vegetarian')
+  await expect(dialog).toContainText('merge')
+  await dialog.getByRole('button', { name: 'Save rename', exact: true }).click()
+
+  await expect(panel.locator('[data-tag-name="veggie"]')).toHaveCount(0)
+  await expect(panel.locator('[data-tag-name="vegetarian"]')).toContainText('vegetarian (2)')
+  await expect(panel.locator('[data-pinned-tag="vegetarian"]')).toBeVisible()
+  await expect(panel.locator('[data-tag-name="vegetarian"]').getByRole('button', { name: 'Unpin vegetarian', exact: true })).toBeVisible()
+
+  // Delete 'quick-snack' with confirmation
+  await panel.getByRole('button', { name: 'Delete quick-snack', exact: true }).click()
+  const alert = page.getByRole('alertdialog')
+  await expect(alert).toContainText('1 recipe')
+  await alert.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(panel.getByText('quick-snack (1)')).toHaveCount(0)
+
+  // Verify on /recipes overview: 'vegetarian (2)' is pinned first and filters both recipes
+  await page.goto('/recipes')
+  const firstTag = page.locator('.tag-filter-btn').first()
+  await expect(firstTag).toHaveText('vegetarian (2)')
+  await firstTag.click()
+  await expect(page.locator('.recipe-card')).toHaveCount(2)
+})

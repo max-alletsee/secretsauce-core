@@ -3,6 +3,8 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useSecretSauce } from '@secretsauce/ui'
 import {
   readTagPrefs,
+  syncDeletedPinnedTag,
+  syncRenamedPinnedTag,
   writeTagPrefs,
   type RecipeTagPrefs,
   type TagSummary,
@@ -14,10 +16,26 @@ const prefs = ref<RecipeTagPrefs>(readTagPrefs())
 const draftVisibleCount = ref(String(prefs.value.visibleCount))
 const householdTags = ref<TagSummary[]>([])
 const loading = ref(false)
+const busy = ref(false)
 const error = ref('')
+
+const renameDialogOpen = ref(false)
+const renameFrom = ref('')
+const renameTo = ref('')
+const renameError = ref('')
 
 const pinnedSet = computed(() => new Set(prefs.value.pinnedTags))
 const tagCounts = computed(() => new Map(householdTags.value.map(t => [t.name, t.count])))
+const trimmedRenameTo = computed(() => renameTo.value.trim())
+const isMergeTarget = computed(
+  () =>
+    trimmedRenameTo.value !== '' &&
+    trimmedRenameTo.value !== renameFrom.value &&
+    tagCounts.value.has(trimmedRenameTo.value),
+)
+const canSubmitRename = computed(
+  () => !busy.value && trimmedRenameTo.value !== '' && trimmedRenameTo.value !== renameFrom.value,
+)
 
 function persistPrefs(next: RecipeTagPrefs) {
   prefs.value = writeTagPrefs(next)
@@ -51,6 +69,64 @@ function movePin(index: number, delta: -1 | 1) {
   if (target < 0 || target >= next.length) return
   ;[next[index], next[target]] = [next[target], next[index]]
   persistPrefs({ ...prefs.value, pinnedTags: next })
+}
+
+function openRenameDialog(tag: TagSummary) {
+  renameFrom.value = tag.name
+  renameTo.value = tag.name
+  renameError.value = ''
+  renameDialogOpen.value = true
+}
+
+async function submitRename() {
+  if (!canSubmitRename.value) return
+  const fromName = renameFrom.value
+  const toName = trimmedRenameTo.value
+  const merged = isMergeTarget.value
+  busy.value = true
+  renameError.value = ''
+  try {
+    await ss.api.post('/api/recipes/tags/rename', {
+      from_name: fromName,
+      to_name: toName,
+    })
+    prefs.value = syncRenamedPinnedTag(fromName, toName)
+    renameDialogOpen.value = false
+    await loadTags()
+    ss.notify?.({
+      level: 'success',
+      message: merged ? `Merged '${fromName}' into '${toName}'` : `Renamed '${fromName}' to '${toName}'`,
+    })
+  } catch (err: any) {
+    renameError.value = err?.message || 'Could not rename tag'
+  } finally {
+    busy.value = false
+  }
+}
+
+async function confirmDeleteTag(tag: TagSummary) {
+  if (busy.value) return
+  const recipeWord = tag.count === 1 ? 'recipe' : 'recipes'
+  const confirmed = await ss.confirm({
+    header: 'Delete tag',
+    message: `Remove tag '${tag.name}' from ${tag.count} ${recipeWord} across your household?`,
+    acceptLabel: 'Delete',
+    rejectLabel: 'Cancel',
+    severity: 'danger',
+  })
+  if (!confirmed) return
+  busy.value = true
+  error.value = ''
+  try {
+    await ss.api.post('/api/recipes/tags/delete', { name: tag.name })
+    prefs.value = syncDeletedPinnedTag(tag.name)
+    await loadTags()
+    ss.notify?.({ level: 'success', message: `Deleted tag '${tag.name}'` })
+  } catch (err: any) {
+    error.value = err?.message || 'Could not delete tag'
+  } finally {
+    busy.value = false
+  }
 }
 
 async function loadTags() {
@@ -155,7 +231,7 @@ onMounted(() => {
     <section class="tag-settings-group">
       <h3>Household tags</h3>
       <p class="section-help">
-        Tags aggregated across all Recipes in your household. Pinning affects only this device.
+        Tags aggregated across all Recipes in your household. Pinning applies only to this device; renaming, merging, or deleting updates Recipes for everyone in your household.
       </p>
       <Message v-if="error" severity="error">{{ error }}</Message>
       <p v-else-if="!loading && !householdTags.length" class="muted">No tags in your household recipes yet.</p>
@@ -170,10 +246,47 @@ onMounted(() => {
               :aria-label="`${pinnedSet.has(tag.name) ? 'Unpin' : 'Pin'} ${tag.name}`"
               @click="togglePin(tag.name)"
             />
+            <Button
+              label="Rename"
+              size="small"
+              text
+              :disabled="busy"
+              :aria-label="`Rename ${tag.name}`"
+              @click="openRenameDialog(tag)"
+            />
+            <Button
+              label="Delete"
+              size="small"
+              text
+              severity="danger"
+              :disabled="busy"
+              :aria-label="`Delete ${tag.name}`"
+              @click="confirmDeleteTag(tag)"
+            />
           </div>
         </li>
       </ul>
     </section>
+
+    <Dialog v-model:visible="renameDialogOpen" modal header="Rename or merge tag" :style="{ width: 'min(26rem, 92vw)' }">
+      <form class="rename-form" @submit.prevent="submitRename">
+        <Message v-if="renameError" severity="error">{{ renameError }}</Message>
+        <p class="section-help">
+          Renaming <strong>{{ renameFrom }}</strong> updates every matching Recipe across the household.
+        </p>
+        <div class="limit-field rename-field">
+          <label for="tag-rename-input">New tag name</label>
+          <InputText id="tag-rename-input" v-model="renameTo" required fluid />
+        </div>
+        <Message v-if="isMergeTarget" severity="info">
+          Tag '{{ trimmedRenameTo }}' already exists — saving will merge '{{ renameFrom }}' into '{{ trimmedRenameTo }}' without duplicates.
+        </Message>
+        <div class="rename-actions">
+          <Button type="button" label="Cancel" severity="secondary" text :disabled="busy" @click="renameDialogOpen = false" />
+          <Button type="submit" label="Save rename" :loading="busy" :disabled="!canSubmitRename" />
+        </div>
+      </form>
+    </Dialog>
   </div>
 </template>
 
@@ -199,4 +312,7 @@ h4 { margin: .25rem 0 0; font-size: .875rem; color: var(--p-text-muted-color); }
 }
 .tag-row-label { font-weight: 500; }
 .tag-row-actions { display: flex; align-items: center; gap: .25rem; flex-wrap: wrap; }
+.rename-form { display: grid; gap: .625rem; }
+.rename-field { max-width: none; }
+.rename-actions { display: flex; justify-content: flex-end; gap: .5rem; }
 </style>

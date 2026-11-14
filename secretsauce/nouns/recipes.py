@@ -866,6 +866,133 @@ class RecipesRepo:
             ]
         }
 
+    async def _batch_update_tag(
+        self,
+        target_tag: str,
+        transform: Any,
+        actor_member_id: str | None = None,
+        origin: str | None = None,
+        conn: aiosqlite.Connection | None = None,
+    ) -> dict[str, Any]:
+        async def _do_update(writer_conn: aiosqlite.Connection) -> dict[str, Any]:
+            rows = await self.db.read_all(
+                "SELECT * FROM recipes WHERE EXISTS (SELECT 1 FROM json_each(COALESCE(tags, '[]')) WHERE value = ?);",
+                (target_tag,),
+                conn=writer_conn,
+            )
+            if not rows:
+                return {"updated_count": 0, "updated_rows": 0}
+
+            updated_at = now_iso()
+            resolved_origin = resolve_origin(origin)
+            updated_groups: set[str] = set()
+            updated_rows = 0
+
+            for row in rows:
+                before = _deserialize_recipe(row)
+                current_tags = list(before.get("tags") or [])
+                next_tags = transform(current_tags)
+                if next_tags == current_tags:
+                    continue
+
+                new_rev = row["revision"] + 1
+                await writer_conn.execute(
+                    """
+                    UPDATE recipes SET
+                        revision = ?,
+                        tags = ?,
+                        updated_at = ?,
+                        actor_member_id = ?,
+                        origin = ?
+                    WHERE id = ?;
+                    """,
+                    (
+                        new_rev,
+                        json.dumps(next_tags),
+                        updated_at,
+                        actor_member_id,
+                        resolved_origin,
+                        row["id"],
+                    ),
+                )
+                after = await self.get_recipe(row["id"], conn=writer_conn)
+                await self._rebuild_fts_row(writer_conn, after)
+                await emit_noun_event(
+                    self.events,
+                    writer_conn,
+                    "recipe:updated",
+                    "recipe",
+                    row["id"],
+                    revision=new_rev,
+                    before=before,
+                    after=after,
+                    actor_member_id=after.get("actor_member_id"),
+                    origin=after.get("origin"),
+                )
+                updated_groups.add(row["group_id"])
+                updated_rows += 1
+
+            return {"updated_count": len(updated_groups), "updated_rows": updated_rows}
+
+        return await in_transaction(self.db, conn, _do_update)
+
+    async def rename_tag(
+        self,
+        from_name: str,
+        to_name: str,
+        actor_member_id: str | None = None,
+        origin: str | None = None,
+        conn: aiosqlite.Connection | None = None,
+    ) -> dict[str, Any]:
+        """Atomically rename or merge a tag across all matching recipe rows."""
+        clean_from = (from_name or "").strip()
+        clean_to = (to_name or "").strip()
+        if not clean_from or not clean_to:
+            raise ValidationError(
+                "Tag names cannot be blank",
+                fields={"from_name": "Required", "to_name": "Required"},
+            )
+        if clean_from == clean_to:
+            return {"updated_count": 0, "updated_rows": 0}
+
+        def _rename_row_tags(current_tags: list[str]) -> list[str]:
+            seen: set[str] = set()
+            next_tags: list[str] = []
+            for tag in current_tags:
+                mapped = clean_to if tag == clean_from else tag
+                if mapped not in seen:
+                    seen.add(mapped)
+                    next_tags.append(mapped)
+            return next_tags
+
+        return await self._batch_update_tag(
+            clean_from,
+            _rename_row_tags,
+            actor_member_id=actor_member_id,
+            origin=origin,
+            conn=conn,
+        )
+
+    async def delete_tag(
+        self,
+        name: str,
+        actor_member_id: str | None = None,
+        origin: str | None = None,
+        conn: aiosqlite.Connection | None = None,
+    ) -> dict[str, Any]:
+        """Atomically delete a tag across all matching recipe rows."""
+        clean_name = (name or "").strip()
+        if not clean_name:
+            raise ValidationError("Tag name cannot be blank", fields={"name": "Required"})
+
+        return await self._batch_update_tag(
+            clean_name,
+            lambda current_tags: [tag for tag in current_tags if tag != clean_name],
+            actor_member_id=actor_member_id,
+            origin=origin,
+            conn=conn,
+        )
+
     async def rename_source(
         self,
         from_name: str,

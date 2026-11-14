@@ -95,3 +95,84 @@ async def test_recipe_tags_aggregation_precedence_and_filtering_past_50(tmp_path
         filtered = await client.get("/api/recipes", params={"tag": "RareGem"})
         assert filtered.status_code == 200
         assert [r["title"] for r in filtered.json()["items"]] == ["Recipe 54"]
+
+
+async def test_recipe_tags_bulk_rename_merge_delete_and_validation(tmp_path, monkeypatch):
+    for var in ("GEMINI_API_KEY", "OPENAI_API_KEY", "OPENROUTER_API_KEY"):
+        monkeypatch.delenv(var, raising=False)
+
+    async with runtime(tmp_path) as (kernel, client):
+        r1 = (
+            await client.post(
+                "/api/recipes",
+                json={"title": "Lentil Stew", "language": "en", "tags": ["veggie", "cozy"]},
+            )
+        ).json()
+        r2 = (
+            await client.post(
+                "/api/recipes",
+                json={
+                    "title": "Roasted Broccoli",
+                    "language": "en",
+                    "tags": ["vegetarian", "veggie", "quick"],
+                },
+            )
+        ).json()
+        r3_de = (
+            await client.post(
+                "/api/recipes",
+                json={"title": "Linseneintopf", "language": "de", "tags": ["veggie"]},
+            )
+        ).json()
+
+        # Blank inputs rejected with 422
+        assert (
+            await client.post(
+                "/api/recipes/tags/rename", json={"from_name": "   ", "to_name": "vegetarian"}
+            )
+        ).status_code == 422
+        assert (
+            await client.post(
+                "/api/recipes/tags/rename", json={"from_name": "veggie", "to_name": ""}
+            )
+        ).status_code == 422
+        assert (await client.post("/api/recipes/tags/delete", json={"name": "  "})).status_code == 422
+
+        # Rename + merge "veggie" -> "vegetarian" across all matching translation rows
+        rename_res = await client.post(
+            "/api/recipes/tags/rename",
+            json={"from_name": "veggie", "to_name": "vegetarian"},
+        )
+        assert rename_res.status_code == 200, rename_res.text
+        assert rename_res.json() == {"updated_count": 3, "updated_rows": 3}
+
+        r1_after = (await client.get(f"/api/recipes/{r1['id']}")).json()
+        r2_after = (await client.get(f"/api/recipes/{r2['id']}")).json()
+        r3_after = (await client.get(f"/api/recipes/{r3_de['id']}")).json()
+        assert r1_after["tags"] == ["vegetarian", "cozy"]
+        assert r1_after["revision"] == r1["revision"] + 1
+        # Merge deduplicates without duplicating "vegetarian"
+        assert r2_after["tags"] == ["vegetarian", "quick"]
+        assert r2_after["revision"] == r2["revision"] + 1
+        assert r3_after["tags"] == ["vegetarian"]
+
+        # FTS reflects renamed tag (per requested/primary language)
+        assert len((await client.get("/api/recipes", params={"q": "veggie"})).json()["items"]) == 0
+        assert len((await client.get("/api/recipes", params={"q": "vegetarian"})).json()["items"]) == 2
+        de_hits = (await client.get("/api/recipes", params={"q": "vegetarian", "lang": "de"})).json()["items"]
+        assert sorted(r["title"] for r in de_hits) == ["Lentil Stew", "Linseneintopf", "Roasted Broccoli"]
+
+        # Delete "cozy" across all matching rows
+        del_res = await client.post("/api/recipes/tags/delete", json={"name": "cozy"})
+        assert del_res.status_code == 200, del_res.text
+        assert del_res.json() == {"updated_count": 1, "updated_rows": 1}
+        r1_final = (await client.get(f"/api/recipes/{r1['id']}")).json()
+        assert r1_final["tags"] == ["vegetarian"]
+        assert r1_final["revision"] == r1_after["revision"] + 1
+        assert len((await client.get("/api/recipes", params={"q": "cozy"})).json()["items"]) == 0
+
+        # Events emitted for each update
+        events = await kernel.events.get_events_after(0)
+        tag_update_events = [e for e in events if e.name == "recipe:updated"]
+        assert len(tag_update_events) == 4
+
