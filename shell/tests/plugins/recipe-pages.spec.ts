@@ -505,14 +505,14 @@ describe('registered Recipe pages (API boundary double)', () => {
     expect(wrapper.text()).toContain('Soup (2)')
 
     // Toggle Show all tags on -> disables Top tags to show input, then toggle back off
-    const showAllSwitch = wrapper.getByRole ? null : wrapper.find('#tag-show-all input, input#tag-show-all')
-    expect(showAllSwitch!.exists()).toBe(true)
-    await showAllSwitch!.setValue(true)
+    const showAllSwitch = wrapper.find('#tag-show-all input, input#tag-show-all')
+    expect(showAllSwitch.exists()).toBe(true)
+    await showAllSwitch.setValue(true)
     await flushPromises()
     const limitInput = wrapper.find('#tag-visible-count')
     expect((limitInput.element as HTMLInputElement).disabled).toBe(true)
 
-    await showAllSwitch!.setValue(false)
+    await showAllSwitch.setValue(false)
     await flushPromises()
     expect((limitInput.element as HTMLInputElement).disabled).toBe(false)
     await limitInput.setValue('1')
