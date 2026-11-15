@@ -61,6 +61,7 @@ Thumbs.db
 worktrees/
 
 # Local Scratch
+.scratch/
 my-test-data/
 dev-data/
 test-data/
