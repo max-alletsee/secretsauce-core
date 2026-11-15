@@ -1,57 +1,57 @@
-var H = Object.defineProperty;
-var L = (t, s, n) => s in t ? H(t, s, { enumerable: !0, configurable: !0, writable: !0, value: n }) : t[s] = n;
-var p = (t, s, n) => L(t, typeof s != "symbol" ? s + "" : s, n);
-import { inject as I, defineComponent as P, computed as C, openBlock as m, createElementBlock as h, Fragment as M, renderList as j, createBlock as w, resolveDynamicComponent as O, ref as d, shallowRef as z, resolveComponent as y, resolveDirective as K, renderSlot as J, withDirectives as R, createVNode as E, withCtx as k, mergeProps as Q, normalizeClass as W, createCommentVNode as b, createElementVNode as X, toDisplayString as D, createTextVNode as Z } from "vue";
-const ae = 1;
-class B extends Error {
-  constructor(n, l, u, r) {
-    super(u);
-    p(this, "status");
-    p(this, "code");
-    p(this, "details");
-    this.name = "ApiError", this.status = n, this.code = l, this.details = r;
+var L = Object.defineProperty;
+var j = (n, l, o) => l in n ? L(n, l, { enumerable: !0, configurable: !0, writable: !0, value: o }) : n[l] = o;
+var h = (n, l, o) => j(n, typeof l != "symbol" ? l + "" : l, o);
+import { inject as T, defineComponent as O, computed as S, openBlock as d, createElementBlock as y, Fragment as B, renderList as K, createBlock as I, resolveDynamicComponent as U, ref as u, shallowRef as J, resolveComponent as b, resolveDirective as Q, renderSlot as W, withDirectives as M, createVNode as C, withCtx as w, mergeProps as X, normalizeClass as Z, createCommentVNode as x, createElementVNode as ee, toDisplayString as P, createTextVNode as te } from "vue";
+const ie = 1;
+class V extends Error {
+  constructor(o, s, v, c) {
+    super(v);
+    h(this, "status");
+    h(this, "code");
+    h(this, "details");
+    this.name = "ApiError", this.status = o, this.code = s, this.details = c;
   }
 }
-class le extends B {
-  constructor(n, l) {
-    super(409, "conflict", n, { current: l });
-    p(this, "current");
-    this.name = "ConflictError", this.current = l;
+class re extends V {
+  constructor(o, s) {
+    super(409, "conflict", o, { current: s });
+    h(this, "current");
+    this.name = "ConflictError", this.current = s;
   }
 }
-class ie extends B {
-  constructor(s = "Network unavailable") {
-    super(0, "offline", s), this.name = "OfflineError";
+class ce extends V {
+  constructor(l = "Network unavailable") {
+    super(0, "offline", l), this.name = "OfflineError";
   }
 }
-const ee = "__SS_UI__";
-function re() {
-  const t = I(ee);
-  if (!t) throw new Error("useSecretSauce() requires a registered plugin component");
-  return t;
+const ne = "__SS_UI__";
+function ue() {
+  const n = T(ne);
+  if (!n) throw new Error("useSecretSauce() requires a registered plugin component");
+  return n;
 }
-const ce = /* @__PURE__ */ P({
+const ve = /* @__PURE__ */ O({
   __name: "Slot",
   props: {
     name: {},
     context: {}
   },
-  setup(t) {
-    const s = t, n = I("__SS_SLOT_REGISTRY__", {
+  setup(n) {
+    const l = n, o = T("__SS_SLOT_REGISTRY__", {
       getContributions: () => []
-    }), l = C(() => [...n.getContributions(s.name) || []].sort((r, a) => (r.order ?? 50) - (a.order ?? 50)));
-    return (u, r) => (m(!0), h(
-      M,
+    }), s = S(() => [...o.getContributions(l.name) || []].sort((c, r) => (c.order ?? 50) - (r.order ?? 50)));
+    return (v, c) => (d(!0), y(
+      B,
       null,
-      j(l.value, (a) => (m(), w(O(a.component), {
-        key: a.id,
-        context: s.context || {}
+      K(s.value, (r) => (d(), I(U(r.component), {
+        key: r.id,
+        context: l.context || {}
       }, null, 8, ["context"]))),
       128
       /* KEYED_FRAGMENT */
     ));
   }
-}), te = /* @__PURE__ */ P({
+}), oe = /* @__PURE__ */ O({
   __name: "IntentTrigger",
   props: {
     hub: {},
@@ -59,105 +59,106 @@ const ce = /* @__PURE__ */ P({
     label: {}
   },
   emits: ["resolve", "cancel"],
-  setup(t, { emit: s }) {
-    const n = t, l = s, u = I("__SS_INTENT_REGISTRY__", { getProviders: () => [] }), r = d(), a = z(null), c = d(!1), _ = d(""), i = C(() => u.getProviders(n.hub).filter((e) => !e.isAvailable || e.isAvailable(n.context)).slice().sort((e, o) => e.order - o.order));
-    function f(e) {
-      var o;
-      return ((o = e.disabledReason) == null ? void 0 : o.call(e, n.context)) || "";
+  setup(n, { emit: l }) {
+    const o = n, s = l, v = T("__SS_INTENT_REGISTRY__", { getProviders: () => [] }), c = u(), r = u(null), i = J(null), f = u(!1), _ = u(""), a = S(() => v.getProviders(o.hub).filter((e) => !e.isAvailable || e.isAvailable(o.context)).slice().sort((e, t) => e.order - t.order));
+    function g(e) {
+      var t;
+      return ((t = e.disabledReason) == null ? void 0 : t.call(e, o.context)) || "";
     }
-    function x(e) {
-      var o;
-      return ((o = e.titleFor) == null ? void 0 : o.call(e, n.context)) || e.title;
+    function E(e) {
+      var t;
+      return ((t = e.titleFor) == null ? void 0 : t.call(e, o.context)) || e.title;
     }
-    function U(e) {
-      var o;
-      return ((o = e.iconFor) == null ? void 0 : o.call(e, n.context)) || e.icon;
+    function $(e) {
+      var t;
+      return ((t = e.iconFor) == null ? void 0 : t.call(e, o.context)) || e.icon;
     }
-    const V = C(() => i.value.map((e) => {
-      const o = U(e);
+    const A = S(() => a.value.map((e) => {
+      const t = $(e);
       return {
-        label: x(e),
-        icon: o ? `pi pi-${o}` : void 0,
-        disabled: !!f(e),
-        reason: f(e),
-        command: () => A(e)
+        label: E(e),
+        icon: t ? `pi pi-${t}` : void 0,
+        disabled: !!g(e),
+        reason: g(e),
+        command: () => R(e)
       };
-    }));
-    async function T(e) {
-      var o;
-      c.value || (_.value = "", i.value.length === 1 ? await A(i.value[0]) : (o = r.value) == null || o.toggle(e));
+    })), F = S(() => r.value || A.value);
+    async function N(e) {
+      var t;
+      f.value || (_.value = "", a.value.length === 1 ? await R(a.value[0]) : (r.value = A.value, (t = c.value) == null || t.toggle(e)));
     }
-    async function A(e) {
-      var o;
-      if (!(c.value || f(e))) {
-        if ((o = r.value) == null || o.hide(), _.value = "", e.kind === "ui") {
-          a.value = e;
+    async function R(e) {
+      var t;
+      if (!(f.value || g(e))) {
+        if (r.value = null, (t = c.value) == null || t.hide(), _.value = "", e.kind === "ui") {
+          i.value = e;
           return;
         }
-        c.value = !0;
+        f.value = !0;
         try {
-          l("resolve", await e.execute(n.context));
-        } catch (g) {
-          _.value = (g == null ? void 0 : g.message) || "Action failed";
+          s("resolve", await e.execute(o.context));
+        } catch (p) {
+          _.value = (p == null ? void 0 : p.message) || "Action failed";
         } finally {
-          c.value = !1;
+          f.value = !1;
         }
       }
     }
-    function F(e) {
-      a.value = null, l("resolve", e);
+    function H(e) {
+      i.value = null, s("resolve", e);
     }
-    function S() {
-      a.value && (a.value = null, l("cancel"));
+    function k() {
+      i.value && (i.value = null, s("cancel"));
     }
-    return (e, o) => {
-      const g = y("Button"), $ = y("Menu"), Y = y("Message"), q = y("Dialog"), N = K("tooltip");
-      return i.value.length ? (m(), h(
-        M,
+    return (e, t) => {
+      const p = b("Button"), Y = b("Menu"), q = b("Message"), z = b("Dialog"), D = Q("tooltip");
+      return a.value.length ? (d(), y(
+        B,
         { key: 0 },
         [
-          J(e.$slots, "default", { open: T }, () => [
-            R((m(), h("span", null, [
-              E(g, {
+          W(e.$slots, "default", { open: N }, () => [
+            M((d(), y("span", null, [
+              C(p, {
                 class: "ss-intent-trigger",
-                label: t.label || x(i.value[0]),
-                loading: c.value,
-                disabled: c.value || i.value.length === 1 && !!f(i.value[0]),
-                icon: i.value.length > 1 ? "pi pi-chevron-down" : i.value[0].icon ? `pi pi-${i.value[0].icon}` : void 0,
-                iconPos: i.value.length > 1 ? "right" : "left",
-                "aria-haspopup": i.value.length > 1 ? "menu" : void 0,
-                onClick: T
+                label: n.label || E(a.value[0]),
+                loading: f.value,
+                disabled: f.value || a.value.length === 1 && !!g(a.value[0]),
+                icon: a.value.length > 1 ? "pi pi-chevron-down" : a.value[0].icon ? `pi pi-${a.value[0].icon}` : void 0,
+                iconPos: a.value.length > 1 ? "right" : "left",
+                "aria-haspopup": a.value.length > 1 ? "menu" : void 0,
+                onClick: N
               }, null, 8, ["label", "loading", "disabled", "icon", "iconPos", "aria-haspopup"])
             ])), [
-              [N, i.value.length === 1 ? f(i.value[0]) : ""]
+              [D, a.value.length === 1 ? g(a.value[0]) : ""]
             ])
           ], !0),
-          E($, {
+          C(Y, {
             ref_key: "menu",
-            ref: r,
-            model: V.value,
-            popup: ""
+            ref: c,
+            model: F.value,
+            popup: "",
+            onHide: t[0] || (t[0] = (m) => r.value = null)
           }, {
-            item: k(({ item: v, props: G }) => [
-              R((m(), h(
+            item: w(({ item: m, props: G }) => [
+              M((d(), y(
                 "a",
-                Q(G.action, { class: "ss-intent-item" }),
+                X(G.action, { class: "ss-intent-item" }),
                 [
-                  v.icon ? (m(), h(
+                  m.icon ? (d(), y(
                     "span",
                     {
                       key: 0,
-                      class: W(v.icon),
+                      class: Z(m.icon),
                       "aria-hidden": "true"
                     },
                     null,
                     2
                     /* CLASS */
-                  )) : b("v-if", !0),
-                  X(
+                  )) : x("v-if", !0),
+                  ee(
                     "span",
                     null,
-                    D(v.label),
+                    P(m.label),
                     1
                     /* TEXT */
                   )
@@ -165,43 +166,43 @@ const ce = /* @__PURE__ */ P({
                 16
                 /* FULL_PROPS */
               )), [
-                [N, v.reason]
+                [D, m.reason]
               ])
             ]),
             _: 1
             /* STABLE */
           }, 8, ["model"]),
-          _.value ? (m(), w(Y, {
+          _.value ? (d(), I(q, {
             key: 0,
             severity: "error"
           }, {
-            default: k(() => [
-              Z(
-                D(_.value),
+            default: w(() => [
+              te(
+                P(_.value),
                 1
                 /* TEXT */
               )
             ]),
             _: 1
             /* STABLE */
-          })) : b("v-if", !0),
-          E(q, {
-            visible: !!a.value,
-            header: a.value ? x(a.value) : "",
+          })) : x("v-if", !0),
+          C(z, {
+            visible: !!i.value,
+            header: i.value ? E(i.value) : "",
             modal: "",
             style: { width: "min(52rem, 95vw)" },
-            "onUpdate:visible": o[0] || (o[0] = (v) => {
-              v || S();
+            "onUpdate:visible": t[1] || (t[1] = (m) => {
+              m || k();
             }),
-            onHide: S
+            onHide: k
           }, {
-            default: k(() => [
-              a.value ? (m(), w(O(a.value.component), {
+            default: w(() => [
+              i.value ? (d(), I(U(i.value.component), {
                 key: 0,
-                context: t.context,
-                onResolve: F,
-                onCancel: S
-              }, null, 40, ["context"])) : b("v-if", !0)
+                context: n.context,
+                onResolve: H,
+                onCancel: k
+              }, null, 40, ["context"])) : x("v-if", !0)
             ]),
             _: 1
             /* STABLE */
@@ -209,17 +210,17 @@ const ce = /* @__PURE__ */ P({
         ],
         64
         /* STABLE_FRAGMENT */
-      )) : b("v-if", !0);
+      )) : x("v-if", !0);
     };
   }
-}), ne = (t, s) => {
-  const n = t.__vccOpts || t;
-  for (const [l, u] of s)
-    n[l] = u;
-  return n;
-}, ue = /* @__PURE__ */ ne(te, [["__scopeId", "data-v-2287d676"]]);
-function de(t = "test-plugin") {
-  const s = d({
+}), le = (n, l) => {
+  const o = n.__vccOpts || n;
+  for (const [s, v] of l)
+    o[s] = v;
+  return o;
+}, de = /* @__PURE__ */ le(oe, [["__scopeId", "data-v-c6f67741"]]);
+function me(n = "test-plugin") {
+  const l = u({
     id: "m1",
     revision: 1,
     name: "Alice",
@@ -230,13 +231,13 @@ function de(t = "test-plugin") {
     disliked_ingredients: [],
     favorite_cuisines: [],
     preferred_language: "en"
-  }), n = d([s.value]), l = d({
+  }), o = u([l.value]), s = u({
     household_name: "Test House",
     meal_types: [{ id: "dinner", label: "Dinner" }],
     languages: { primary: "en" },
     units: "metric",
     event_retention_days: 60
-  }), u = d(!0), r = {
+  }), v = u(!0), c = {
     get: async () => ({}),
     post: async () => ({}),
     patch: async () => ({}),
@@ -244,9 +245,9 @@ function de(t = "test-plugin") {
     delete: async () => {
     },
     upload: async () => ({})
-  }, a = {
-    pending: d(0),
-    failed: d([]),
+  }, r = {
+    pending: u(0),
+    failed: u([]),
     enqueue: async () => "outbox-id-1",
     discard: async () => {
     },
@@ -254,7 +255,7 @@ function de(t = "test-plugin") {
     }
   };
   return {
-    pluginId: t,
+    pluginId: n,
     route: () => {
     },
     slot: () => {
@@ -266,13 +267,13 @@ function de(t = "test-plugin") {
     } },
     on: () => {
     },
-    api: r,
-    url: (c) => c,
-    store: { currentMember: s, members: n, household: l, online: u },
-    outbox: a,
+    api: c,
+    url: (i) => i,
+    store: { currentMember: l, members: o, household: s, online: v },
+    outbox: r,
     i18n: { add: () => {
     } },
-    t: (c) => c,
+    t: (i) => i,
     theme: { register: () => {
     } },
     notify: () => {
@@ -281,13 +282,13 @@ function de(t = "test-plugin") {
   };
 }
 export {
-  ae as API_VERSION,
-  B as ApiError,
-  le as ConflictError,
-  ue as IntentTrigger,
-  ie as OfflineError,
-  ee as SECRET_SAUCE_UI_KEY,
-  ce as Slot,
-  de as createFakeSecretSauceUI,
-  re as useSecretSauce
+  ie as API_VERSION,
+  V as ApiError,
+  re as ConflictError,
+  de as IntentTrigger,
+  ce as OfflineError,
+  ne as SECRET_SAUCE_UI_KEY,
+  ve as Slot,
+  me as createFakeSecretSauceUI,
+  ue as useSecretSauce
 };

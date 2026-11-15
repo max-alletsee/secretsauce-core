@@ -298,3 +298,96 @@ test('user can define pre-defined notes like take-out and use them in recipe slo
   await expect(slot).toContainText('take-out')
 })
 
+test('user can move a meal across days and slots, un-skip skipped slots, and default cooked status by past/future', async ({ page, request }) => {
+  await login(page)
+  expect((await request.patch('/api/household', { data: { meal_types: [{ id: 'breakfast', label: 'Breakfast' }, { id: 'lunch', label: 'Lunch' }, { id: 'dinner', label: 'Dinner' }] } })).ok()).toBe(true)
+
+  const today = day(0)
+  const tomorrow = day(1)
+  const dayAfter = day(2)
+  const yesterday = day(-1)
+
+  const moveMealRes = await request.post('/api/timeline', { data: { date: today, meal_type: 'dinner', entry_type: 'note', title: 'Moveable Feast' } })
+  expect(moveMealRes.status()).toBe(201)
+  const moveEntry = await moveMealRes.json()
+
+  const existingTomorrowRes = await request.post('/api/timeline', { data: { date: tomorrow, meal_type: 'lunch', entry_type: 'note', title: 'Existing Tomorrow Lunch' } })
+  expect(existingTomorrowRes.status()).toBe(201)
+  const existingTomorrow = await existingTomorrowRes.json()
+
+  expect((await request.put(`/api/x/core-timeline/days/${dayAfter}/slots/lunch`, { data: { kind: 'skip' } })).ok()).toBe(true)
+
+  async function selectDateInPicker(dialog: any, targetIso: string) {
+    const [targetYear, targetMonth, targetDay] = targetIso.split('-').map(Number)
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    for (let guard = 0; guard < 24; guard++) {
+      const monthName = (await dialog.locator('.p-datepicker-select-month').textContent())?.trim() || ''
+      const yearText = (await dialog.locator('.p-datepicker-select-year').textContent())?.trim() || '0'
+      const shownMonth = monthNames.indexOf(monthName) + 1
+      const shownYear = Number(yearText)
+      if (shownYear === targetYear && shownMonth === targetMonth) break
+      const targetVal = targetYear * 12 + targetMonth
+      const shownVal = shownYear * 12 + shownMonth
+      await dialog.locator(targetVal > shownVal ? '.p-datepicker-next-button' : '.p-datepicker-prev-button').click()
+    }
+    await dialog.locator('td:not(.p-datepicker-other-month) .p-datepicker-day').filter({ hasText: new RegExp(`^${targetDay}$`) }).click()
+  }
+
+  await page.goto('/timeline')
+  const card = page.locator(`.day-card[data-timeline-date="${today}"] .timeline-card`).filter({ hasText: 'Moveable Feast' })
+  await expect(card).toBeVisible()
+  await card.click()
+  await page.getByRole('menuitem', { name: 'Move meal', exact: true }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Move', exact: true })).toBeDisabled()
+
+  // 1. Move to tomorrow's already-occupied lunch -> shows minimal occupied dot, keeps both meals in order
+  await selectDateInPicker(dialog, tomorrow)
+  const tomorrowLunch = dialog.locator('[data-move-slot="lunch"]')
+  await expect(tomorrowLunch).toHaveAttribute('data-slot-occupied', 'true')
+  await expect(tomorrowLunch.locator('.slot-occupied-dot')).toBeVisible()
+  await tomorrowLunch.click()
+  await dialog.getByRole('button', { name: 'Move', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+
+  const tomorrowLunchSlot = page.locator(`.day-card[data-timeline-date="${tomorrow}"] [data-slot-id="lunch"]`)
+  await expect(tomorrowLunchSlot.locator('.timeline-card')).toHaveCount(2)
+  await expect(tomorrowLunchSlot.locator('.timeline-card').nth(0)).toContainText('Existing Tomorrow Lunch')
+  await expect(tomorrowLunchSlot.locator('.timeline-card').nth(1)).toContainText('Moveable Feast')
+
+  // 2. Move into a skipped slot on day(2) -> shows (skipped), un-skips it and persists
+  await tomorrowLunchSlot.locator('.timeline-card').filter({ hasText: 'Moveable Feast' }).click()
+  await page.getByRole('menuitem', { name: 'Move meal', exact: true }).click()
+  await selectDateInPicker(dialog, dayAfter)
+  const skippedLunch = dialog.locator('[data-move-slot="lunch"]')
+  await expect(skippedLunch).toContainText('(skipped)')
+  await skippedLunch.click()
+  await dialog.getByRole('button', { name: 'Move', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+
+  const dayAfterLunchSlot = page.locator(`.day-card[data-timeline-date="${dayAfter}"] [data-slot-id="lunch"]`)
+  await expect(dayAfterLunchSlot).toContainText('Moveable Feast')
+  await expect(dayAfterLunchSlot).not.toContainText('Skipped this day')
+
+  // 3. Move to yesterday -> auto-defaults Mark as cooked checked, persists across reload
+  const dayAfterCard = dayAfterLunchSlot.locator('.timeline-card').filter({ hasText: 'Moveable Feast' })
+  await dayAfterCard.evaluate(el => el.scrollIntoView({ block: 'center' }))
+  await dayAfterCard.click()
+  await page.getByRole('menuitem', { name: 'Move meal', exact: true }).click()
+  await selectDateInPicker(dialog, yesterday)
+  await expect(dialog.locator('#move-cooked-toggle')).toBeChecked()
+  await dialog.locator('[data-move-slot="dinner"]').click()
+  await dialog.getByRole('button', { name: 'Move', exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+
+  await page.reload()
+  const yesterdayEntries = await (await request.get(`/api/timeline?from=${yesterday}&to=${yesterday}`)).json()
+  const moved = yesterdayEntries.find((e: any) => e.id === moveEntry.id)
+  expect(moved).toBeTruthy()
+  expect(moved.meal_type).toBe('dinner')
+  expect(moved.status).toBe('cooked')
+})
+
+

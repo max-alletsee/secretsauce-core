@@ -13,7 +13,7 @@ const widgets=computed(()=>registry?.getContributions('timeline.sidebar')||[])
 const days=computed(()=>buildDays(windowDates.value,slots.value,entries.value,today.value))
 const past=computed(()=>days.value.filter(day=>day.isPast)),future=computed(()=>days.value.filter(day=>!day.isPast))
 let revision=0,timer:ReturnType<typeof setTimeout>|undefined,disposed=false
-async function load(){const n=++revision;const {from,to}=windowDates.value;error.value=''
+async function load(){clearTimeout(timer);const n=++revision;const {from,to}=windowDates.value;error.value=''
   try{
     const timeline:TimelineEntry[]=[],resolved:Record<string,ResolvedSlot[]>={}
     // Bound both APIs: timeline allows a 62-day difference (63 inclusive), slots 92 inclusive.

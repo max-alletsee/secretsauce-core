@@ -1,5 +1,6 @@
 import type { SecretSauceUI } from '@secretsauce/ui'
 import CookedBadge from './components/CookedBadge.vue'
+import MoveMealDialog from './components/MoveMealDialog.vue'
 import TimelinePage from './pages/TimelinePage.vue'
 import { localToday, shiftDate } from './days'
 
@@ -48,6 +49,16 @@ export default function activate(ss: SecretSauceUI) {
         ss.notify({ level: 'success', message: 'Meal marked as cooked!' })
       }
     },
+  })
+  ss.intent.provider({
+    hub: 'entry:interact',
+    id: 'move',
+    title: 'Move meal',
+    icon: 'arrow-right-arrow-left',
+    order: 30,
+    kind: 'ui',
+    component: MoveMealDialog,
+    isAvailable: context => !!(context as any)?.entry,
   })
   ss.intent.provider({ hub: 'entry:interact', id: 'remove', title: 'Remove from plan', icon: 'trash', order: 999, kind: 'headless',
     execute: async (context: any) => {

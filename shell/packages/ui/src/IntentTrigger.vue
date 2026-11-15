@@ -6,6 +6,7 @@ const props = defineProps<{ hub: string; context?: any; label?: string }>()
 const emit = defineEmits<{ resolve: [result: any]; cancel: [] }>()
 const registry = inject<{ getProviders(hub: string): IntentProvider[] }>('__SS_INTENT_REGISTRY__', { getProviders: () => [] })
 const menu = ref<any>()
+const frozenModel = ref<any[] | null>(null)
 const activeDialog = shallowRef<IntentProvider | null>(null)
 const busy = ref(false), error = ref('')
 const availableProviders = computed(() => registry.getProviders(props.hub)
@@ -23,14 +24,19 @@ const menuModel = computed(() => availableProviders.value.map(provider => {
     disabled: !!reason(provider), reason: reason(provider), command: () => runProvider(provider),
   }
 }))
+const displayedModel = computed(() => frozenModel.value || menuModel.value)
 async function open(event: Event) {
   if (busy.value) return
   error.value = ''
   if (availableProviders.value.length === 1) await runProvider(availableProviders.value[0])
-  else menu.value?.toggle(event)
+  else {
+    frozenModel.value = menuModel.value
+    menu.value?.toggle(event)
+  }
 }
 async function runProvider(provider: IntentProvider) {
   if (busy.value || reason(provider)) return
+  frozenModel.value = null
   menu.value?.hide()
   error.value = ''
   if (provider.kind === 'ui') { activeDialog.value = provider; return }
@@ -53,7 +59,7 @@ function cancel() { if (activeDialog.value) { activeDialog.value = null; emit('c
           :iconPos="availableProviders.length > 1 ? 'right' : 'left'" :aria-haspopup="availableProviders.length > 1 ? 'menu' : undefined" @click="open" />
       </span>
     </slot>
-    <Menu ref="menu" :model="menuModel" popup>
+    <Menu ref="menu" :model="displayedModel" popup @hide="frozenModel = null">
       <template #item="{ item, props: menuProps }">
         <a v-bind="menuProps.action" v-tooltip="item.reason" class="ss-intent-item">
           <span v-if="item.icon" :class="item.icon" aria-hidden="true"/><span>{{ item.label }}</span>
