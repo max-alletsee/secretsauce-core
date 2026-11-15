@@ -161,3 +161,39 @@ test('deletes an existing recipe from RecipeEditPage after confirmation and keep
   await expect(page).toHaveURL(/\/recipes$/)
   expect((await request.get(`/api/recipes/${recipe.group_id}`)).status()).toBe(404)
 })
+
+test('RecipeEditPage renders all actions at the top in order and keeps them sticky while scrolling', async ({ page, request }) => {
+  await login(page)
+  const res = await request.post('/api/recipes', {
+    data: {
+      title: 'Long Scrollable Recipe',
+      language: 'en',
+      servings: 4,
+      ingredients: Array.from({ length: 15 }, (_, i) => ({ name: `Ingredient ${i + 1}`, quantity: i + 1, unit: 'g' })),
+      steps: Array.from({ length: 10 }, (_, i) => ({ instruction: `Step ${i + 1}: cook thoroughly and taste.` })),
+    },
+  })
+  expect(res.status()).toBe(201)
+  const recipe = await res.json()
+
+  await page.goto(`/recipes/${recipe.id}/edit`)
+  const topBar = page.locator('.edit-top-bar')
+  const actionButtons = topBar.locator('.edit-top-actions button')
+  await expect(actionButtons).toHaveCount(4)
+  await expect(actionButtons).toHaveText(['Delete Recipe', 'Customize Recipe', 'Cancel', 'Save Recipe'])
+  await expect(page.locator('.actions-row')).toHaveCount(0)
+
+  const content = page.locator('.ss-content')
+  await content.evaluate(el => { el.scrollTop = el.scrollHeight })
+  await expect.poll(() => content.evaluate(el => el.scrollTop)).toBeGreaterThan(100)
+
+  const barBox = await topBar.boundingBox()
+  const contentBox = await content.boundingBox()
+  expect(barBox).not.toBeNull()
+  expect(contentBox).not.toBeNull()
+  expect(Math.abs(barBox!.y - contentBox!.y)).toBeLessThanOrEqual(2)
+
+  // Save directly from the sticky header while scrolled down
+  await page.getByRole('button', { name: 'Save Recipe', exact: true }).click()
+  await expect(page).toHaveURL(new RegExp(`/recipes/${recipe.id}$`))
+})

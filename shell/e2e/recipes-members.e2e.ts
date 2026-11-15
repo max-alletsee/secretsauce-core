@@ -131,7 +131,7 @@ test.describe('Recipes & Members End-to-End Browser Tests', () => {
     await stepRow.locator('.textarea-instruction').fill('Mix dry and wet ingredients gently.')
 
     // Save recipe
-    await page.locator('.actions-row button').click()
+    await page.getByRole('button', { name: 'Save Recipe', exact: true }).click()
 
     // Expect transition to detail view for newly created recipe
     await expect(page).toHaveURL(/.*\/recipes\/[a-zA-Z0-9_-]+/, { timeout: 10_000 })

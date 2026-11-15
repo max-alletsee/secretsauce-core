@@ -160,8 +160,10 @@ const editContext = computed(() => ({
     <div class="edit-top-bar">
       <h2>{{ targetId ? 'Edit Recipe' : 'New Recipe' }}</h2>
       <div class="edit-top-actions">
+        <Button v-if="targetId" type="button" label="Delete Recipe" class="btn-delete-recipe" icon="pi pi-trash" severity="danger" outlined :loading="deleting && busy" :disabled="busy || deletedRemotely" @click="removeRecipe" />
         <Slot name="recipe.edit.actions" :context="editContext" />
-        <Button label="Cancel" class="btn-cancel" severity="secondary" :disabled="busy" @click="ss.navigate?.(targetId ? `/recipes/${targetId}` : '/recipes')" />
+        <Button type="button" label="Cancel" class="btn-cancel" severity="secondary" :disabled="busy" @click="ss.navigate?.(targetId ? `/recipes/${targetId}` : '/recipes')" />
+        <Button type="submit" label="Save Recipe" class="btn-primary" icon="pi pi-check" :loading="busy && !deleting" :disabled="!title.trim() || busy || deletedRemotely" />
       </div>
     </div>
     <Message v-if="deletedRemotely" severity="warn">This recipe was deleted in another session. Saving is disabled, or you can copy your changes before leaving.</Message>
@@ -179,21 +181,15 @@ const editContext = computed(() => ({
     <div class="form-group"><label for="recipe-cover">Cover image</label><input id="recipe-cover" type="file" accept="image/*" :disabled="busy || !groupId" @change="onImageUpload"><small v-if="!targetId">Save your recipe first to add a cover image.</small><small v-else>Cover uploads are saved immediately, separately from recipe edits.</small><img v-if="coverAssetId" :src="ss.url(`/api/assets/${coverAssetId}/file`)" alt="Recipe cover" class="cover-preview"></div>
     <section><h3>Ingredients</h3><IngredientRowList v-model="ingredients" /></section>
     <section><h3>Instructions</h3><StepList v-model="steps" /></section>
-    <div class="actions-row">
-      <Button v-if="targetId" type="button" label="Delete Recipe" class="btn-delete-recipe" icon="pi pi-trash" severity="danger" outlined :loading="deleting && busy" :disabled="busy || deletedRemotely" @click="removeRecipe" />
-      <Button type="submit" label="Save Recipe" class="btn-primary" icon="pi pi-check" :loading="busy && !deleting" :disabled="!title.trim() || busy || deletedRemotely" />
-    </div>
   </form>
 </template>
 <style scoped>
-.recipe-edit-page { padding: .75rem 1rem; max-width: 60rem; margin: 0 auto; display: grid; gap: .625rem; }
-.edit-top-bar, .actions-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
-.edit-top-actions { display: flex; align-items: center; gap: .375rem; }
+.recipe-edit-page { padding: 0 1rem .75rem; max-width: 60rem; margin: 0 auto; display: grid; gap: .625rem; }
+.edit-top-bar { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin: 0 -1rem; padding: .75rem 1rem; background: var(--p-surface-50); border-bottom: 1px solid var(--p-content-border-color); }
+.edit-top-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
 h2 { margin: 0; font-size: 1.25rem; line-height: 1.2; }
 h3 { margin: 0 0 .375rem; font-size: 1rem; }
 .form-group { display: grid; gap: .25rem; }label { color: var(--p-text-muted-color); font-size: .875rem; }
 .form-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; }.cover-preview { max-width: 15rem; max-height: 10rem; }
-.actions-row { justify-content: flex-end; }
-.btn-delete-recipe { margin-right: auto; }
-@media (max-width: 767px) { .recipe-edit-page { padding: .5rem .625rem; gap: .5rem; } .form-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 767px) { .recipe-edit-page { padding: 0 .625rem .5rem; gap: .5rem; } .edit-top-bar { margin: 0 -.625rem; padding: .5rem .625rem; } .form-row { grid-template-columns: 1fr 1fr; } }
 </style>

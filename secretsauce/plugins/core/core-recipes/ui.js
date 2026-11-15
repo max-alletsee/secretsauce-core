@@ -1319,7 +1319,7 @@ const nt = { class: "recipe-detail-page" }, at = {
       ]);
     };
   }
-}), Gt = /* @__PURE__ */ ie(jt, [["__scopeId", "data-v-267c9e36"]]), Kt = { class: "edit-top-bar" }, Wt = { class: "edit-top-actions" }, Yt = { class: "form-group" }, Ht = { class: "form-group" }, Qt = { class: "form-row" }, Zt = { class: "form-group" }, Xt = { class: "form-group" }, el = { class: "form-group" }, tl = { class: "form-group" }, ll = { class: "form-group" }, nl = { class: "form-group" }, al = ["disabled"], ol = { key: 0 }, il = { key: 1 }, sl = ["src"], ul = { class: "actions-row" }, rl = /* @__PURE__ */ oe({
+}), Gt = /* @__PURE__ */ ie(jt, [["__scopeId", "data-v-267c9e36"]]), Kt = { class: "edit-top-bar" }, Wt = { class: "edit-top-actions" }, Yt = { class: "form-group" }, Ht = { class: "form-group" }, Qt = { class: "form-row" }, Zt = { class: "form-group" }, Xt = { class: "form-group" }, el = { class: "form-group" }, tl = { class: "form-group" }, ll = { class: "form-group" }, nl = { class: "form-group" }, al = ["disabled"], ol = { key: 0 }, il = { key: 1 }, sl = ["src"], ul = /* @__PURE__ */ oe({
   __name: "RecipeEditPage",
   props: {
     recipeId: {},
@@ -1456,11 +1456,24 @@ const nt = { class: "recipe-detail-page" }, at = {
               /* TEXT */
             ),
             t("div", Wt, [
+              u.value ? (p(), X(L, {
+                key: 0,
+                type: "button",
+                label: "Delete Recipe",
+                class: "btn-delete-recipe",
+                icon: "pi pi-trash",
+                severity: "danger",
+                outlined: "",
+                loading: d.value && l.value,
+                disabled: l.value || A.value,
+                onClick: r
+              }, null, 8, ["loading", "disabled"])) : x("v-if", !0),
               g(J(ae), {
                 name: "recipe.edit.actions",
                 context: S.value
               }, null, 8, ["context"]),
               g(L, {
+                type: "button",
                 label: "Cancel",
                 class: "btn-cancel",
                 severity: "secondary",
@@ -1469,7 +1482,15 @@ const nt = { class: "recipe-detail-page" }, at = {
                   var he, ke;
                   return (ke = (he = J(a)).navigate) == null ? void 0 : ke.call(he, u.value ? `/recipes/${u.value}` : "/recipes");
                 })
-              }, null, 8, ["disabled"])
+              }, null, 8, ["disabled"]),
+              g(L, {
+                type: "submit",
+                label: "Save Recipe",
+                class: "btn-primary",
+                icon: "pi pi-check",
+                loading: l.value && !d.value,
+                disabled: !o.value.trim() || l.value || A.value
+              }, null, 8, ["loading", "disabled"])
             ])
           ]),
           A.value ? (p(), X(b, {
@@ -1673,28 +1694,6 @@ const nt = { class: "recipe-detail-page" }, at = {
               modelValue: W.value,
               "onUpdate:modelValue": n[10] || (n[10] = (F) => W.value = F)
             }, null, 8, ["modelValue"])
-          ]),
-          t("div", ul, [
-            u.value ? (p(), X(L, {
-              key: 0,
-              type: "button",
-              label: "Delete Recipe",
-              class: "btn-delete-recipe",
-              icon: "pi pi-trash",
-              severity: "danger",
-              outlined: "",
-              loading: d.value && l.value,
-              disabled: l.value || A.value,
-              onClick: r
-            }, null, 8, ["loading", "disabled"])) : x("v-if", !0),
-            g(L, {
-              type: "submit",
-              label: "Save Recipe",
-              class: "btn-primary",
-              icon: "pi pi-check",
-              loading: l.value && !d.value,
-              disabled: !o.value.trim() || l.value || A.value
-            }, null, 8, ["loading", "disabled"])
           ])
         ],
         32
@@ -1702,19 +1701,19 @@ const nt = { class: "recipe-detail-page" }, at = {
       );
     };
   }
-}), $e = /* @__PURE__ */ ie(rl, [["__scopeId", "data-v-c798b480"]]), cl = { class: "ss-recipe-tag-settings" }, dl = { class: "tag-settings-group" }, pl = { class: "device-toggle" }, vl = { class: "limit-field" }, ml = {
+}), $e = /* @__PURE__ */ ie(ul, [["__scopeId", "data-v-0d7a866e"]]), rl = { class: "ss-recipe-tag-settings" }, cl = { class: "tag-settings-group" }, dl = { class: "device-toggle" }, pl = { class: "limit-field" }, vl = {
   key: 0,
   class: "pinned-list"
-}, fl = { class: "tag-list" }, gl = ["data-pinned-tag"], yl = { class: "tag-row-label" }, _l = {
+}, ml = { class: "tag-list" }, fl = ["data-pinned-tag"], gl = { class: "tag-row-label" }, yl = {
   key: 1,
   class: "muted"
-}, bl = { class: "tag-row-actions" }, hl = { class: "tag-settings-group" }, kl = {
+}, _l = { class: "tag-row-actions" }, bl = { class: "tag-settings-group" }, hl = {
   key: 1,
   class: "muted"
-}, $l = {
+}, kl = {
   key: 2,
   class: "tag-list"
-}, wl = ["data-tag-name"], Cl = { class: "tag-row-label" }, Vl = { class: "tag-row-actions" }, Sl = { class: "section-help" }, Il = { class: "limit-field rename-field" }, Tl = { class: "rename-actions" }, Al = /* @__PURE__ */ oe({
+}, $l = ["data-tag-name"], wl = { class: "tag-row-label" }, Cl = { class: "tag-row-actions" }, Vl = { class: "section-help" }, Sl = { class: "limit-field rename-field" }, Il = { class: "rename-actions" }, Tl = /* @__PURE__ */ oe({
   __name: "RecipeTagSettings",
   setup(s) {
     var M, P, G;
@@ -1806,8 +1805,8 @@ const nt = { class: "recipe-detail-page" }, at = {
       e.value = ue(), y.value = String(e.value.visibleCount), A();
     }), (r, i) => {
       const S = R("ToggleSwitch"), q = R("InputText"), m = R("Button"), n = R("Message"), L = R("Dialog");
-      return p(), _("div", cl, [
-        t("section", dl, [
+      return p(), _("div", rl, [
+        t("section", cl, [
           i[8] || (i[8] = t(
             "h3",
             null,
@@ -1822,7 +1821,7 @@ const nt = { class: "recipe-detail-page" }, at = {
             -1
             /* CACHED */
           )),
-          t("div", pl, [
+          t("div", dl, [
             g(S, {
               inputId: "tag-show-all",
               "aria-label": "Show all tags",
@@ -1837,7 +1836,7 @@ const nt = { class: "recipe-detail-page" }, at = {
               /* CACHED */
             ))
           ]),
-          t("div", vl, [
+          t("div", pl, [
             i[5] || (i[5] = t(
               "label",
               { for: "tag-visible-count" },
@@ -1863,7 +1862,7 @@ const nt = { class: "recipe-detail-page" }, at = {
               /* CACHED */
             ))
           ]),
-          e.value.pinnedTags.length ? (p(), _("div", ml, [
+          e.value.pinnedTags.length ? (p(), _("div", vl, [
             i[7] || (i[7] = t(
               "h4",
               null,
@@ -1871,7 +1870,7 @@ const nt = { class: "recipe-detail-page" }, at = {
               -1
               /* CACHED */
             )),
-            t("ul", fl, [
+            t("ul", ml, [
               (p(!0), _(
                 te,
                 null,
@@ -1880,7 +1879,7 @@ const nt = { class: "recipe-detail-page" }, at = {
                   class: "tag-row",
                   "data-pinned-tag": b
                 }, [
-                  t("span", yl, [
+                  t("span", gl, [
                     Q(
                       D(b) + " ",
                       1
@@ -1898,9 +1897,9 @@ const nt = { class: "recipe-detail-page" }, at = {
                       ],
                       64
                       /* STABLE_FRAGMENT */
-                    )) : (p(), _("small", _l, " (0 recipes — hidden on overview)"))
+                    )) : (p(), _("small", yl, " (0 recipes — hidden on overview)"))
                   ]),
-                  t("div", bl, [
+                  t("div", _l, [
                     g(m, {
                       icon: "pi pi-arrow-up",
                       size: "small",
@@ -1925,14 +1924,14 @@ const nt = { class: "recipe-detail-page" }, at = {
                       onClick: (E) => W(b)
                     }, null, 8, ["aria-label", "onClick"])
                   ])
-                ], 8, gl))),
+                ], 8, fl))),
                 128
                 /* KEYED_FRAGMENT */
               ))
             ])
           ])) : x("v-if", !0)
         ]),
-        t("section", hl, [
+        t("section", bl, [
           i[10] || (i[10] = t(
             "h3",
             null,
@@ -1960,7 +1959,7 @@ const nt = { class: "recipe-detail-page" }, at = {
             ]),
             _: 1
             /* STABLE */
-          })) : !u.value && !a.value.length ? (p(), _("p", kl, "No tags in your household recipes yet.")) : (p(), _("ul", $l, [
+          })) : !u.value && !a.value.length ? (p(), _("p", hl, "No tags in your household recipes yet.")) : (p(), _("ul", kl, [
             (p(!0), _(
               te,
               null,
@@ -1971,12 +1970,12 @@ const nt = { class: "recipe-detail-page" }, at = {
               }, [
                 t(
                   "span",
-                  Cl,
+                  wl,
                   D(b.name) + " (" + D(b.count) + ")",
                   1
                   /* TEXT */
                 ),
-                t("div", Vl, [
+                t("div", Cl, [
                   g(m, {
                     label: U.value.has(b.name) ? "Unpin" : "Pin",
                     size: "small",
@@ -2002,7 +2001,7 @@ const nt = { class: "recipe-detail-page" }, at = {
                     onClick: (H) => d(b)
                   }, null, 8, ["disabled", "aria-label", "onClick"])
                 ])
-              ], 8, wl))),
+              ], 8, $l))),
               128
               /* KEYED_FRAGMENT */
             ))
@@ -2037,7 +2036,7 @@ const nt = { class: "recipe-detail-page" }, at = {
                   _: 1
                   /* STABLE */
                 })) : x("v-if", !0),
-                t("p", Sl, [
+                t("p", Vl, [
                   i[12] || (i[12] = Q(
                     " Renaming ",
                     -1
@@ -2056,7 +2055,7 @@ const nt = { class: "recipe-detail-page" }, at = {
                     /* CACHED */
                   ))
                 ]),
-                t("div", Il, [
+                t("div", Sl, [
                   i[14] || (i[14] = t(
                     "label",
                     { for: "tag-rename-input" },
@@ -2086,7 +2085,7 @@ const nt = { class: "recipe-detail-page" }, at = {
                   _: 1
                   /* STABLE */
                 })) : x("v-if", !0),
-                t("div", Tl, [
+                t("div", Il, [
                   g(m, {
                     type: "button",
                     label: "Cancel",
@@ -2113,14 +2112,14 @@ const nt = { class: "recipe-detail-page" }, at = {
       ]);
     };
   }
-}), Rl = /* @__PURE__ */ ie(Al, [["__scopeId", "data-v-83507393"]]);
-function Dl(s) {
+}), Al = /* @__PURE__ */ ie(Tl, [["__scopeId", "data-v-33910152"]]);
+function xl(s) {
   var c;
   s.route({ path: "/recipes", component: tt, nav: { label: "Recipes", icon: "book", order: 10 } }), s.route({ path: "/recipes/new", component: $e }), s.route({ path: "/recipes/:id", component: $t }), s.route({ path: "/recipes/:id/edit", component: $e }), (c = s.settings) != null && c.section && s.settings.section({
     id: "recipe-tags",
     title: "Recipe Tags",
     order: 30,
-    component: Rl
+    component: Al
   }), s.intent.hub({ id: "recipe:create", title: "Add or Import Recipe" }), s.intent.provider({
     hub: "recipe:create",
     id: "manual",
@@ -2163,5 +2162,5 @@ function Dl(s) {
   });
 }
 export {
-  Dl as default
+  xl as default
 };
