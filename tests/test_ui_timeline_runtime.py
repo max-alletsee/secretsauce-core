@@ -196,3 +196,56 @@ async def test_timeline_push_reaches_the_real_sse_client_after_commit(tmp_path):
         finally:
             if not task.done(): task.cancel()
             await asyncio.gather(task, return_exceptions=True)
+
+
+async def test_timeline_settings_defaults_validation_and_persistence(tmp_path):
+    async with runtime(tmp_path) as (app, client):
+        initial = await client.get(f'{BASE}/settings')
+        assert initial.status_code == 200, initial.text
+        assert initial.json() == {'default_past_days': 2, 'default_planning_days': 7}
+
+        for bad in [
+            {'default_past_days': -1, 'default_planning_days': 7},
+            {'default_past_days': 31, 'default_planning_days': 7},
+            {'default_past_days': 2, 'default_planning_days': 0},
+            {'default_past_days': 2, 'default_planning_days': 61},
+            {'default_past_days': 1.5, 'default_planning_days': 7},
+            {'default_past_days': 2},
+        ]:
+            rejected = await client.put(f'{BASE}/settings', json=bad)
+            assert rejected.status_code == 422, rejected.text
+            assert rejected.json()['error']['code'] == 'validation'
+
+        assert (await client.get(f'{BASE}/settings')).json() == {'default_past_days': 2, 'default_planning_days': 7}
+
+        updated = await client.put(f'{BASE}/settings', json={'default_past_days': 0, 'default_planning_days': 14})
+        assert updated.status_code == 200, updated.text
+        assert updated.json() == {'default_past_days': 0, 'default_planning_days': 14}
+        assert (await client.get(f'{BASE}/settings')).json() == {'default_past_days': 0, 'default_planning_days': 14}
+        plugin_cfg = await client.get('/api/plugins/core-timeline/config')
+        assert plugin_cfg.status_code == 200
+        assert plugin_cfg.json() == {'default_past_days': 0, 'default_planning_days': 14}
+
+
+async def test_timeline_settings_update_pushes_sse_event(tmp_path):
+    async with runtime(tmp_path) as (app, client):
+        kernel = app.state.kernel
+        head = await kernel.events.get_head_seq()
+        task = asyncio.create_task(client.get(f'/api/events/stream?limit=2&last_event_id={head}'))
+        try:
+            async with asyncio.timeout(5):
+                while kernel.broadcaster.subscriber_count == 0: await asyncio.sleep(.01)
+            res = await client.put(f'{BASE}/settings', json={'default_past_days': 4, 'default_planning_days': 10})
+            assert res.status_code == 200, res.text
+            response = await asyncio.wait_for(task, 5)
+            frame = _frames(response.text)[1]
+            assert frame['event'] == 'push'
+            assert frame['data'] == {
+                'kind': 'push',
+                'name': 'core-timeline:settings-changed',
+                'data': {'default_past_days': 4, 'default_planning_days': 10},
+                'plugin_id': 'core-timeline',
+            }
+        finally:
+            if not task.done(): task.cancel()
+            await asyncio.gather(task, return_exceptions=True)

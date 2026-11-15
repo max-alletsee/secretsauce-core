@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import activate from '../../../secretsauce/plugins/core/core-timeline/ui/src/index'
-import { registeredRoute, savedRecipe, clickButton } from '../helpers/registeredPlugin'
+import { registeredRoute, registeredSlot, savedRecipe, clickButton } from '../helpers/registeredPlugin'
 const wrappers: VueWrapper[] = []
 afterEach(() => { wrappers.splice(0).forEach(w => w.unmount()); document.body.innerHTML = '' })
 function resolved(from: string, to: string) {
@@ -131,5 +131,143 @@ describe('registered Timeline route (API boundary double)', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('uses configured Timeline Window, hides empty past container when 0, and chunks wide warmCache requests', async () => {
+    const timelineQueries: Array<{ from: string; to: string }> = []
+    const { wrapper } = await registeredRoute(activate, 'core-timeline', {
+      get: async (path: string, query: any) => {
+        if (path === '/api/x/core-timeline/settings') return { default_past_days: 0, default_planning_days: 3 }
+        if (path === '/api/x/core-timeline/slots') return resolved(query.from, query.to)
+        if (path.startsWith('/api/timeline')) {
+          if (query) timelineQueries.push({ from: query.from, to: query.to })
+          else {
+            const url = new URL(path, 'http://localhost')
+            timelineQueries.push({ from: url.searchParams.get('from')!, to: url.searchParams.get('to')! })
+          }
+          return []
+        }
+        return []
+      },
+    } as any, '/timeline')
+    wrappers.push(wrapper)
+
+    expect(wrapper.findAll('[data-timeline-date]')).toHaveLength(3)
+    expect(wrapper.findAll('.past-day-line')).toHaveLength(0)
+    expect(wrapper.find('.past-days').exists()).toBe(false)
+
+    await clickButton('Show 4 earlier days')
+    expect(wrapper.find('.past-days').exists()).toBe(true)
+    expect(wrapper.findAll('.past-day-line')).toHaveLength(4)
+
+    // Verify warmCache covered at least 15 days (today..today+14)
+    expect(timelineQueries.some(q => {
+      const diff = Math.round((new Date(`${q.to}T12:00:00`).getTime() - new Date(`${q.from}T12:00:00`).getTime()) / 86400000)
+      return diff >= 14 && diff <= 62
+    })).toBe(true)
+  })
+
+  it('chunks warmCache into <=62 day requests when configured window exceeds 62 days', async () => {
+    const warmRanges: Array<{ from: string; to: string; diff: number }> = []
+    const { wrapper } = await registeredRoute(activate, 'core-timeline', {
+      get: async (path: string, query: any) => {
+        if (path === '/api/x/core-timeline/settings') return { default_past_days: 30, default_planning_days: 60 }
+        if (path === '/api/x/core-timeline/slots') return resolved(query.from, query.to)
+        if (path.startsWith('/api/timeline')) {
+          const from = query?.from ?? new URL(path, 'http://localhost').searchParams.get('from')!
+          const to = query?.to ?? new URL(path, 'http://localhost').searchParams.get('to')!
+          const diff = Math.round((new Date(`${to}T12:00:00`).getTime() - new Date(`${from}T12:00:00`).getTime()) / 86400000)
+          expect(diff).toBeLessThanOrEqual(62)
+          warmRanges.push({ from, to, diff })
+          return []
+        }
+        return []
+      },
+    } as any, '/timeline')
+    wrappers.push(wrapper)
+
+    expect(wrapper.findAll('[data-timeline-date]')).toHaveLength(90)
+    expect(warmRanges.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('updates unexpanded Timeline on settings-changed push, preserves expanded window until Today reset', async () => {
+    let settings = { default_past_days: 2, default_planning_days: 7 }
+    const { wrapper, harness } = await registeredRoute(activate, 'core-timeline', {
+      get: async (path: string, query: any) => {
+        if (path === '/api/x/core-timeline/settings') return { ...settings }
+        if (path === '/api/x/core-timeline/slots') return resolved(query.from, query.to)
+        if (path.startsWith('/api/timeline')) return []
+        return []
+      },
+    } as any, '/timeline')
+    wrappers.push(wrapper)
+
+    expect(wrapper.findAll('[data-timeline-date]')).toHaveLength(9)
+
+    // Unexpanded view reacts immediately to settings-changed
+    settings = { default_past_days: 1, default_planning_days: 4 }
+    harness.emitStream('core-timeline:settings-changed', { kind: 'push', name: 'core-timeline:settings-changed', data: settings, plugin_id: 'core-timeline' })
+    await flushPromises()
+    expect(wrapper.findAll('[data-timeline-date]')).toHaveLength(5)
+    expect(wrapper.findAll('.past-day-line')).toHaveLength(1)
+
+    // Manually expand window -> subsequent settings-changed does not clobber until Today click
+    await clickButton('Show 4 earlier days')
+    expect(wrapper.findAll('[data-timeline-date]')).toHaveLength(9)
+
+    settings = { default_past_days: 0, default_planning_days: 2 }
+    harness.emitStream('core-timeline:settings-changed', { kind: 'push', name: 'core-timeline:settings-changed', data: settings, plugin_id: 'core-timeline' })
+    await flushPromises()
+    expect(wrapper.findAll('[data-timeline-date]')).toHaveLength(9)
+
+    await clickButton('Today', wrapper.element)
+    await flushPromises()
+    expect(wrapper.findAll('[data-timeline-date]')).toHaveLength(2)
+    expect(wrapper.find('.past-days').exists()).toBe(false)
+  })
+
+  it('renders inline plugin settings for Timeline Window and saves validated settings', async () => {
+    let saved: any = null
+    const { wrapper, harness } = registeredSlot(
+      activate,
+      'core-timeline',
+      {
+        get: async (path: string) => {
+          if (path === '/api/x/core-timeline/settings') return { default_past_days: 2, default_planning_days: 7 }
+          if (path.startsWith('/api/timeline')) return []
+          throw new Error(`Unexpected GET ${path}`)
+        },
+        put: async (path: string, body: any) => {
+          expect(path).toBe('/api/x/core-timeline/settings')
+          saved = body
+          return body
+        },
+      } as any,
+      'plugin_manager.plugin.actions',
+      { plugin: { id: 'core-timeline', state: 'active', enabled: true } },
+    )
+    wrappers.push(wrapper)
+
+    await clickButton('Settings', wrapper.element)
+    await flushPromises()
+
+    const pastInput = wrapper.find<HTMLInputElement>('#timeline-default-past-days')
+    const planningInput = wrapper.find<HTMLInputElement>('#timeline-default-planning-days')
+    expect(pastInput.element.value).toBe('2')
+    expect(planningInput.element.value).toBe('7')
+
+    await pastInput.setValue('4')
+    await planningInput.setValue('10')
+    await clickButton('Save Settings', wrapper.element)
+
+    expect(saved).toEqual({ default_past_days: 4, default_planning_days: 10 })
+    expect(harness.notifications).toContainEqual(expect.objectContaining({ level: 'success' }))
+
+    // Out-of-range input is rejected inline without issuing PUT
+    saved = null
+    await pastInput.setValue('31')
+    await clickButton('Save Settings', wrapper.element)
+    expect(saved).toBeNull()
+    expect(wrapper.text()).toContain('Default past days must be between 0 and 30.')
   })
 })

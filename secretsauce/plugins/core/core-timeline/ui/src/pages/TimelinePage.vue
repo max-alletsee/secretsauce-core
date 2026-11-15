@@ -4,8 +4,9 @@ import { Slot, useSecretSauce } from '@secretsauce/ui'
 import DayCard from '../components/DayCard.vue'
 import AddEntryDialog from '../components/AddEntryDialog.vue'
 import { buildDays, localToday, shiftDate, type DateWindow, type ResolvedSlot, type TimelineEntry } from '../days'
+import { defaultTimelineSettings, fetchTimelineSettings, normalizeTimelineSettings, windowForSettings, type TimelineSettings } from '../settings'
 const ss=useSecretSauce()
-const today=ref(localToday()),windowDates=ref<DateWindow>({from:shiftDate(today.value,-2),to:shiftDate(today.value,6)})
+const today=ref(localToday()),settings=ref<TimelineSettings>(defaultTimelineSettings()),windowDates=ref<DateWindow>(windowForSettings(today.value,settings.value)),manuallyExpanded=ref(false)
 const entries=ref<TimelineEntry[]>([]),slots=ref<Record<string,ResolvedSlot[]>>({}),error=ref(''),expanded=ref(new Set<string>()),active=ref<{date:string;mealType:string}|null>(null)
 const phone=ref(window.innerWidth<768),widgetsOpen=ref<string[]>([])
 const registry=inject<any>('__SS_SLOT_REGISTRY__')
@@ -29,15 +30,43 @@ async function load(){clearTimeout(timer);const n=++revision;const {from,to}=win
   }catch(failure:any){if(n===revision&&!disposed)error.value=failure.message||'Could not load Timeline'}
 }
 function refresh(){clearTimeout(timer);timer=setTimeout(load,300)}
-const stops=['timeline:created','timeline:updated','timeline:deleted','core-timeline:slots-changed','recipe:deleted'].map(name=>ss.on(name,refresh))
+const stops=[
+  ...['timeline:created','timeline:updated','timeline:deleted','core-timeline:slots-changed','recipe:deleted'].map(name=>ss.on(name,refresh)),
+  ss.on('core-timeline:settings-changed',(msg:any)=>{
+    const next=normalizeTimelineSettings(msg?.data??msg)
+    settings.value=next
+    if(!manuallyExpanded.value&&!disposed){
+      today.value=localToday()
+      windowDates.value=windowForSettings(today.value,next)
+      load()
+    }
+  }),
+]
 function resize(){phone.value=window.innerWidth<768}
-function earlier(){windowDates.value={...windowDates.value,from:shiftDate(windowDates.value.from,-4)};load()}
-function more(){windowDates.value={...windowDates.value,to:shiftDate(windowDates.value.to,5)};load()}
-async function reset(){today.value=localToday();windowDates.value={from:shiftDate(today.value,-2),to:shiftDate(today.value,6)};expanded.value.clear();await load();await nextTick();document.querySelector('.day-card.is-today')?.scrollIntoView?.({block:'start',behavior:'smooth'})}
+function earlier(){manuallyExpanded.value=true;windowDates.value={...windowDates.value,from:shiftDate(windowDates.value.from,-4)};load()}
+function more(){manuallyExpanded.value=true;windowDates.value={...windowDates.value,to:shiftDate(windowDates.value.to,5)};load()}
+async function reset(){
+  manuallyExpanded.value=false
+  today.value=localToday()
+  settings.value=await fetchTimelineSettings(ss)
+  if(disposed)return
+  windowDates.value=windowForSettings(today.value,settings.value)
+  expanded.value.clear()
+  await load()
+  await nextTick()
+  document.querySelector('.day-card.is-today')?.scrollIntoView?.({block:'start',behavior:'smooth'})
+}
 function toggle(date:string){if(expanded.value.has(date))expanded.value.delete(date);else expanded.value.add(date)}
 function pastLabel(date:string){return new Date(`${date}T12:00:00`).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})}
 function summary(day:any){return day.slots.flatMap((slot:any)=>slot.entries.map((entry:any)=>`${entry.status==='cooked'?'✓ ':''}${slot.label.toUpperCase()} ${entry.recipe?.title||entry.title||'Planned meal'}`)).join(' · ')||'—'}
-onMounted(()=>{load();window.addEventListener('resize',resize)})
+async function init(){
+  settings.value=await fetchTimelineSettings(ss)
+  if(disposed)return
+  today.value=localToday()
+  windowDates.value=windowForSettings(today.value,settings.value)
+  await load()
+}
+onMounted(()=>{init();window.addEventListener('resize',resize)})
 onBeforeUnmount(()=>{disposed=true;++revision;clearTimeout(timer);stops.forEach(stop=>{if(typeof stop==='function')stop()});window.removeEventListener('resize',resize)})
 </script>
 <template>
@@ -49,7 +78,7 @@ onBeforeUnmount(()=>{disposed=true;++revision;clearTimeout(timer);stops.forEach(
         <Slot v-else name="timeline.sidebar" :context="windowDates" />
       </aside>
       <div class="timeline-feed"><Button label="Show 4 earlier days" size="small" text @click="earlier" />
-        <div class="past-days"><div v-for="day in past" :key="day.date" :data-timeline-date="expanded.has(day.date)?undefined:day.date"><Button class="past-day-line" :label="`${pastLabel(day.date)} · ${summary(day)}`" size="small" text :aria-expanded="expanded.has(day.date)" @click="toggle(day.date)" /><DayCard v-if="expanded.has(day.date)" :day="day" @add="active=$event" @changed="load" /></div></div>
+        <div v-if="past.length" class="past-days"><div v-for="day in past" :key="day.date" :data-timeline-date="expanded.has(day.date)?undefined:day.date"><Button class="past-day-line" :label="`${pastLabel(day.date)} · ${summary(day)}`" size="small" text :aria-expanded="expanded.has(day.date)" @click="toggle(day.date)" /><DayCard v-if="expanded.has(day.date)" :day="day" @add="active=$event" @changed="load" /></div></div>
         <DayCard v-for="day in future" :key="day.date" :day="day" @add="active=$event" @changed="load" />
         <Button label="Show 5 more days" size="small" outlined @click="more" />
       </div>

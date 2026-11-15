@@ -1,12 +1,15 @@
 import type { SecretSauceUI } from '@secretsauce/ui'
 import CookedBadge from './components/CookedBadge.vue'
 import MoveMealDialog from './components/MoveMealDialog.vue'
+import TimelinePluginSettings from './components/TimelinePluginSettings.vue'
 import TimelinePage from './pages/TimelinePage.vue'
 import { localToday, shiftDate } from './days'
+import { fetchTimelineSettings } from './settings'
 
 export default function activate(ss: SecretSauceUI) {
   ss.route({ path: '/timeline', component: TimelinePage, nav: { label: 'Timeline', icon: 'calendar', order: 5 } })
   ss.slot('timeline.entry.badge', CookedBadge, { order: 10 })
+  ss.slot('plugin_manager.plugin.actions', TimelinePluginSettings, { order: 10 })
   ss.intent.hub({ id: 'entry:create', title: 'Add entry to timeline' })
   ss.intent.hub({ id: 'entry:interact', title: 'Meal actions' })
   ss.intent.hub({ id: 'timeline:assist', title: 'Timeline planning assistance' })
@@ -72,10 +75,17 @@ export default function activate(ss: SecretSauceUI) {
     try {
       // Timeline days are browser-local calendar dates, not UTC timestamps.
       const today = localToday()
-      const entries = await ss.api.get<any[]>(`/api/timeline?from=${shiftDate(today, -2)}&to=${shiftDate(today, 14)}`)
-      for (const entry of entries) if (entry.recipe_id) ss.api.get(`/api/recipes/${entry.recipe_id}`).catch(() => {})
+      const settings = await fetchTimelineSettings(ss)
+      const from = shiftDate(today, -settings.default_past_days)
+      const to = shiftDate(today, Math.max(settings.default_planning_days - 1, 14))
+      for (let start = from; start <= to;) {
+        const end = shiftDate(start, 62) < to ? shiftDate(start, 62) : to
+        const entries = await ss.api.get<any[]>(`/api/timeline?from=${start}&to=${end}`)
+        for (const entry of entries) if (entry.recipe_id) ss.api.get(`/api/recipes/${entry.recipe_id}`).catch(() => {})
+        start = shiftDate(end, 1)
+      }
     } catch { /* cache warming must not prevent offline use */ }
   }
   warmCache()
-  for (const name of ['timeline:created', 'timeline:updated', 'timeline:deleted']) ss.on(name, warmCache)
+  for (const name of ['timeline:created', 'timeline:updated', 'timeline:deleted', 'core-timeline:settings-changed']) ss.on(name, warmCache)
 }

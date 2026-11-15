@@ -8,6 +8,10 @@ A household meal planning, cooking, and recipe management system.
 The continuous chronological feed of past, present, and future days where a household plans upcoming meals and reviews past meals.
 _Avoid_: Schedule, Calendar, Journal
 
+**Timeline Window**:
+The default span of past days and planning days (Today and upcoming days) initially displayed around Today on the Timeline.
+_Avoid_: Date Range, Visible Horizon, Planning Horizon
+
 **Timeline Entry**:
 A single meal record placed in a Meal Slot on a given date, representing both the plan for that meal and what actually happened when it was prepared.
 _Avoid_: Schedule Entry, Journal Entry, Cook Log, Planned Meal, Meal Item

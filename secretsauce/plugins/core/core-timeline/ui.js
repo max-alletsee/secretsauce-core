@@ -1,15 +1,15 @@
-import { defineComponent as K, resolveComponent as f, openBlock as o, createBlock as I, createCommentVNode as V, computed as j, ref as g, watch as re, createElementBlock as $, createElementVNode as b, toDisplayString as N, withCtx as A, createTextVNode as W, createVNode as m, Fragment as G, renderList as J, normalizeClass as de, resolveDirective as ce, withDirectives as ve, unref as te, withModifiers as me, inject as pe, onMounted as ye, onBeforeUnmount as fe, resolveDynamicComponent as ge, nextTick as be } from "vue";
-import { useSecretSauce as ne, Slot as ae, IntentTrigger as ke } from "@secretsauce/ui";
-const _e = /* @__PURE__ */ K({
+import { defineComponent as ee, resolveComponent as k, openBlock as s, createBlock as U, createCommentVNode as V, computed as W, ref as y, watch as me, createElementBlock as S, createElementVNode as g, toDisplayString as Y, withCtx as P, createTextVNode as X, createVNode as c, Fragment as Q, renderList as Z, normalizeClass as _e, unref as J, resolveDirective as we, withDirectives as Te, withModifiers as Se, inject as De, onMounted as Me, onBeforeUnmount as Ae, resolveDynamicComponent as Ie, nextTick as Le } from "vue";
+import { useSecretSauce as le, Slot as ie, IntentTrigger as Pe } from "@secretsauce/ui";
+const Ve = /* @__PURE__ */ ee({
   __name: "CookedBadge",
   props: {
     context: {}
   },
   setup(t) {
-    return (T, e) => {
-      var d, i;
-      const a = f("Tag");
-      return ((i = (d = t.context) == null ? void 0 : d.entry) == null ? void 0 : i.status) === "cooked" ? (o(), I(a, {
+    return (r, e) => {
+      var i, l;
+      const a = k("Tag");
+      return ((l = (i = t.context) == null ? void 0 : i.entry) == null ? void 0 : l.status) === "cooked" ? (s(), U(a, {
         key: 0,
         value: "Cooked",
         icon: "pi pi-check",
@@ -19,162 +19,162 @@ const _e = /* @__PURE__ */ K({
     };
   }
 });
-function le() {
+function ne() {
   const t = /* @__PURE__ */ new Date();
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
 }
-function O(t, T) {
+function O(t, r) {
   const e = /* @__PURE__ */ new Date(`${t}T12:00:00`);
-  return e.setDate(e.getDate() + T), `${e.getFullYear()}-${String(e.getMonth() + 1).padStart(2, "0")}-${String(e.getDate()).padStart(2, "0")}`;
+  return e.setDate(e.getDate() + r), `${e.getFullYear()}-${String(e.getMonth() + 1).padStart(2, "0")}-${String(e.getDate()).padStart(2, "0")}`;
 }
-function he(t, T, e, a) {
-  const d = [];
-  for (let i = t.from; i <= t.to; i = O(i, 1)) {
-    const k = (T[i] || []).map((y) => ({ ...y, entries: [] }));
-    for (const y of e.filter((r) => r.date === i)) {
-      const r = y.meal_type.toLowerCase();
-      let S = k.find((C) => C.id.toLowerCase() === r) || k.find((C) => C.label.toLowerCase() === r);
-      S || (S = { id: y.meal_type, label: y.meal_type.replace(/[-_]/g, " ").replace(/\b\w/g, (C) => C.toUpperCase()), kind: "extra", skipped: !1, entries: [], synthetic: !0 }, k.push(S)), S.entries.push(y), S.skipped = !1;
+function Ne(t, r, e, a) {
+  const i = [];
+  for (let l = t.from; l <= t.to; l = O(l, 1)) {
+    const v = (r[l] || []).map((m) => ({ ...m, entries: [] }));
+    for (const m of e.filter((d) => d.date === l)) {
+      const d = m.meal_type.toLowerCase();
+      let h = v.find(($) => $.id.toLowerCase() === d) || v.find(($) => $.label.toLowerCase() === d);
+      h || (h = { id: m.meal_type, label: m.meal_type.replace(/[-_]/g, " ").replace(/\b\w/g, ($) => $.toUpperCase()), kind: "extra", skipped: !1, entries: [], synthetic: !0 }, v.push(h)), h.entries.push(m), h.skipped = !1;
     }
-    d.push({ date: i, isPast: i < a, isToday: i === a, slots: k });
+    i.push({ date: l, isPast: l < a, isToday: l === a, slots: v });
   }
-  return d;
+  return i;
 }
-const $e = { class: "move-meal-dialog" }, we = { class: "move-meal-subtitle" }, Ce = { class: "move-meal-grid" }, Te = { class: "move-date-col" }, xe = { class: "move-slot-col" }, Se = {
+const Be = { class: "move-meal-dialog" }, Ue = { class: "move-meal-subtitle" }, Ee = { class: "move-meal-grid" }, Re = { class: "move-date-col" }, ze = { class: "move-slot-col" }, Fe = {
   key: 0,
   class: "slot-loading"
-}, De = {
+}, qe = {
   key: 1,
   class: "slot-list",
   role: "radiogroup",
   "aria-label": "Meal slot"
-}, Me = ["data-move-slot", "data-slot-occupied", "aria-checked", "onClick"], Ae = { class: "slot-option-label" }, Le = {
+}, Ye = ["data-move-slot", "data-slot-occupied", "aria-checked", "onClick"], je = { class: "slot-option-label" }, Oe = {
   key: 0,
   class: "slot-skipped-note"
-}, Ie = {
+}, He = {
   key: 0,
   class: "slot-occupied-dot",
   "aria-label": "Has planned meal",
   title: "Already has a meal"
-}, Ve = { class: "cooked-row" }, Pe = { class: "dialog-actions" }, Be = /* @__PURE__ */ K({
+}, Ge = { class: "cooked-row" }, We = { class: "dialog-actions" }, Xe = /* @__PURE__ */ ee({
   inheritAttrs: !1,
   __name: "MoveMealDialog",
   props: {
     context: {}
   },
   emits: ["resolve", "cancel"],
-  setup(t, { emit: T }) {
-    const e = t, a = T, d = ne();
-    function i(_) {
-      const [v, h, x] = _.split("-").map(Number);
-      return new Date(v, h - 1, x, 12, 0, 0);
+  setup(t, { emit: r }) {
+    const e = t, a = r, i = le();
+    function l(T) {
+      const [p, x, D] = T.split("-").map(Number);
+      return new Date(p, x - 1, D, 12, 0, 0);
     }
-    function k(_) {
-      return `${_.getFullYear()}-${String(_.getMonth() + 1).padStart(2, "0")}-${String(_.getDate()).padStart(2, "0")}`;
+    function v(T) {
+      return `${T.getFullYear()}-${String(T.getMonth() + 1).padStart(2, "0")}-${String(T.getDate()).padStart(2, "0")}`;
     }
-    function y(_) {
-      return _ === e.context.entry.date ? e.context.entry.status === "cooked" : _ < le();
+    function m(T) {
+      return T === e.context.entry.date ? e.context.entry.status === "cooked" : T < ne();
     }
-    const r = j(() => e.context.mealType || e.context.entry.meal_type), S = g(i(e.context.entry.date)), C = j(() => k(S.value || i(e.context.entry.date))), p = g(r.value), n = g(y(e.context.entry.date)), D = g(!1), z = g(!1), P = g(""), R = g([]), L = g([]);
+    const d = W(() => e.context.mealType || e.context.entry.meal_type), h = y(l(e.context.entry.date)), $ = W(() => v(h.value || l(e.context.entry.date))), o = y(d.value), n = y(m(e.context.entry.date)), f = y(!1), E = y(!1), M = y(""), N = y([]), B = y([]);
     let w = 0;
-    async function s(_) {
-      var h, x, B;
-      const v = ++w;
-      D.value = !0, P.value = "";
+    async function u(T) {
+      var x, D, q;
+      const p = ++w;
+      f.value = !0, M.value = "";
       try {
-        const u = { from: _, to: _ }, [l, c] = await Promise.all([
-          d.api.get("/api/x/core-timeline/slots", u),
-          d.api.get("/api/timeline", u)
+        const F = { from: T, to: T }, [b, C] = await Promise.all([
+          i.api.get("/api/x/core-timeline/slots", F),
+          i.api.get("/api/timeline", F)
         ]);
-        if (v !== w) return;
-        const U = ((h = l == null ? void 0 : l.days) == null ? void 0 : h[_]) || [];
-        R.value = U, L.value = Array.isArray(c) ? c : [];
-        const X = p.value || r.value, Y = X.toLowerCase(), Z = U.find((F) => F.id === X) || U.find((F) => F.id.toLowerCase() === Y) || U.find((F) => F.label.toLowerCase() === Y);
-        Z ? p.value = Z.id : p.value = ((x = U.find((F) => !F.skipped)) == null ? void 0 : x.id) || ((B = U[0]) == null ? void 0 : B.id) || "";
-      } catch (u) {
-        v === w && (P.value = (u == null ? void 0 : u.message) || "Could not load target day", R.value = [], L.value = []);
+        if (p !== w) return;
+        const _ = ((x = b == null ? void 0 : b.days) == null ? void 0 : x[T]) || [];
+        N.value = _, B.value = Array.isArray(C) ? C : [];
+        const A = o.value || d.value, j = A.toLowerCase(), H = _.find((G) => G.id === A) || _.find((G) => G.id.toLowerCase() === j) || _.find((G) => G.label.toLowerCase() === j);
+        H ? o.value = H.id : o.value = ((D = _.find((G) => !G.skipped)) == null ? void 0 : D.id) || ((q = _[0]) == null ? void 0 : q.id) || "";
+      } catch (F) {
+        p === w && (M.value = (F == null ? void 0 : F.message) || "Could not load target day", N.value = [], B.value = []);
       } finally {
-        v === w && (D.value = !1);
+        p === w && (f.value = !1);
       }
     }
-    re(
-      C,
-      (_) => {
-        n.value = y(_), s(_);
+    me(
+      $,
+      (T) => {
+        n.value = m(T), u(T);
       },
       { immediate: !0 }
     );
-    const H = j(() => {
-      const _ = L.value.filter((x) => x.id !== e.context.entry.id), v = R.value, h = /* @__PURE__ */ new Map();
-      for (const x of v) h.set(x.id, []);
-      for (const x of _) {
-        const B = String(x.meal_type || "").toLowerCase(), u = v.find((l) => l.id.toLowerCase() === B) || v.find((l) => l.label.toLowerCase() === B);
-        u && h.get(u.id).push(x);
+    const R = W(() => {
+      const T = B.value.filter((D) => D.id !== e.context.entry.id), p = N.value, x = /* @__PURE__ */ new Map();
+      for (const D of p) x.set(D.id, []);
+      for (const D of T) {
+        const q = String(D.meal_type || "").toLowerCase(), F = p.find((b) => b.id.toLowerCase() === q) || p.find((b) => b.label.toLowerCase() === q);
+        F && x.get(F.id).push(D);
       }
-      return v.map((x) => {
-        const B = h.get(x.id) || [], u = B.length ? B.reduce((l, c) => Math.max(l, Number(c.position ?? 0)), 0) + 1 : 0;
+      return p.map((D) => {
+        const q = x.get(D.id) || [], F = q.length ? q.reduce((b, C) => Math.max(b, Number(C.position ?? 0)), 0) + 1 : 0;
         return {
-          ...x,
-          occupied: B.length > 0,
-          nextPosition: u
+          ...D,
+          occupied: q.length > 0,
+          nextPosition: F
         };
       });
-    }), q = j(() => C.value === e.context.entry.date && p.value.toLowerCase() === r.value.toLowerCase()), E = j(() => {
-      var _;
-      return ((_ = e.context.entry.recipe) == null ? void 0 : _.title) || e.context.entry.title || "Meal";
+    }), L = W(() => $.value === e.context.entry.date && o.value.toLowerCase() === d.value.toLowerCase()), z = W(() => {
+      var T;
+      return ((T = e.context.entry.recipe) == null ? void 0 : T.title) || e.context.entry.title || "Meal";
     });
-    async function Q() {
-      var _;
-      if (!(z.value || D.value || !p.value || q.value)) {
-        z.value = !0, P.value = "";
+    async function K() {
+      var T;
+      if (!(E.value || f.value || !o.value || L.value)) {
+        E.value = !0, M.value = "";
         try {
-          const v = e.context.entry, h = H.value.find((c) => c.id === p.value), x = n.value ? "cooked" : "planned", B = x === "cooked" && (v.cooked_by_member_id || v.assigned_cook_id || ((_ = d.store.currentMember.value) == null ? void 0 : _.id)) || null, u = await d.api.patch(`/api/timeline/${v.id}`, {
-            revision: v.revision,
-            date: C.value,
-            meal_type: p.value,
-            position: (h == null ? void 0 : h.nextPosition) ?? 0,
-            status: x,
-            cooked_by_member_id: B
+          const p = e.context.entry, x = R.value.find((C) => C.id === o.value), D = n.value ? "cooked" : "planned", q = D === "cooked" && (p.cooked_by_member_id || p.assigned_cook_id || ((T = i.store.currentMember.value) == null ? void 0 : T.id)) || null, F = await i.api.patch(`/api/timeline/${p.id}`, {
+            revision: p.revision,
+            date: $.value,
+            meal_type: o.value,
+            position: (x == null ? void 0 : x.nextPosition) ?? 0,
+            status: D,
+            cooked_by_member_id: q
           });
-          if (h != null && h.skipped)
+          if (x != null && x.skipped)
             try {
-              await d.api.delete(`/api/x/core-timeline/days/${C.value}/slots/${encodeURIComponent(h.id)}`);
-            } catch (c) {
-              if ((c == null ? void 0 : c.status) !== 404) throw c;
+              await i.api.delete(`/api/x/core-timeline/days/${$.value}/slots/${encodeURIComponent(x.id)}`);
+            } catch (C) {
+              if ((C == null ? void 0 : C.status) !== 404) throw C;
             }
-          const l = (/* @__PURE__ */ new Date(`${C.value}T12:00:00`)).toLocaleDateString(void 0, {
+          const b = (/* @__PURE__ */ new Date(`${$.value}T12:00:00`)).toLocaleDateString(void 0, {
             weekday: "short",
             day: "numeric",
             month: "short"
           });
-          d.notify({
+          i.notify({
             level: "success",
-            message: `Moved to ${l} · ${(h == null ? void 0 : h.label) || p.value}`
-          }), a("resolve", u);
-        } catch (v) {
-          P.value = (v == null ? void 0 : v.message) || "Could not move meal";
+            message: `Moved to ${b} · ${(x == null ? void 0 : x.label) || o.value}`
+          }), a("resolve", F);
+        } catch (p) {
+          M.value = (p == null ? void 0 : p.message) || "Could not move meal";
         } finally {
-          z.value = !1;
+          E.value = !1;
         }
       }
     }
-    return (_, v) => {
-      const h = f("Message"), x = f("DatePicker"), B = f("ProgressSpinner"), u = f("ToggleSwitch"), l = f("Button");
-      return o(), $("div", $e, [
-        b(
+    return (T, p) => {
+      const x = k("Message"), D = k("DatePicker"), q = k("ProgressSpinner"), F = k("ToggleSwitch"), b = k("Button");
+      return s(), S("div", Be, [
+        g(
           "p",
-          we,
-          N(E.value),
+          Ue,
+          Y(z.value),
           1
           /* TEXT */
         ),
-        P.value ? (o(), I(h, {
+        M.value ? (s(), U(x, {
           key: 0,
           severity: "error"
         }, {
-          default: A(() => [
-            W(
-              N(P.value),
+          default: P(() => [
+            X(
+              Y(M.value),
               1
               /* TEXT */
             )
@@ -182,66 +182,66 @@ const $e = { class: "move-meal-dialog" }, we = { class: "move-meal-subtitle" }, 
           _: 1
           /* STABLE */
         })) : V("v-if", !0),
-        b("div", Ce, [
-          b("div", Te, [
-            v[3] || (v[3] = b(
+        g("div", Ee, [
+          g("div", Re, [
+            p[3] || (p[3] = g(
               "span",
               { class: "field-label" },
               "Day",
               -1
               /* CACHED */
             )),
-            m(x, {
-              modelValue: S.value,
-              "onUpdate:modelValue": v[0] || (v[0] = (c) => S.value = c),
+            c(D, {
+              modelValue: h.value,
+              "onUpdate:modelValue": p[0] || (p[0] = (C) => h.value = C),
               inline: ""
             }, null, 8, ["modelValue"])
           ]),
-          b("div", xe, [
-            v[5] || (v[5] = b(
+          g("div", ze, [
+            p[5] || (p[5] = g(
               "span",
               { class: "field-label" },
               "Meal slot",
               -1
               /* CACHED */
             )),
-            D.value ? (o(), $("div", Se, [
-              m(B, { style: { width: "1.5rem", height: "1.5rem" } })
-            ])) : (o(), $("div", De, [
-              (o(!0), $(
-                G,
+            f.value ? (s(), S("div", Fe, [
+              c(q, { style: { width: "1.5rem", height: "1.5rem" } })
+            ])) : (s(), S("div", qe, [
+              (s(!0), S(
+                Q,
                 null,
-                J(H.value, (c) => (o(), $("button", {
-                  key: c.id,
+                Z(R.value, (C) => (s(), S("button", {
+                  key: C.id,
                   type: "button",
-                  class: de(["slot-option", { "is-selected": p.value === c.id, "is-skipped": c.skipped }]),
-                  "data-move-slot": c.id,
-                  "data-slot-occupied": String(c.occupied),
+                  class: _e(["slot-option", { "is-selected": o.value === C.id, "is-skipped": C.skipped }]),
+                  "data-move-slot": C.id,
+                  "data-slot-occupied": String(C.occupied),
                   role: "radio",
-                  "aria-checked": p.value === c.id,
-                  onClick: (U) => p.value = c.id
+                  "aria-checked": o.value === C.id,
+                  onClick: (_) => o.value = C.id
                 }, [
-                  b("span", Ae, [
-                    W(
-                      N(c.label),
+                  g("span", je, [
+                    X(
+                      Y(C.label),
                       1
                       /* TEXT */
                     ),
-                    c.skipped ? (o(), $("span", Le, " (skipped)")) : V("v-if", !0)
+                    C.skipped ? (s(), S("span", Oe, " (skipped)")) : V("v-if", !0)
                   ]),
-                  c.occupied ? (o(), $("span", Ie)) : V("v-if", !0)
-                ], 10, Me))),
+                  C.occupied ? (s(), S("span", He)) : V("v-if", !0)
+                ], 10, Ye))),
                 128
                 /* KEYED_FRAGMENT */
               ))
             ])),
-            b("div", Ve, [
-              m(u, {
+            g("div", Ge, [
+              c(F, {
                 inputId: "move-cooked-toggle",
                 modelValue: n.value,
-                "onUpdate:modelValue": v[1] || (v[1] = (c) => n.value = c)
+                "onUpdate:modelValue": p[1] || (p[1] = (C) => n.value = C)
               }, null, 8, ["modelValue"]),
-              v[4] || (v[4] = b(
+              p[4] || (p[4] = g(
                 "label",
                 { for: "move-cooked-toggle" },
                 "Mark as cooked",
@@ -251,90 +251,296 @@ const $e = { class: "move-meal-dialog" }, we = { class: "move-meal-subtitle" }, 
             ])
           ])
         ]),
-        b("div", Pe, [
-          m(l, {
+        g("div", We, [
+          c(b, {
             label: "Cancel",
             severity: "secondary",
-            disabled: z.value,
-            onClick: v[2] || (v[2] = (c) => a("cancel"))
+            disabled: E.value,
+            onClick: p[2] || (p[2] = (C) => a("cancel"))
           }, null, 8, ["disabled"]),
-          m(l, {
+          c(b, {
             label: "Move",
             icon: "pi pi-arrow-right-arrow-left",
-            loading: z.value,
-            disabled: z.value || D.value || !p.value || q.value,
-            onClick: Q
+            loading: E.value,
+            disabled: E.value || f.value || !o.value || L.value,
+            onClick: K
           }, null, 8, ["loading", "disabled"])
         ])
       ]);
     };
   }
-}), ee = (t, T) => {
+}), te = (t, r) => {
   const e = t.__vccOpts || t;
-  for (const [a, d] of T)
-    e[a] = d;
+  for (const [a, i] of r)
+    e[a] = i;
   return e;
-}, Ue = /* @__PURE__ */ ee(Be, [["__scopeId", "data-v-a7a6faf6"]]), Re = { class: "card-header" }, Ee = { class: "card-title" }, Ne = ["aria-label"], ze = {
+}, Qe = /* @__PURE__ */ te(Xe, [["__scopeId", "data-v-a7a6faf6"]]), Ce = 2, pe = 0, ye = 30, xe = 7, fe = 1, ge = 60;
+function ke() {
+  return {
+    default_past_days: Ce,
+    default_planning_days: xe
+  };
+}
+function he(t, r, e, a) {
+  return typeof t != "number" || !Number.isInteger(t) ? r : Math.max(e, Math.min(a, t));
+}
+function ve(t) {
+  const r = ke();
+  if (!t || typeof t != "object") return r;
+  const e = t;
+  return {
+    default_past_days: he(e.default_past_days, r.default_past_days, pe, ye),
+    default_planning_days: he(
+      e.default_planning_days,
+      r.default_planning_days,
+      fe,
+      ge
+    )
+  };
+}
+function ce(t, r) {
+  return {
+    from: O(t, -r.default_past_days),
+    to: O(t, r.default_planning_days - 1)
+  };
+}
+async function be(t) {
+  try {
+    const r = await t.api.get("/api/x/core-timeline/settings");
+    return ve(r);
+  } catch {
+    return ke();
+  }
+}
+const Je = {
+  key: 0,
+  class: "plugin-inline-settings"
+}, Ke = { class: "settings-grid" }, Ze = { class: "settings-actions" }, et = /* @__PURE__ */ ee({
+  inheritAttrs: !1,
+  __name: "TimelinePluginSettings",
+  props: {
+    context: {}
+  },
+  setup(t) {
+    const r = le(), e = y(!1), a = y(!1), i = y(!1), l = y(""), v = y(String(Ce)), m = y(String(xe));
+    function d(o, n, f, E) {
+      const M = String(o ?? "").trim();
+      if (!/^-?\d+$/.test(M))
+        throw new Error(`${n} must be a whole number between ${f} and ${E}.`);
+      const N = Number(M);
+      if (!Number.isInteger(N) || N < f || N > E)
+        throw new Error(`${n} must be between ${f} and ${E}.`);
+      return N;
+    }
+    async function h() {
+      a.value = !0, l.value = "";
+      try {
+        const o = ve(await r.api.get("/api/x/core-timeline/settings"));
+        v.value = String(o.default_past_days), m.value = String(o.default_planning_days);
+      } catch (o) {
+        l.value = (o == null ? void 0 : o.message) || "Failed to load timeline settings";
+      } finally {
+        a.value = !1;
+      }
+    }
+    me(e, (o) => {
+      o && h();
+    });
+    async function $() {
+      if (i.value) return;
+      l.value = "";
+      let o, n;
+      try {
+        o = d(v.value, "Default past days", pe, ye), n = d(
+          m.value,
+          "Default planning days (including Today)",
+          fe,
+          ge
+        );
+      } catch (f) {
+        l.value = f.message;
+        return;
+      }
+      i.value = !0;
+      try {
+        const f = ve(
+          await r.api.put("/api/x/core-timeline/settings", {
+            default_past_days: o,
+            default_planning_days: n
+          })
+        );
+        v.value = String(f.default_past_days), m.value = String(f.default_planning_days), r.notify({ level: "success", message: "Timeline settings updated." });
+      } catch (f) {
+        l.value = (f == null ? void 0 : f.message) || "Failed to save timeline settings";
+      } finally {
+        i.value = !1;
+      }
+    }
+    return (o, n) => {
+      var N, B, w, u, R, L;
+      const f = k("Button"), E = k("Message"), M = k("InputText");
+      return ((B = (N = t.context) == null ? void 0 : N.plugin) == null ? void 0 : B.id) === "core-timeline" ? (s(), S(
+        Q,
+        { key: 0 },
+        [
+          c(f, {
+            label: e.value ? "Close Settings" : "Settings",
+            icon: e.value ? "pi pi-chevron-up" : "pi pi-cog",
+            size: "small",
+            outlined: !e.value,
+            disabled: ((u = (w = t.context) == null ? void 0 : w.plugin) == null ? void 0 : u.state) !== "active",
+            class: "btn-timeline-settings-toggle",
+            onClick: n[0] || (n[0] = (z) => e.value = !e.value)
+          }, null, 8, ["label", "icon", "outlined", "disabled"]),
+          e.value && ((L = (R = t.context) == null ? void 0 : R.plugin) == null ? void 0 : L.state) === "active" ? (s(), S("div", Je, [
+            l.value ? (s(), U(E, {
+              key: 0,
+              severity: "error"
+            }, {
+              default: P(() => [
+                X(
+                  Y(l.value),
+                  1
+                  /* TEXT */
+                )
+              ]),
+              _: 1
+              /* STABLE */
+            })) : V("v-if", !0),
+            g("div", Ke, [
+              g("div", null, [
+                n[3] || (n[3] = g(
+                  "label",
+                  { for: "timeline-default-past-days" },
+                  "Default past days",
+                  -1
+                  /* CACHED */
+                )),
+                c(M, {
+                  id: "timeline-default-past-days",
+                  modelValue: v.value,
+                  "onUpdate:modelValue": n[1] || (n[1] = (z) => v.value = z),
+                  type: "number",
+                  min: J(pe),
+                  max: J(ye),
+                  step: "1",
+                  disabled: a.value || i.value,
+                  fluid: ""
+                }, null, 8, ["modelValue", "min", "max", "disabled"]),
+                n[4] || (n[4] = g(
+                  "small",
+                  null,
+                  "Collapsed past days shown above Today (0–30).",
+                  -1
+                  /* CACHED */
+                ))
+              ]),
+              g("div", null, [
+                n[5] || (n[5] = g(
+                  "label",
+                  { for: "timeline-default-planning-days" },
+                  "Default planning days (including Today)",
+                  -1
+                  /* CACHED */
+                )),
+                c(M, {
+                  id: "timeline-default-planning-days",
+                  modelValue: m.value,
+                  "onUpdate:modelValue": n[2] || (n[2] = (z) => m.value = z),
+                  type: "number",
+                  min: J(fe),
+                  max: J(ge),
+                  step: "1",
+                  disabled: a.value || i.value,
+                  fluid: ""
+                }, null, 8, ["modelValue", "min", "max", "disabled"]),
+                n[6] || (n[6] = g(
+                  "small",
+                  null,
+                  "Today plus upcoming days shown by default (1–60).",
+                  -1
+                  /* CACHED */
+                ))
+              ])
+            ]),
+            g("div", Ze, [
+              c(f, {
+                label: "Save Settings",
+                icon: "pi pi-check",
+                size: "small",
+                loading: i.value,
+                disabled: a.value,
+                onClick: $
+              }, null, 8, ["loading", "disabled"])
+            ])
+          ])) : V("v-if", !0)
+        ],
+        64
+        /* STABLE_FRAGMENT */
+      )) : V("v-if", !0);
+    };
+  }
+}), tt = /* @__PURE__ */ te(et, [["__scopeId", "data-v-e5e51827"]]), at = { class: "card-header" }, nt = { class: "card-title" }, lt = ["aria-label"], it = {
   key: 0,
   class: "card-servings"
-}, qe = {
+}, ot = {
   key: 1,
   class: "card-note"
-}, Fe = /* @__PURE__ */ K({
+}, st = /* @__PURE__ */ ee({
   __name: "TimelineCard",
   props: {
     entry: {}
   },
   emits: ["interact"],
-  setup(t, { emit: T }) {
-    function e(d) {
-      return (/* @__PURE__ */ new Date(`${d}T12:00:00`)).toLocaleDateString("en", { weekday: "long" });
+  setup(t, { emit: r }) {
+    function e(i) {
+      return (/* @__PURE__ */ new Date(`${i}T12:00:00`)).toLocaleDateString("en", { weekday: "long" });
     }
-    const a = T;
-    return (d, i) => {
-      const k = f("Button"), y = ce("tooltip");
-      return o(), $("div", {
+    const a = r;
+    return (i, l) => {
+      const v = k("Button"), m = we("tooltip");
+      return s(), S("div", {
         class: "timeline-card",
-        onClick: i[1] || (i[1] = (r) => a("interact", r))
+        onClick: l[1] || (l[1] = (d) => a("interact", d))
       }, [
-        m(k, {
+        c(v, {
           class: "timeline-card-main",
           variant: "text"
         }, {
-          default: A(() => {
-            var r;
+          default: P(() => {
+            var d;
             return [
-              b("div", Re, [
-                b(
+              g("div", at, [
+                g(
                   "span",
-                  Ee,
-                  N(((r = t.entry.recipe) == null ? void 0 : r.title) || t.entry.title || "Planned Meal"),
+                  nt,
+                  Y(((d = t.entry.recipe) == null ? void 0 : d.title) || t.entry.title || "Planned Meal"),
                   1
                   /* TEXT */
                 ),
-                t.entry.origin === "plugin:core-recurring" ? ve((o(), $("i", {
+                t.entry.origin === "plugin:core-recurring" ? Te((s(), S("i", {
                   key: 0,
                   class: "pi pi-replay",
                   "aria-label": `Repeats every ${e(t.entry.date)}`
-                }, null, 8, Ne)), [
-                  [y, `Repeats every ${e(t.entry.date)}`]
+                }, null, 8, lt)), [
+                  [m, `Repeats every ${e(t.entry.date)}`]
                 ]) : V("v-if", !0),
-                m(te(ae), {
+                c(J(ie), {
                   name: "timeline.entry.badge",
                   context: { entry: t.entry }
                 }, null, 8, ["context"])
               ]),
-              t.entry.servings_override ? (o(), $(
+              t.entry.servings_override ? (s(), S(
                 "div",
-                ze,
-                N(t.entry.servings_override) + " servings",
+                it,
+                Y(t.entry.servings_override) + " servings",
                 1
                 /* TEXT */
               )) : V("v-if", !0),
-              t.entry.note ? (o(), $(
+              t.entry.note ? (s(), S(
                 "div",
-                qe,
-                N(t.entry.note),
+                ot,
+                Y(t.entry.note),
                 1
                 /* TEXT */
               )) : V("v-if", !0)
@@ -343,13 +549,13 @@ const $e = { class: "move-meal-dialog" }, we = { class: "move-meal-subtitle" }, 
           _: 1
           /* STABLE */
         }),
-        t.entry.status === "cooked" ? (o(), $("div", {
+        t.entry.status === "cooked" ? (s(), S("div", {
           key: 0,
           class: "card-footer",
-          onClick: i[0] || (i[0] = me(() => {
+          onClick: l[0] || (l[0] = Se(() => {
           }, ["stop"]))
         }, [
-          m(te(ae), {
+          c(J(ie), {
             name: "timeline.entry.footer",
             context: { entry: t.entry }
           }, null, 8, ["context"])
@@ -357,95 +563,95 @@ const $e = { class: "move-meal-dialog" }, we = { class: "move-meal-subtitle" }, 
       ]);
     };
   }
-}), Oe = /* @__PURE__ */ ee(Fe, [["__scopeId", "data-v-e23d9a02"]]), je = ["data-slot-id"], He = { class: "slot-header" }, We = {
+}), dt = /* @__PURE__ */ te(st, [["__scopeId", "data-v-e23d9a02"]]), rt = ["data-slot-id"], ut = { class: "slot-header" }, ct = {
   key: 0,
   class: "pi pi-calendar-plus",
   "aria-label": "Only on this day"
-}, Ye = {
+}, vt = {
   key: 1,
   class: "skipped-row"
-}, Ge = /* @__PURE__ */ K({
+}, mt = /* @__PURE__ */ ee({
   __name: "MealSlot",
   props: {
     slot: {},
     date: {}
   },
   emits: ["add", "changed"],
-  setup(t, { emit: T }) {
-    const e = t, a = T, d = ne(), i = g(), k = g(""), y = g(!1);
-    function r() {
+  setup(t, { emit: r }) {
+    const e = t, a = r, i = le(), l = y(), v = y(""), m = y(!1);
+    function d() {
       a("add", { date: e.date, mealType: e.slot.id });
     }
-    async function S(p) {
-      if (!y.value) {
-        y.value = !0, k.value = "";
+    async function h(o) {
+      if (!m.value) {
+        m.value = !0, v.value = "";
         try {
-          if (p === "remove" && e.slot.entries.length && !await d.confirm({ header: "Remove slot", message: `Remove ${e.slot.label} and its ${e.slot.entries.length} planned meal${e.slot.entries.length === 1 ? "" : "s"}?`, acceptLabel: "Remove", rejectLabel: "Cancel", severity: "danger" })) return;
+          if (o === "remove" && e.slot.entries.length && !await i.confirm({ header: "Remove slot", message: `Remove ${e.slot.label} and its ${e.slot.entries.length} planned meal${e.slot.entries.length === 1 ? "" : "s"}?`, acceptLabel: "Remove", rejectLabel: "Cancel", severity: "danger" })) return;
           const n = `/api/x/core-timeline/days/${e.date}/slots/${encodeURIComponent(e.slot.id)}`;
-          p === "skip" ? await d.api.put(n, { kind: "skip" }) : await d.api.delete(n, p === "remove" ? { with_entries: "true" } : void 0), a("changed");
+          o === "skip" ? await i.api.put(n, { kind: "skip" }) : await i.api.delete(n, o === "remove" ? { with_entries: "true" } : void 0), a("changed");
         } catch (n) {
-          k.value = n.message || "Could not change slot";
+          v.value = n.message || "Could not change slot";
         } finally {
-          y.value = !1;
+          m.value = !1;
         }
       }
     }
-    const C = j(() => [{ label: "Add another meal", icon: "pi pi-plus", command: r }, ...e.slot.kind === "default" && !e.slot.entries.length ? [{ label: "Skip on this day", command: () => S("skip") }] : [], ...e.slot.kind === "extra" && !e.slot.synthetic ? [{ label: "Remove slot", icon: "pi pi-trash", command: () => S("remove") }] : []]);
-    return (p, n) => {
-      const D = f("Button"), z = f("Menu"), P = f("Message"), R = ce("tooltip");
-      return o(), $("div", {
+    const $ = W(() => [{ label: "Add another meal", icon: "pi pi-plus", command: d }, ...e.slot.kind === "default" && !e.slot.entries.length ? [{ label: "Skip on this day", command: () => h("skip") }] : [], ...e.slot.kind === "extra" && !e.slot.synthetic ? [{ label: "Remove slot", icon: "pi pi-trash", command: () => h("remove") }] : []]);
+    return (o, n) => {
+      const f = k("Button"), E = k("Menu"), M = k("Message"), N = we("tooltip");
+      return s(), S("div", {
         class: "meal-slot",
         "data-slot-id": t.slot.id
       }, [
-        b("div", He, [
-          b(
+        g("div", ut, [
+          g(
             "span",
             {
-              class: de(["slot-name", { skipped: t.slot.skipped }])
+              class: _e(["slot-name", { skipped: t.slot.skipped }])
             },
             [
-              W(
-                N(t.slot.label) + " ",
+              X(
+                Y(t.slot.label) + " ",
                 1
                 /* TEXT */
               ),
-              t.slot.kind === "extra" ? ve((o(), $(
+              t.slot.kind === "extra" ? Te((s(), S(
                 "i",
-                We,
+                ct,
                 null,
                 512
                 /* NEED_PATCH */
               )), [
-                [R, "Only on this day"]
+                [N, "Only on this day"]
               ]) : V("v-if", !0)
             ],
             2
             /* CLASS */
           ),
-          t.slot.skipped ? V("v-if", !0) : (o(), I(D, {
+          t.slot.skipped ? V("v-if", !0) : (s(), U(f, {
             key: 0,
             icon: "pi pi-ellipsis-h",
             size: "small",
             text: "",
             rounded: "",
             "aria-label": "Slot actions",
-            disabled: y.value,
-            onClick: n[0] || (n[0] = (L) => i.value.toggle(L))
+            disabled: m.value,
+            onClick: n[0] || (n[0] = (B) => l.value.toggle(B))
           }, null, 8, ["disabled"])),
-          m(z, {
+          c(E, {
             ref_key: "menu",
-            ref: i,
-            model: C.value,
+            ref: l,
+            model: $.value,
             popup: ""
           }, null, 8, ["model"])
         ]),
-        k.value ? (o(), I(P, {
+        v.value ? (s(), U(M, {
           key: 0,
           severity: "error"
         }, {
-          default: A(() => [
-            W(
-              N(k.value),
+          default: P(() => [
+            X(
+              Y(v.value),
               1
               /* TEXT */
             )
@@ -453,37 +659,37 @@ const $e = { class: "move-meal-dialog" }, we = { class: "move-meal-subtitle" }, 
           _: 1
           /* STABLE */
         })) : V("v-if", !0),
-        t.slot.skipped ? (o(), $("div", Ye, [
-          n[3] || (n[3] = b(
+        t.slot.skipped ? (s(), S("div", vt, [
+          n[3] || (n[3] = g(
             "span",
             null,
             "Skipped this day",
             -1
             /* CACHED */
           )),
-          m(D, {
+          c(f, {
             label: "Undo",
             size: "small",
             text: "",
-            loading: y.value,
-            onClick: n[1] || (n[1] = (L) => S("undo"))
+            loading: m.value,
+            onClick: n[1] || (n[1] = (B) => h("undo"))
           }, null, 8, ["loading"])
-        ])) : (o(), $(
-          G,
+        ])) : (s(), S(
+          Q,
           { key: 2 },
           [
-            (o(!0), $(
-              G,
+            (s(!0), S(
+              Q,
               null,
-              J(t.slot.entries, (L) => (o(), I(te(ke), {
-                key: L.id,
+              Z(t.slot.entries, (B) => (s(), U(J(Pe), {
+                key: B.id,
                 hub: "entry:interact",
-                context: { entry: L, mealType: t.slot.id },
+                context: { entry: B, mealType: t.slot.id },
                 onResolve: n[2] || (n[2] = (w) => a("changed"))
               }, {
-                default: A(({ open: w }) => [
-                  m(Oe, {
-                    entry: L,
+                default: P(({ open: w }) => [
+                  c(dt, {
+                    entry: B,
                     onInteract: w
                   }, null, 8, ["entry", "onInteract"])
                 ]),
@@ -493,37 +699,37 @@ const $e = { class: "move-meal-dialog" }, we = { class: "move-meal-subtitle" }, 
               128
               /* KEYED_FRAGMENT */
             )),
-            m(te(ae), {
+            c(J(ie), {
               name: "timeline.slot.suggestions",
               context: { date: t.date, slot: t.slot, onChanged: () => a("changed") }
             }, null, 8, ["context"]),
-            t.slot.entries.length ? V("v-if", !0) : (o(), I(D, {
+            t.slot.entries.length ? V("v-if", !0) : (s(), U(f, {
               key: 0,
               class: "empty-slot-btn",
               icon: "pi pi-plus",
               size: "small",
               text: "",
               "aria-label": "Add meal",
-              onClick: r
+              onClick: d
             }))
           ],
           64
           /* STABLE_FRAGMENT */
         ))
-      ], 8, je);
+      ], 8, rt);
     };
   }
-}), Qe = /* @__PURE__ */ ee(Ge, [["__scopeId", "data-v-7bb29b64"]]);
-function Je(t, T) {
-  const e = t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "slot", a = new Set(T);
-  let d = e.slice(0, 64).replace(/-+$/g, "");
-  for (let i = 2; a.has(d); i++) {
-    const k = `-${i}`;
-    d = e.slice(0, 64 - k.length).replace(/-+$/g, "") + k;
+}), pt = /* @__PURE__ */ te(mt, [["__scopeId", "data-v-7bb29b64"]]);
+function yt(t, r) {
+  const e = t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "slot", a = new Set(r);
+  let i = e.slice(0, 64).replace(/-+$/g, "");
+  for (let l = 2; a.has(i); l++) {
+    const v = `-${l}`;
+    i = e.slice(0, 64 - v.length).replace(/-+$/g, "") + v;
   }
-  return d;
+  return i;
 }
-const Ke = /* @__PURE__ */ K({
+const ft = /* @__PURE__ */ ee({
   __name: "AddSlotDialog",
   props: {
     visible: { type: Boolean },
@@ -531,47 +737,47 @@ const Ke = /* @__PURE__ */ K({
     slots: {}
   },
   emits: ["update:visible", "changed"],
-  setup(t, { emit: T }) {
-    const e = t, a = T, d = ne(), i = g(""), k = g(null), y = g(!1), r = g(""), S = j(() => [{ label: "At the end", value: null }, ...e.slots.filter((p) => p.kind === "default").map((p) => ({ label: `Before ${p.label}`, value: p.id }))]);
-    re(() => e.visible, (p) => {
-      p && (i.value = "", k.value = null, r.value = "");
+  setup(t, { emit: r }) {
+    const e = t, a = r, i = le(), l = y(""), v = y(null), m = y(!1), d = y(""), h = W(() => [{ label: "At the end", value: null }, ...e.slots.filter((o) => o.kind === "default").map((o) => ({ label: `Before ${o.label}`, value: o.id }))]);
+    me(() => e.visible, (o) => {
+      o && (l.value = "", v.value = null, d.value = "");
     });
-    async function C() {
-      if (!(!i.value.trim() || y.value)) {
-        y.value = !0, r.value = "";
+    async function $() {
+      if (!(!l.value.trim() || m.value)) {
+        m.value = !0, d.value = "";
         try {
-          const p = Je(i.value, [...e.slots.map((n) => n.id), ...d.store.household.value.meal_types.map((n) => n.id)]);
-          await d.api.put(`/api/x/core-timeline/days/${e.date}/slots/${p}`, { kind: "extra", label: i.value.trim(), before: k.value }), a("changed"), a("update:visible", !1);
-        } catch (p) {
-          r.value = p.message || "Could not add slot";
+          const o = yt(l.value, [...e.slots.map((n) => n.id), ...i.store.household.value.meal_types.map((n) => n.id)]);
+          await i.api.put(`/api/x/core-timeline/days/${e.date}/slots/${o}`, { kind: "extra", label: l.value.trim(), before: v.value }), a("changed"), a("update:visible", !1);
+        } catch (o) {
+          d.value = o.message || "Could not add slot";
         } finally {
-          y.value = !1;
+          m.value = !1;
         }
       }
     }
-    return (p, n) => {
-      const D = f("Message"), z = f("InputText"), P = f("Select"), R = f("Button"), L = f("Dialog");
-      return o(), I(L, {
+    return (o, n) => {
+      const f = k("Message"), E = k("InputText"), M = k("Select"), N = k("Button"), B = k("Dialog");
+      return s(), U(B, {
         visible: t.visible,
         "onUpdate:visible": n[2] || (n[2] = (w) => a("update:visible", w)),
         header: "Add slot for this day",
         modal: "",
         style: { width: "28rem", maxWidth: "95vw" }
       }, {
-        default: A(() => [
-          b(
+        default: P(() => [
+          g(
             "form",
             {
-              onSubmit: me(C, ["prevent"])
+              onSubmit: Se($, ["prevent"])
             },
             [
-              r.value ? (o(), I(D, {
+              d.value ? (s(), U(f, {
                 key: 0,
                 severity: "error"
               }, {
-                default: A(() => [
-                  W(
-                    N(r.value),
+                default: P(() => [
+                  X(
+                    Y(d.value),
                     1
                     /* TEXT */
                   )
@@ -579,41 +785,41 @@ const Ke = /* @__PURE__ */ K({
                 _: 1
                 /* STABLE */
               })) : V("v-if", !0),
-              n[3] || (n[3] = b(
+              n[3] || (n[3] = g(
                 "label",
                 { for: "extra-slot-name" },
                 "Slot name",
                 -1
                 /* CACHED */
               )),
-              m(z, {
+              c(E, {
                 id: "extra-slot-name",
-                modelValue: i.value,
-                "onUpdate:modelValue": n[0] || (n[0] = (w) => i.value = w),
+                modelValue: l.value,
+                "onUpdate:modelValue": n[0] || (n[0] = (w) => l.value = w),
                 maxlength: "64",
                 required: ""
               }, null, 8, ["modelValue"]),
-              n[4] || (n[4] = b(
+              n[4] || (n[4] = g(
                 "label",
                 { for: "extra-slot-position" },
                 "Position",
                 -1
                 /* CACHED */
               )),
-              m(P, {
+              c(M, {
                 inputId: "extra-slot-position",
                 "aria-label": "Position",
-                modelValue: k.value,
-                "onUpdate:modelValue": n[1] || (n[1] = (w) => k.value = w),
-                options: S.value,
+                modelValue: v.value,
+                "onUpdate:modelValue": n[1] || (n[1] = (w) => v.value = w),
+                options: h.value,
                 optionLabel: "label",
                 optionValue: "value"
               }, null, 8, ["modelValue", "options"]),
-              m(R, {
+              c(N, {
                 label: "Add slot",
                 type: "submit",
-                loading: y.value,
-                disabled: !i.value.trim()
+                loading: m.value,
+                disabled: !l.value.trim()
               }, null, 8, ["loading", "disabled"])
             ],
             32
@@ -625,51 +831,51 @@ const Ke = /* @__PURE__ */ K({
       }, 8, ["visible"]);
     };
   }
-}), Xe = /* @__PURE__ */ ee(Ke, [["__scopeId", "data-v-8c53feab"]]), Ze = ["data-timeline-date"], et = /* @__PURE__ */ K({
+}), gt = /* @__PURE__ */ te(ft, [["__scopeId", "data-v-8c53feab"]]), bt = ["data-timeline-date"], _t = /* @__PURE__ */ ee({
   __name: "DayCard",
   props: {
     day: {}
   },
   emits: ["add", "changed"],
-  setup(t, { emit: T }) {
-    const e = T, a = g(), d = g(!1), i = [{ label: "Add slot for this day", icon: "pi pi-calendar-plus", command: () => {
-      d.value = !0;
+  setup(t, { emit: r }) {
+    const e = r, a = y(), i = y(!1), l = [{ label: "Add slot for this day", icon: "pi pi-calendar-plus", command: () => {
+      i.value = !0;
     } }];
-    function k(y) {
-      return (/* @__PURE__ */ new Date(`${y}T12:00:00`)).toLocaleDateString(void 0, { weekday: "long", day: "numeric", month: "short" });
+    function v(m) {
+      return (/* @__PURE__ */ new Date(`${m}T12:00:00`)).toLocaleDateString(void 0, { weekday: "long", day: "numeric", month: "short" });
     }
-    return (y, r) => {
-      const S = f("Tag"), C = f("Button"), p = f("Menu");
-      return o(), $("section", {
-        class: de(["day-card", { "is-today": t.day.isToday }]),
+    return (m, d) => {
+      const h = k("Tag"), $ = k("Button"), o = k("Menu");
+      return s(), S("section", {
+        class: _e(["day-card", { "is-today": t.day.isToday }]),
         "data-timeline-date": t.day.date
       }, [
-        b("header", null, [
-          b(
+        g("header", null, [
+          g(
             "h3",
             null,
-            N(k(t.day.date)),
+            Y(v(t.day.date)),
             1
             /* TEXT */
           ),
-          t.day.isToday ? (o(), I(S, {
+          t.day.isToday ? (s(), U(h, {
             key: 0,
             value: "Today"
           })) : V("v-if", !0),
-          m(C, {
+          c($, {
             icon: "pi pi-ellipsis-v",
             size: "small",
             text: "",
             rounded: "",
             "aria-label": "Day actions",
-            onClick: r[0] || (r[0] = (n) => a.value.toggle(n))
+            onClick: d[0] || (d[0] = (n) => a.value.toggle(n))
           }),
-          m(
-            p,
+          c(
+            o,
             {
               ref_key: "menu",
               ref: a,
-              model: i,
+              model: l,
               popup: ""
             },
             null,
@@ -677,34 +883,34 @@ const Ke = /* @__PURE__ */ K({
             /* NEED_PATCH */
           )
         ]),
-        (o(!0), $(
-          G,
+        (s(!0), S(
+          Q,
           null,
-          J(t.day.slots, (n) => (o(), I(Qe, {
+          Z(t.day.slots, (n) => (s(), U(pt, {
             key: n.id,
             slot: n,
             date: t.day.date,
-            onAdd: r[1] || (r[1] = (D) => e("add", D)),
-            onChanged: r[2] || (r[2] = (D) => e("changed"))
+            onAdd: d[1] || (d[1] = (f) => e("add", f)),
+            onChanged: d[2] || (d[2] = (f) => e("changed"))
           }, null, 8, ["slot", "date"]))),
           128
           /* KEYED_FRAGMENT */
         )),
-        m(te(ae), {
+        c(J(ie), {
           name: "timeline.day.footer",
           context: { date: t.day.date }
         }, null, 8, ["context"]),
-        m(Xe, {
-          visible: d.value,
-          "onUpdate:visible": r[3] || (r[3] = (n) => d.value = n),
+        c(gt, {
+          visible: i.value,
+          "onUpdate:visible": d[3] || (d[3] = (n) => i.value = n),
           date: t.day.date,
           slots: t.day.slots,
-          onChanged: r[4] || (r[4] = (n) => e("changed"))
+          onChanged: d[4] || (d[4] = (n) => e("changed"))
         }, null, 8, ["visible", "date", "slots"])
-      ], 10, Ze);
+      ], 10, bt);
     };
   }
-}), ue = /* @__PURE__ */ ee(et, [["__scopeId", "data-v-1b485257"]]), tt = { class: "add-entry" }, at = { key: 0 }, lt = { class: "quick-notes" }, nt = /* @__PURE__ */ K({
+}), $e = /* @__PURE__ */ te(_t, [["__scopeId", "data-v-1b485257"]]), kt = { class: "add-entry" }, ht = { key: 0 }, $t = { class: "quick-notes" }, wt = /* @__PURE__ */ ee({
   __name: "AddEntryDialog",
   props: {
     visible: { type: Boolean },
@@ -712,74 +918,74 @@ const Ke = /* @__PURE__ */ K({
     mealType: {}
   },
   emits: ["update:visible", "created"],
-  setup(t, { emit: T }) {
-    const e = t, a = T, d = ["Dining out", "Leftovers", "Takeout", "Quick meal"], i = ne(), k = g("recipes"), y = g(""), r = g([]), S = g([]), C = g(""), p = g(2), n = g(!1), D = g(""), z = j(() => {
-      var q, E;
-      const s = (((q = i.store.household.value) == null ? void 0 : q.meal_types) || []).find(
-        (Q) => {
-          var _, v, h, x;
-          return Q.id === e.mealType || ((_ = Q.id) == null ? void 0 : _.toLowerCase()) === ((v = e.mealType) == null ? void 0 : v.toLowerCase()) || ((h = Q.label) == null ? void 0 : h.toLowerCase()) === ((x = e.mealType) == null ? void 0 : x.toLowerCase());
+  setup(t, { emit: r }) {
+    const e = t, a = r, i = ["Dining out", "Leftovers", "Takeout", "Quick meal"], l = le(), v = y("recipes"), m = y(""), d = y([]), h = y([]), $ = y(""), o = y(2), n = y(!1), f = y(""), E = W(() => {
+      var L, z;
+      const u = (((L = l.store.household.value) == null ? void 0 : L.meal_types) || []).find(
+        (K) => {
+          var T, p, x, D;
+          return K.id === e.mealType || ((T = K.id) == null ? void 0 : T.toLowerCase()) === ((p = e.mealType) == null ? void 0 : p.toLowerCase()) || ((x = K.label) == null ? void 0 : x.toLowerCase()) === ((D = e.mealType) == null ? void 0 : D.toLowerCase());
         }
       );
-      if (s && Array.isArray(s.predefined_notes))
-        return s.predefined_notes;
-      const H = (E = i.store.household.value) == null ? void 0 : E.predefined_notes;
-      return Array.isArray(H) ? H : d;
+      if (u && Array.isArray(u.predefined_notes))
+        return u.predefined_notes;
+      const R = (z = l.store.household.value) == null ? void 0 : z.predefined_notes;
+      return Array.isArray(R) ? R : i;
     });
-    let P = 0;
-    async function R() {
-      const w = ++P;
+    let M = 0;
+    async function N() {
+      const w = ++M;
       try {
-        const s = await i.api.get("/api/recipes", { q: y.value });
-        w === P && (r.value = s.items);
-      } catch (s) {
-        w === P && (D.value = s.message);
+        const u = await l.api.get("/api/recipes", { q: m.value });
+        w === M && (d.value = u.items);
+      } catch (u) {
+        w === M && (f.value = u.message);
       }
     }
-    re(() => e.visible, async (w) => {
+    me(() => e.visible, async (w) => {
       if (!w) {
-        ++P;
+        ++M;
         return;
       }
-      k.value = "recipes", y.value = "", C.value = "", p.value = 2, D.value = "", r.value = [], await R();
+      v.value = "recipes", m.value = "", $.value = "", o.value = 2, f.value = "", d.value = [], await N();
       try {
-        S.value = await i.api.get("/api/x/core-shortlist");
+        h.value = await l.api.get("/api/x/core-shortlist");
       } catch {
-        S.value = [];
+        h.value = [];
       }
     });
-    async function L(w) {
-      var q;
-      if (n.value || !w && !C.value.trim()) return;
-      n.value = !0, D.value = "";
-      const s = e.date < le(), H = s ? "cooked" : "planned";
+    async function B(w) {
+      var L;
+      if (n.value || !w && !$.value.trim()) return;
+      n.value = !0, f.value = "";
+      const u = e.date < ne(), R = u ? "cooked" : "planned";
       try {
-        const E = await i.api.post("/api/timeline", { date: e.date, meal_type: e.mealType, entry_type: w ? "recipe" : "note", ...w ? { recipe_id: w } : { title: C.value }, servings_override: p.value, status: H, ...s && ((q = i.store.currentMember.value) != null && q.id) ? { cooked_by_member_id: i.store.currentMember.value.id } : {} });
-        a("created", E), a("update:visible", !1);
-      } catch (E) {
-        D.value = E.message || "Could not add meal";
+        const z = await l.api.post("/api/timeline", { date: e.date, meal_type: e.mealType, entry_type: w ? "recipe" : "note", ...w ? { recipe_id: w } : { title: $.value }, servings_override: o.value, status: R, ...u && ((L = l.store.currentMember.value) != null && L.id) ? { cooked_by_member_id: l.store.currentMember.value.id } : {} });
+        a("created", z), a("update:visible", !1);
+      } catch (z) {
+        f.value = z.message || "Could not add meal";
       } finally {
         n.value = !1;
       }
     }
-    return (w, s) => {
-      const H = f("Message"), q = f("InputNumber"), E = f("Tab"), Q = f("TabList"), _ = f("InputText"), v = f("Button"), h = f("TabPanel"), x = f("TabPanels"), B = f("Tabs"), u = f("Dialog");
-      return o(), I(u, {
+    return (w, u) => {
+      const R = k("Message"), L = k("InputNumber"), z = k("Tab"), K = k("TabList"), T = k("InputText"), p = k("Button"), x = k("TabPanel"), D = k("TabPanels"), q = k("Tabs"), F = k("Dialog");
+      return s(), U(F, {
         visible: t.visible,
-        "onUpdate:visible": s[5] || (s[5] = (l) => a("update:visible", l)),
+        "onUpdate:visible": u[5] || (u[5] = (b) => a("update:visible", b)),
         header: `Add meal · ${t.date}`,
         modal: "",
         style: { width: "36rem", maxWidth: "95vw" }
       }, {
-        default: A(() => [
-          b("div", tt, [
-            D.value ? (o(), I(H, {
+        default: P(() => [
+          g("div", kt, [
+            f.value ? (s(), U(R, {
               key: 0,
               severity: "error"
             }, {
-              default: A(() => [
-                W(
-                  N(D.value),
+              default: P(() => [
+                X(
+                  Y(f.value),
                   1
                   /* TEXT */
                 )
@@ -787,30 +993,30 @@ const Ke = /* @__PURE__ */ K({
               _: 1
               /* STABLE */
             })) : V("v-if", !0),
-            s[11] || (s[11] = b(
+            u[11] || (u[11] = g(
               "label",
               { for: "entry-servings" },
               "Servings",
               -1
               /* CACHED */
             )),
-            m(q, {
+            c(L, {
               inputId: "entry-servings",
-              modelValue: p.value,
-              "onUpdate:modelValue": s[0] || (s[0] = (l) => p.value = l),
+              modelValue: o.value,
+              "onUpdate:modelValue": u[0] || (u[0] = (b) => o.value = b),
               min: 0.25,
               maxFractionDigits: 2
             }, null, 8, ["modelValue"]),
-            m(B, {
-              value: k.value,
-              "onUpdate:value": s[4] || (s[4] = (l) => k.value = l)
+            c(q, {
+              value: v.value,
+              "onUpdate:value": u[4] || (u[4] = (b) => v.value = b)
             }, {
-              default: A(() => [
-                m(Q, null, {
-                  default: A(() => [
-                    m(E, { value: "recipes" }, {
-                      default: A(() => [...s[6] || (s[6] = [
-                        W(
+              default: P(() => [
+                c(K, null, {
+                  default: P(() => [
+                    c(z, { value: "recipes" }, {
+                      default: P(() => [...u[6] || (u[6] = [
+                        X(
                           "Recipes",
                           -1
                           /* CACHED */
@@ -819,9 +1025,9 @@ const Ke = /* @__PURE__ */ K({
                       _: 1
                       /* STABLE */
                     }),
-                    m(E, { value: "shortlist" }, {
-                      default: A(() => [...s[7] || (s[7] = [
-                        W(
+                    c(z, { value: "shortlist" }, {
+                      default: P(() => [...u[7] || (u[7] = [
+                        X(
                           "Shortlist",
                           -1
                           /* CACHED */
@@ -830,9 +1036,9 @@ const Ke = /* @__PURE__ */ K({
                       _: 1
                       /* STABLE */
                     }),
-                    m(E, { value: "note" }, {
-                      default: A(() => [...s[8] || (s[8] = [
-                        W(
+                    c(z, { value: "note" }, {
+                      default: P(() => [...u[8] || (u[8] = [
+                        X(
                           "Note",
                           -1
                           /* CACHED */
@@ -845,42 +1051,42 @@ const Ke = /* @__PURE__ */ K({
                   _: 1
                   /* STABLE */
                 }),
-                m(x, null, {
-                  default: A(() => [
-                    m(h, { value: "recipes" }, {
-                      default: A(() => [
-                        s[9] || (s[9] = b(
+                c(D, null, {
+                  default: P(() => [
+                    c(x, { value: "recipes" }, {
+                      default: P(() => [
+                        u[9] || (u[9] = g(
                           "label",
                           { for: "entry-recipe-search" },
                           "Search recipes",
                           -1
                           /* CACHED */
                         )),
-                        m(_, {
+                        c(T, {
                           id: "entry-recipe-search",
-                          modelValue: y.value,
-                          "onUpdate:modelValue": s[1] || (s[1] = (l) => y.value = l),
-                          onInput: R,
+                          modelValue: m.value,
+                          "onUpdate:modelValue": u[1] || (u[1] = (b) => m.value = b),
+                          onInput: N,
                           fluid: ""
                         }, null, 8, ["modelValue"]),
-                        (o(!0), $(
-                          G,
+                        (s(!0), S(
+                          Q,
                           null,
-                          J(r.value, (l) => (o(), $("div", {
-                            key: l.id,
+                          Z(d.value, (b) => (s(), S("div", {
+                            key: b.id,
                             class: "recipe-result"
                           }, [
-                            b(
+                            g(
                               "span",
                               null,
-                              N(l.title),
+                              Y(b.title),
                               1
                               /* TEXT */
                             ),
-                            m(v, {
+                            c(p, {
                               label: "Schedule",
                               loading: n.value,
-                              onClick: (c) => L(l.id)
+                              onClick: (C) => B(b.id)
                             }, null, 8, ["loading", "onClick"])
                           ]))),
                           128
@@ -890,27 +1096,27 @@ const Ke = /* @__PURE__ */ K({
                       _: 1
                       /* STABLE */
                     }),
-                    m(h, { value: "shortlist" }, {
-                      default: A(() => [
-                        S.value.length ? V("v-if", !0) : (o(), $("p", at, "No recipes in shortlist")),
-                        (o(!0), $(
-                          G,
+                    c(x, { value: "shortlist" }, {
+                      default: P(() => [
+                        h.value.length ? V("v-if", !0) : (s(), S("p", ht, "No recipes in shortlist")),
+                        (s(!0), S(
+                          Q,
                           null,
-                          J(S.value, (l) => (o(), $("div", {
-                            key: l.recipe_id,
+                          Z(h.value, (b) => (s(), S("div", {
+                            key: b.recipe_id,
                             class: "recipe-result"
                           }, [
-                            b(
+                            g(
                               "span",
                               null,
-                              N(l.recipe_title),
+                              Y(b.recipe_title),
                               1
                               /* TEXT */
                             ),
-                            m(v, {
+                            c(p, {
                               label: "Schedule",
                               loading: n.value,
-                              onClick: (c) => L(l.recipe_id)
+                              onClick: (C) => B(b.recipe_id)
                             }, null, 8, ["loading", "onClick"])
                           ]))),
                           128
@@ -920,41 +1126,41 @@ const Ke = /* @__PURE__ */ K({
                       _: 1
                       /* STABLE */
                     }),
-                    m(h, { value: "note" }, {
-                      default: A(() => [
-                        s[10] || (s[10] = b(
+                    c(x, { value: "note" }, {
+                      default: P(() => [
+                        u[10] || (u[10] = g(
                           "label",
                           { for: "entry-note" },
                           "Note title",
                           -1
                           /* CACHED */
                         )),
-                        m(_, {
+                        c(T, {
                           id: "entry-note",
-                          modelValue: C.value,
-                          "onUpdate:modelValue": s[2] || (s[2] = (l) => C.value = l),
+                          modelValue: $.value,
+                          "onUpdate:modelValue": u[2] || (u[2] = (b) => $.value = b),
                           fluid: ""
                         }, null, 8, ["modelValue"]),
-                        b("div", lt, [
-                          (o(!0), $(
-                            G,
+                        g("div", $t, [
+                          (s(!0), S(
+                            Q,
                             null,
-                            J(z.value, (l) => (o(), I(v, {
-                              key: l,
-                              label: l,
+                            Z(E.value, (b) => (s(), U(p, {
+                              key: b,
+                              label: b,
                               outlined: "",
                               size: "small",
-                              onClick: (c) => C.value = l
+                              onClick: (C) => $.value = b
                             }, null, 8, ["label", "onClick"]))),
                             128
                             /* KEYED_FRAGMENT */
                           ))
                         ]),
-                        m(v, {
+                        c(p, {
                           label: "Add meal",
                           loading: n.value,
-                          disabled: !C.value.trim(),
-                          onClick: s[3] || (s[3] = (l) => L())
+                          disabled: !$.value.trim(),
+                          onClick: u[3] || (u[3] = (b) => B())
                         }, null, 8, ["loading", "disabled"])
                       ]),
                       _: 1
@@ -975,89 +1181,101 @@ const Ke = /* @__PURE__ */ K({
       }, 8, ["visible", "header"]);
     };
   }
-}), ot = /* @__PURE__ */ ee(nt, [["__scopeId", "data-v-23ac8af0"]]), it = { class: "timeline-page" }, st = { class: "timeline-toolbar" }, rt = { class: "timeline-container" }, dt = { class: "timeline-sidebar-wrapper" }, ut = { class: "timeline-feed" }, ct = { class: "past-days" }, vt = ["data-timeline-date"], mt = /* @__PURE__ */ K({
+}), Tt = /* @__PURE__ */ te(wt, [["__scopeId", "data-v-23ac8af0"]]), St = { class: "timeline-page" }, Ct = { class: "timeline-toolbar" }, xt = { class: "timeline-container" }, Dt = { class: "timeline-sidebar-wrapper" }, Mt = { class: "timeline-feed" }, At = {
+  key: 0,
+  class: "past-days"
+}, It = ["data-timeline-date"], Lt = /* @__PURE__ */ ee({
   __name: "TimelinePage",
   setup(t) {
-    const T = ne(), e = g(le()), a = g({ from: O(e.value, -2), to: O(e.value, 6) }), d = g([]), i = g({}), k = g(""), y = g(/* @__PURE__ */ new Set()), r = g(null), S = g(window.innerWidth < 768), C = g([]), p = pe("__SS_SLOT_REGISTRY__"), n = j(() => (p == null ? void 0 : p.getContributions("timeline.sidebar")) || []), D = j(() => he(a.value, i.value, d.value, e.value)), z = j(() => D.value.filter((u) => u.isPast)), P = j(() => D.value.filter((u) => !u.isPast));
-    let R = 0, L, w = !1;
-    async function s() {
-      clearTimeout(L);
-      const u = ++R, { from: l, to: c } = a.value;
-      k.value = "";
+    const r = le(), e = y(ne()), a = y(ke()), i = y(ce(e.value, a.value)), l = y(!1), v = y([]), m = y({}), d = y(""), h = y(/* @__PURE__ */ new Set()), $ = y(null), o = y(window.innerWidth < 768), n = y([]), f = De("__SS_SLOT_REGISTRY__"), E = W(() => (f == null ? void 0 : f.getContributions("timeline.sidebar")) || []), M = W(() => Ne(i.value, m.value, v.value, e.value)), N = W(() => M.value.filter((_) => _.isPast)), B = W(() => M.value.filter((_) => !_.isPast));
+    let w = 0, u, R = !1;
+    async function L() {
+      clearTimeout(u);
+      const _ = ++w, { from: A, to: j } = i.value;
+      d.value = "";
       try {
-        const U = [], X = {};
-        for (let Y = l; Y <= c; ) {
-          const Z = O(Y, 62) < c ? O(Y, 62) : c, F = { from: Y, to: Z }, [oe, ie] = await Promise.all([T.api.get("/api/timeline", F), T.api.get("/api/x/core-timeline/slots", F)]);
-          if (u !== R || w) return;
-          U.push(...oe), Object.assign(X, ie.days), Y = O(Z, 1);
+        const H = [], G = {};
+        for (let ae = A; ae <= j; ) {
+          const oe = O(ae, 62) < j ? O(ae, 62) : j, se = { from: ae, to: oe }, [de, re] = await Promise.all([r.api.get("/api/timeline", se), r.api.get("/api/x/core-timeline/slots", se)]);
+          if (_ !== w || R) return;
+          H.push(...de), Object.assign(G, re.days), ae = O(oe, 1);
         }
-        d.value = U, i.value = X;
-      } catch (U) {
-        u === R && !w && (k.value = U.message || "Could not load Timeline");
+        v.value = H, m.value = G;
+      } catch (H) {
+        _ === w && !R && (d.value = H.message || "Could not load Timeline");
       }
     }
-    function H() {
-      clearTimeout(L), L = setTimeout(s, 300);
+    function z() {
+      clearTimeout(u), u = setTimeout(L, 300);
     }
-    const q = ["timeline:created", "timeline:updated", "timeline:deleted", "core-timeline:slots-changed", "recipe:deleted"].map((u) => T.on(u, H));
-    function E() {
-      S.value = window.innerWidth < 768;
+    const K = [
+      ...["timeline:created", "timeline:updated", "timeline:deleted", "core-timeline:slots-changed", "recipe:deleted"].map((_) => r.on(_, z)),
+      r.on("core-timeline:settings-changed", (_) => {
+        const A = ve((_ == null ? void 0 : _.data) ?? _);
+        a.value = A, !l.value && !R && (e.value = ne(), i.value = ce(e.value, A), L());
+      })
+    ];
+    function T() {
+      o.value = window.innerWidth < 768;
     }
-    function Q() {
-      a.value = { ...a.value, from: O(a.value.from, -4) }, s();
+    function p() {
+      l.value = !0, i.value = { ...i.value, from: O(i.value.from, -4) }, L();
     }
-    function _() {
-      a.value = { ...a.value, to: O(a.value.to, 5) }, s();
+    function x() {
+      l.value = !0, i.value = { ...i.value, to: O(i.value.to, 5) }, L();
     }
-    async function v() {
-      var u, l;
-      e.value = le(), a.value = { from: O(e.value, -2), to: O(e.value, 6) }, y.value.clear(), await s(), await be(), (l = (u = document.querySelector(".day-card.is-today")) == null ? void 0 : u.scrollIntoView) == null || l.call(u, { block: "start", behavior: "smooth" });
+    async function D() {
+      var _, A;
+      l.value = !1, e.value = ne(), a.value = await be(r), !R && (i.value = ce(e.value, a.value), h.value.clear(), await L(), await Le(), (A = (_ = document.querySelector(".day-card.is-today")) == null ? void 0 : _.scrollIntoView) == null || A.call(_, { block: "start", behavior: "smooth" }));
     }
-    function h(u) {
-      y.value.has(u) ? y.value.delete(u) : y.value.add(u);
+    function q(_) {
+      h.value.has(_) ? h.value.delete(_) : h.value.add(_);
     }
-    function x(u) {
-      return (/* @__PURE__ */ new Date(`${u}T12:00:00`)).toLocaleDateString(void 0, { weekday: "short", day: "numeric", month: "short" });
+    function F(_) {
+      return (/* @__PURE__ */ new Date(`${_}T12:00:00`)).toLocaleDateString(void 0, { weekday: "short", day: "numeric", month: "short" });
     }
-    function B(u) {
-      return u.slots.flatMap((l) => l.entries.map((c) => {
-        var U;
-        return `${c.status === "cooked" ? "✓ " : ""}${l.label.toUpperCase()} ${((U = c.recipe) == null ? void 0 : U.title) || c.title || "Planned meal"}`;
+    function b(_) {
+      return _.slots.flatMap((A) => A.entries.map((j) => {
+        var H;
+        return `${j.status === "cooked" ? "✓ " : ""}${A.label.toUpperCase()} ${((H = j.recipe) == null ? void 0 : H.title) || j.title || "Planned meal"}`;
       })).join(" · ") || "—";
     }
-    return ye(() => {
-      s(), window.addEventListener("resize", E);
-    }), fe(() => {
-      w = !0, ++R, clearTimeout(L), q.forEach((u) => {
-        typeof u == "function" && u();
-      }), window.removeEventListener("resize", E);
-    }), (u, l) => {
-      var oe, ie;
-      const c = f("Button"), U = f("Message"), X = f("AccordionHeader"), Y = f("AccordionContent"), Z = f("AccordionPanel"), F = f("Accordion");
-      return o(), $("div", it, [
-        b("div", st, [
-          l[4] || (l[4] = b(
+    async function C() {
+      a.value = await be(r), !R && (e.value = ne(), i.value = ce(e.value, a.value), await L());
+    }
+    return Me(() => {
+      C(), window.addEventListener("resize", T);
+    }), Ae(() => {
+      R = !0, ++w, clearTimeout(u), K.forEach((_) => {
+        typeof _ == "function" && _();
+      }), window.removeEventListener("resize", T);
+    }), (_, A) => {
+      var de, re;
+      const j = k("Button"), H = k("Message"), G = k("AccordionHeader"), ae = k("AccordionContent"), oe = k("AccordionPanel"), se = k("Accordion");
+      return s(), S("div", St, [
+        g("div", Ct, [
+          A[4] || (A[4] = g(
             "h2",
             null,
             "Timeline",
             -1
             /* CACHED */
           )),
-          m(c, {
+          c(j, {
             label: "Today",
             icon: "pi pi-calendar",
             size: "small",
             outlined: "",
-            onClick: v
+            onClick: D
           })
         ]),
-        k.value ? (o(), I(U, {
+        d.value ? (s(), U(H, {
           key: 0,
           severity: "error"
         }, {
-          default: A(() => [
-            W(
-              N(k.value),
+          default: P(() => [
+            X(
+              Y(d.value),
               1
               /* TEXT */
             )
@@ -1065,30 +1283,30 @@ const Ke = /* @__PURE__ */ K({
           _: 1
           /* STABLE */
         })) : V("v-if", !0),
-        b("div", rt, [
-          b("aside", dt, [
-            S.value ? (o(), I(F, {
+        g("div", xt, [
+          g("aside", Dt, [
+            o.value ? (s(), U(se, {
               key: 0,
-              value: C.value,
-              "onUpdate:value": l[0] || (l[0] = (M) => C.value = M),
+              value: n.value,
+              "onUpdate:value": A[0] || (A[0] = (I) => n.value = I),
               multiple: ""
             }, {
-              default: A(() => [
-                (o(!0), $(
-                  G,
+              default: P(() => [
+                (s(!0), S(
+                  Q,
                   null,
-                  J(n.value, (M) => (o(), I(Z, {
-                    key: M.id,
-                    value: M.id
+                  Z(E.value, (I) => (s(), U(oe, {
+                    key: I.id,
+                    value: I.id
                   }, {
-                    default: A(() => [
-                      m(
-                        X,
+                    default: P(() => [
+                      c(
+                        G,
                         null,
                         {
-                          default: A(() => [
-                            W(
-                              N(M.pluginId === "core-shortlist" ? "Shortlist" : M.pluginId === "core-meal-planner-ai" ? "AI meal suggestions" : M.pluginId === "core-recurring" ? "Recurring meals" : M.pluginId),
+                          default: P(() => [
+                            X(
+                              Y(I.pluginId === "core-shortlist" ? "Shortlist" : I.pluginId === "core-meal-planner-ai" ? "AI meal suggestions" : I.pluginId === "core-recurring" ? "Recurring meals" : I.pluginId),
                               1
                               /* TEXT */
                             )
@@ -1099,12 +1317,12 @@ const Ke = /* @__PURE__ */ K({
                         1024
                         /* DYNAMIC_SLOTS */
                       ),
-                      m(
-                        Y,
+                      c(
+                        ae,
                         null,
                         {
-                          default: A(() => [
-                            (o(), I(ge(M.component), { context: a.value }, null, 8, ["context"]))
+                          default: P(() => [
+                            (s(), U(Ie(I.component), { context: i.value }, null, 8, ["context"]))
                           ]),
                           _: 2
                           /* DYNAMIC */
@@ -1122,81 +1340,81 @@ const Ke = /* @__PURE__ */ K({
               ]),
               _: 1
               /* STABLE */
-            }, 8, ["value"])) : (o(), I(te(ae), {
+            }, 8, ["value"])) : (s(), U(J(ie), {
               key: 1,
               name: "timeline.sidebar",
-              context: a.value
+              context: i.value
             }, null, 8, ["context"]))
           ]),
-          b("div", ut, [
-            m(c, {
+          g("div", Mt, [
+            c(j, {
               label: "Show 4 earlier days",
               size: "small",
               text: "",
-              onClick: Q
+              onClick: p
             }),
-            b("div", ct, [
-              (o(!0), $(
-                G,
+            N.value.length ? (s(), S("div", At, [
+              (s(!0), S(
+                Q,
                 null,
-                J(z.value, (M) => (o(), $("div", {
-                  key: M.date,
-                  "data-timeline-date": y.value.has(M.date) ? void 0 : M.date
+                Z(N.value, (I) => (s(), S("div", {
+                  key: I.date,
+                  "data-timeline-date": h.value.has(I.date) ? void 0 : I.date
                 }, [
-                  m(c, {
+                  c(j, {
                     class: "past-day-line",
-                    label: `${x(M.date)} · ${B(M)}`,
+                    label: `${F(I.date)} · ${b(I)}`,
                     size: "small",
                     text: "",
-                    "aria-expanded": y.value.has(M.date),
-                    onClick: (se) => h(M.date)
+                    "aria-expanded": h.value.has(I.date),
+                    onClick: (ue) => q(I.date)
                   }, null, 8, ["label", "aria-expanded", "onClick"]),
-                  y.value.has(M.date) ? (o(), I(ue, {
+                  h.value.has(I.date) ? (s(), U($e, {
                     key: 0,
-                    day: M,
-                    onAdd: l[1] || (l[1] = (se) => r.value = se),
-                    onChanged: s
+                    day: I,
+                    onAdd: A[1] || (A[1] = (ue) => $.value = ue),
+                    onChanged: L
                   }, null, 8, ["day"])) : V("v-if", !0)
-                ], 8, vt))),
+                ], 8, It))),
                 128
                 /* KEYED_FRAGMENT */
               ))
-            ]),
-            (o(!0), $(
-              G,
+            ])) : V("v-if", !0),
+            (s(!0), S(
+              Q,
               null,
-              J(P.value, (M) => (o(), I(ue, {
-                key: M.date,
-                day: M,
-                onAdd: l[2] || (l[2] = (se) => r.value = se),
-                onChanged: s
+              Z(B.value, (I) => (s(), U($e, {
+                key: I.date,
+                day: I,
+                onAdd: A[2] || (A[2] = (ue) => $.value = ue),
+                onChanged: L
               }, null, 8, ["day"]))),
               128
               /* KEYED_FRAGMENT */
             )),
-            m(c, {
+            c(j, {
               label: "Show 5 more days",
               size: "small",
               outlined: "",
-              onClick: _
+              onClick: x
             })
           ])
         ]),
-        m(ot, {
-          visible: !!r.value,
-          date: ((oe = r.value) == null ? void 0 : oe.date) || e.value,
-          mealType: ((ie = r.value) == null ? void 0 : ie.mealType) || "",
-          "onUpdate:visible": l[3] || (l[3] = (M) => {
-            M || (r.value = null);
+        c(Tt, {
+          visible: !!$.value,
+          date: ((de = $.value) == null ? void 0 : de.date) || e.value,
+          mealType: ((re = $.value) == null ? void 0 : re.mealType) || "",
+          "onUpdate:visible": A[3] || (A[3] = (I) => {
+            I || ($.value = null);
           }),
-          onCreated: s
+          onCreated: L
         }, null, 8, ["visible", "date", "mealType"])
       ]);
     };
   }
-}), pt = /* @__PURE__ */ ee(mt, [["__scopeId", "data-v-964f9676"]]);
-function gt(t) {
-  t.route({ path: "/timeline", component: pt, nav: { label: "Timeline", icon: "calendar", order: 5 } }), t.slot("timeline.entry.badge", _e, { order: 10 }), t.intent.hub({ id: "entry:create", title: "Add entry to timeline" }), t.intent.hub({ id: "entry:interact", title: "Meal actions" }), t.intent.hub({ id: "timeline:assist", title: "Timeline planning assistance" }), t.intent.provider({
+}), Pt = /* @__PURE__ */ te(Lt, [["__scopeId", "data-v-708c3315"]]);
+function Bt(t) {
+  t.route({ path: "/timeline", component: Pt, nav: { label: "Timeline", icon: "calendar", order: 5 } }), t.slot("timeline.entry.badge", Ve, { order: 10 }), t.slot("plugin_manager.plugin.actions", tt, { order: 10 }), t.intent.hub({ id: "entry:create", title: "Add entry to timeline" }), t.intent.hub({ id: "entry:interact", title: "Meal actions" }), t.intent.hub({ id: "timeline:assist", title: "Timeline planning assistance" }), t.intent.provider({
     hub: "entry:interact",
     id: "view-recipe",
     title: "View recipe",
@@ -1225,7 +1443,7 @@ function gt(t) {
     kind: "headless",
     isAvailable: (e) => !!(e != null && e.entry),
     execute: async (e) => {
-      var d;
+      var i;
       const a = e.entry;
       if (a.status === "cooked")
         await t.outbox.enqueue({
@@ -1234,12 +1452,12 @@ function gt(t) {
           body: { revision: a.revision, status: "planned", cooked_by_member_id: null }
         }), a.status = "planned", a.cooked_by_member_id = null, a.revision = (a.revision || 1) + 1, t.notify({ level: "info", message: "Meal unmarked as cooked" });
       else {
-        const i = a.assigned_cook_id || ((d = t.store.currentMember.value) == null ? void 0 : d.id) || null;
+        const l = a.assigned_cook_id || ((i = t.store.currentMember.value) == null ? void 0 : i.id) || null;
         await t.outbox.enqueue({
           method: "PATCH",
           path: `/api/timeline/${a.id}`,
-          body: { revision: a.revision, status: "cooked", cooked_by_member_id: i }
-        }), a.status = "cooked", a.cooked_by_member_id = i, a.revision = (a.revision || 1) + 1, t.notify({ level: "success", message: "Meal marked as cooked!" });
+          body: { revision: a.revision, status: "cooked", cooked_by_member_id: l }
+        }), a.status = "cooked", a.cooked_by_member_id = l, a.revision = (a.revision || 1) + 1, t.notify({ level: "success", message: "Meal marked as cooked!" });
       }
     }
   }), t.intent.provider({
@@ -1249,7 +1467,7 @@ function gt(t) {
     icon: "arrow-right-arrow-left",
     order: 30,
     kind: "ui",
-    component: Ue,
+    component: Qe,
     isAvailable: (e) => !!(e != null && e.entry)
   }), t.intent.provider({
     hub: "entry:interact",
@@ -1263,17 +1481,21 @@ function gt(t) {
       !a || !await t.confirm({ header: "Remove meal", message: "Remove this meal from the plan?", acceptLabel: "Remove", rejectLabel: "Cancel", severity: "danger" }) || (await t.api.delete(`/api/timeline/${a.id}?revision=${a.revision}`), t.notify({ level: "success", message: "Meal removed from plan" }));
     }
   });
-  const T = async () => {
+  const r = async () => {
     try {
-      const e = le(), a = await t.api.get(`/api/timeline?from=${O(e, -2)}&to=${O(e, 14)}`);
-      for (const d of a) d.recipe_id && t.api.get(`/api/recipes/${d.recipe_id}`).catch(() => {
-      });
+      const e = ne(), a = await be(t), i = O(e, -a.default_past_days), l = O(e, Math.max(a.default_planning_days - 1, 14));
+      for (let v = i; v <= l; ) {
+        const m = O(v, 62) < l ? O(v, 62) : l, d = await t.api.get(`/api/timeline?from=${v}&to=${m}`);
+        for (const h of d) h.recipe_id && t.api.get(`/api/recipes/${h.recipe_id}`).catch(() => {
+        });
+        v = O(m, 1);
+      }
     } catch {
     }
   };
-  T();
-  for (const e of ["timeline:created", "timeline:updated", "timeline:deleted"]) t.on(e, T);
+  r();
+  for (const e of ["timeline:created", "timeline:updated", "timeline:deleted", "core-timeline:settings-changed"]) t.on(e, r);
 }
 export {
-  gt as default
+  Bt as default
 };

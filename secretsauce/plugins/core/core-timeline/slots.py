@@ -13,11 +13,24 @@ from secretsauce.util import now_iso
 ID_PATTERN = r'^[a-z0-9][a-z0-9-]{0,63}$'
 
 
+DEFAULT_PAST_DAYS = 2
+MIN_PAST_DAYS = 0
+MAX_PAST_DAYS = 30
+DEFAULT_PLANNING_DAYS = 7
+MIN_PLANNING_DAYS = 1
+MAX_PLANNING_DAYS = 60
+
+
 class Slot(TypedDict):
     id: str
     label: str
     kind: Literal['default', 'extra']
     skipped: bool
+
+
+class TimelineSettings(BaseModel):
+    default_past_days: int = Field(strict=True, ge=MIN_PAST_DAYS, le=MAX_PAST_DAYS)
+    default_planning_days: int = Field(strict=True, ge=MIN_PLANNING_DAYS, le=MAX_PLANNING_DAYS)
 
 
 def calendar_date(value: str) -> date:
@@ -48,6 +61,38 @@ class SlotWrite(BaseModel):
 class TimelineSlotsService:
     def __init__(self, ctx: PluginContext):
         self.ctx = ctx
+
+    @staticmethod
+    def _coerce_bounded_int(value: object, default: int, minimum: int, maximum: int) -> int:
+        if isinstance(value, bool) or not isinstance(value, int):
+            return default
+        return max(minimum, min(maximum, value))
+
+    async def get_settings(self) -> dict[str, int]:
+        cfg = self.ctx.config
+        return {
+            'default_past_days': self._coerce_bounded_int(
+                cfg.get('default_past_days', DEFAULT_PAST_DAYS),
+                DEFAULT_PAST_DAYS,
+                MIN_PAST_DAYS,
+                MAX_PAST_DAYS,
+            ),
+            'default_planning_days': self._coerce_bounded_int(
+                cfg.get('default_planning_days', DEFAULT_PLANNING_DAYS),
+                DEFAULT_PLANNING_DAYS,
+                MIN_PLANNING_DAYS,
+                MAX_PLANNING_DAYS,
+            ),
+        }
+
+    async def update_settings(self, payload: TimelineSettings) -> dict[str, int]:
+        updates = {
+            'default_past_days': payload.default_past_days,
+            'default_planning_days': payload.default_planning_days,
+        }
+        await self.ctx.save_config(updates)
+        await self.ctx.push('core-timeline:settings-changed', updates)
+        return updates
 
     async def slots_for(self, from_date: str, to_date: str, conn=None) -> dict[str, list[Slot]]:
         start, end = calendar_date(from_date), calendar_date(to_date)
@@ -128,6 +173,16 @@ class TimelineSlotsService:
 
 
 router = APIRouter(prefix='/api/x/core-timeline', tags=['core-timeline'])
+
+
+@router.get('/settings')
+async def get_settings(ctx: PluginContext = Depends(current_ctx)):
+    return await ctx.services.get('core-timeline').get_settings()
+
+
+@router.put('/settings')
+async def put_settings(payload: TimelineSettings, ctx: PluginContext = Depends(current_ctx)):
+    return await ctx.services.get('core-timeline').update_settings(payload)
 
 
 @router.get('/slots')

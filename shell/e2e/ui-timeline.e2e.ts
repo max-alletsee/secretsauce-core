@@ -390,4 +390,40 @@ test('user can move a meal across days and slots, un-skip skipped slots, and def
   expect(moved.status).toBe('cooked')
 })
 
+test('core-timeline plugin settings configure default past and planning days on Timeline', async ({ page, request }) => {
+  await login(page)
+  const original = await (await request.get('/api/x/core-timeline/settings')).json()
+  try {
+    await page.goto('/settings?section=plugins')
+    const card = page.locator('.plugin-card[data-plugin-id="core-timeline"]')
+    await expect(card).toBeVisible()
+    await card.getByRole('button', { name: 'Settings', exact: true }).click()
+
+    const pastInput = card.locator('#timeline-default-past-days')
+    const planningInput = card.locator('#timeline-default-planning-days')
+    await expect(pastInput).toHaveValue(String(original.default_past_days))
+    await expect(planningInput).toHaveValue(String(original.default_planning_days))
+
+    await pastInput.fill('0')
+    await planningInput.fill('3')
+    await card.getByRole('button', { name: 'Save Settings', exact: true }).click()
+    await expect.poll(async () => (await (await request.get('/api/x/core-timeline/settings')).json())).toEqual({
+      default_past_days: 0,
+      default_planning_days: 3,
+    })
+
+    await page.getByRole('link', { name: 'Timeline', exact: true }).first().click()
+    await expect(page.locator('.day-card.is-today')).toBeVisible()
+    await expect(page.locator('.past-days')).toHaveCount(0)
+    await expect(page.locator('.timeline-feed > .day-card')).toHaveCount(3)
+
+    await page.reload()
+    await expect(page.locator('.day-card.is-today')).toBeVisible()
+    await expect(page.locator('.past-days')).toHaveCount(0)
+    await expect(page.locator('.timeline-feed > .day-card')).toHaveCount(3)
+  } finally {
+    await request.put('/api/x/core-timeline/settings', { data: original })
+  }
+})
+
 
