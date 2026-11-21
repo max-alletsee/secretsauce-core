@@ -1,16 +1,16 @@
-import { ref as m, defineComponent as X, computed as J, watch as re, resolveComponent as C, openBlock as f, createBlock as q, withCtx as L, createElementVNode as k, withModifiers as ve, createTextVNode as I, toDisplayString as M, createCommentVNode as U, createVNode as v, unref as pe, createElementBlock as x, Fragment as Q, renderList as Z, onMounted as fe, onBeforeUnmount as ie } from "vue";
+import { ref as m, defineComponent as X, computed as J, watch as re, resolveComponent as x, openBlock as p, createBlock as q, withCtx as L, createElementVNode as k, withModifiers as ve, createTextVNode as N, toDisplayString as M, createCommentVNode as A, createVNode as v, unref as pe, createElementBlock as S, Fragment as Q, renderList as Z, onMounted as fe, onBeforeUnmount as ie } from "vue";
 import { useSecretSauce as Y } from "@secretsauce/ui";
 const ne = /* @__PURE__ */ new WeakMap();
-function K(c, p) {
+function K(c, f) {
   const g = /* @__PURE__ */ new Date(`${c}T12:00:00Z`);
-  return g.setUTCDate(g.getUTCDate() + p), g.toISOString().slice(0, 10);
+  return g.setUTCDate(g.getUTCDate() + f), g.toISOString().slice(0, 10);
 }
 function ee(c) {
-  const p = c.api || c, g = ne.get(p);
+  const f = c.api || c, g = ne.get(f);
   if (g) return g;
   const l = m([]), s = /* @__PURE__ */ new Map();
   let n = !1, _ = 0;
-  async function S() {
+  async function w() {
     n = !1;
     const o = Array.from(s.keys()).sort();
     if (!o.length) {
@@ -21,19 +21,19 @@ function ee(c) {
     try {
       const R = [];
       for (let i = d; i <= t; ) {
-        const w = K(i, 90) < t ? K(i, 90) : t, V = await c.api.get("/api/x/core-recurring/suggestions", {
+        const C = K(i, 90) < t ? K(i, 90) : t, V = await c.api.get("/api/x/core-recurring/suggestions", {
           from: i,
-          to: w
+          to: C
         });
         if (h !== _) return;
-        Array.isArray(V) && R.push(...V), i = K(w, 1);
+        Array.isArray(V) && R.push(...V), i = K(C, 1);
       }
       h === _ && (l.value = R);
     } catch {
     }
   }
   function b() {
-    n || (n = !0, queueMicrotask(S));
+    n || (n = !0, queueMicrotask(w));
   }
   function $(o) {
     return /^\d{4}-\d{2}-\d{2}$/.test(o) ? (s.set(o, (s.get(o) || 0) + 1), b(), () => {
@@ -51,16 +51,16 @@ function ee(c) {
   const u = {
     suggestions: l,
     registerDate: $,
-    refreshSuggestions: S,
+    refreshSuggestions: w,
     removeSuggestion: a
   };
-  return ne.set(p, u), u;
+  return ne.set(f, u), u;
 }
 function ae(c) {
   var l;
-  const p = ((l = c.store.members) == null ? void 0 : l.value) || [];
-  if (!p.length) return 2;
-  const g = p.reduce((s, n) => s + (Number(n == null ? void 0 : n.serving_ratio) || 1), 0);
+  const f = ((l = c.store.members) == null ? void 0 : l.value) || [];
+  if (!f.length) return 2;
+  const g = f.reduce((s, n) => s + (Number(n == null ? void 0 : n.serving_ratio) || 1), 0);
   return g > 0 ? Math.round(g * 100) / 100 : 2;
 }
 const ge = {
@@ -73,18 +73,18 @@ const ge = {
     rule: {}
   },
   emits: ["update:visible", "saved"],
-  setup(c, { emit: p }) {
-    const g = ["Dining out", "Leftovers", "Takeout", "Quick meal"], l = c, s = p, n = Y(), _ = ee(n), S = m(0), b = m(""), $ = m(2), a = m("recipes"), u = m(""), o = m([]), d = m([]), t = m(null), h = m(""), R = m(!1), i = m(""), w = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(
+  setup(c, { emit: f }) {
+    const g = ["Dining out", "Leftovers", "Takeout", "Quick meal"], l = c, s = f, n = Y(), _ = ee(n), w = m(0), b = m(""), $ = m(2), a = m("recipes"), u = m(""), o = m([]), d = m([]), t = m(null), h = m(""), R = m(!1), i = m(""), C = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(
       (y, e) => ({ label: y, value: e })
     ), V = J(() => {
       var y;
       return ((y = n.store.household.value) == null ? void 0 : y.meal_types) || [];
     }), E = J(() => {
-      var N, W;
-      const e = (((N = n.store.household.value) == null ? void 0 : N.meal_types) || []).find(
-        (A) => {
-          var G, O, B, F;
-          return A.id === b.value || ((G = A.id) == null ? void 0 : G.toLowerCase()) === ((O = b.value) == null ? void 0 : O.toLowerCase()) || ((B = A.label) == null ? void 0 : B.toLowerCase()) === ((F = b.value) == null ? void 0 : F.toLowerCase());
+      var I, W;
+      const e = (((I = n.store.household.value) == null ? void 0 : I.meal_types) || []).find(
+        (B) => {
+          var G, O, U, F;
+          return B.id === b.value || ((G = B.id) == null ? void 0 : G.toLowerCase()) === ((O = b.value) == null ? void 0 : O.toLowerCase()) || ((U = B.label) == null ? void 0 : U.toLowerCase()) === ((F = b.value) == null ? void 0 : F.toLowerCase());
         }
       );
       if (e && Array.isArray(e.predefined_notes))
@@ -108,11 +108,11 @@ const ge = {
     re(
       () => l.visible,
       async (y) => {
-        var D, N;
+        var D, I;
         if (++T, !y) return;
         i.value = "", u.value = "", o.value = [];
-        const e = ((D = V.value.find((W) => W.id === "dinner")) == null ? void 0 : D.id) || ((N = V.value[0]) == null ? void 0 : N.id) || "";
-        l.rule ? (S.value = l.rule.weekday, b.value = l.rule.meal_type || e, $.value = l.rule.servings || ae(n), l.rule.entry_type === "note" ? (a.value = "note", h.value = l.rule.title || "", t.value = null) : (a.value = "recipes", h.value = "", t.value = l.rule.recipe_id ? { id: l.rule.recipe_id, title: l.rule.recipe_title || l.rule.title || "" } : null)) : (S.value = 0, b.value = e, $.value = ae(n), a.value = "recipes", t.value = null, h.value = ""), await j();
+        const e = ((D = V.value.find((W) => W.id === "dinner")) == null ? void 0 : D.id) || ((I = V.value[0]) == null ? void 0 : I.id) || "";
+        l.rule ? (w.value = l.rule.weekday, b.value = l.rule.meal_type || e, $.value = l.rule.servings || ae(n), l.rule.entry_type === "note" ? (a.value = "note", h.value = l.rule.title || "", t.value = null) : (a.value = "recipes", h.value = "", t.value = l.rule.recipe_id ? { id: l.rule.recipe_id, title: l.rule.recipe_title || l.rule.title || "" } : null)) : (w.value = 0, b.value = e, $.value = ae(n), a.value = "recipes", t.value = null, h.value = ""), await j();
         try {
           d.value = await n.api.get("/api/x/core-shortlist");
         } catch {
@@ -127,7 +127,7 @@ const ge = {
       if (!z.value) return;
       R.value = !0, i.value = "";
       const y = a.value === "note", e = {
-        weekday: S.value,
+        weekday: w.value,
         meal_type: b.value,
         entry_type: y ? "note" : "recipe",
         ...y ? { title: h.value.trim() } : { recipe_id: t.value.id },
@@ -143,8 +143,8 @@ const ge = {
       }
     }
     return (y, e) => {
-      const D = C("Message"), N = C("Select"), W = C("InputNumber"), A = C("Tab"), G = C("TabList"), O = C("InputText"), B = C("Button"), F = C("TabPanel"), oe = C("TabPanels"), ue = C("Tabs"), ce = C("Dialog");
-      return f(), q(ce, {
+      const D = x("Message"), I = x("Select"), W = x("InputNumber"), B = x("Tab"), G = x("TabList"), O = x("InputText"), U = x("Button"), F = x("TabPanel"), oe = x("TabPanels"), ue = x("Tabs"), ce = x("Dialog");
+      return p(), q(ce, {
         visible: c.visible,
         "onUpdate:visible": e[6] || (e[6] = (r) => s("update:visible", r)),
         header: c.rule ? "Edit recurring meal" : "Add recurring meal",
@@ -159,12 +159,12 @@ const ge = {
               onSubmit: ve(se, ["prevent"])
             },
             [
-              i.value ? (f(), q(D, {
+              i.value ? (p(), q(D, {
                 key: 0,
                 severity: "error"
               }, {
                 default: L(() => [
-                  I(
+                  N(
                     M(i.value),
                     1
                     /* TEXT */
@@ -172,7 +172,7 @@ const ge = {
                 ]),
                 _: 1
                 /* STABLE */
-              })) : U("v-if", !0),
+              })) : A("v-if", !0),
               e[13] || (e[13] = k(
                 "label",
                 { for: "recurring-weekday" },
@@ -180,12 +180,12 @@ const ge = {
                 -1
                 /* CACHED */
               )),
-              v(N, {
+              v(I, {
                 inputId: "recurring-weekday",
                 "aria-label": "Weekday",
-                modelValue: S.value,
-                "onUpdate:modelValue": e[0] || (e[0] = (r) => S.value = r),
-                options: pe(w),
+                modelValue: w.value,
+                "onUpdate:modelValue": e[0] || (e[0] = (r) => w.value = r),
+                options: pe(C),
                 optionLabel: "label",
                 optionValue: "value",
                 fluid: ""
@@ -197,7 +197,7 @@ const ge = {
                 -1
                 /* CACHED */
               )),
-              v(N, {
+              v(I, {
                 inputId: "recurring-slot",
                 "aria-label": "Meal slot",
                 modelValue: b.value,
@@ -230,9 +230,9 @@ const ge = {
                 default: L(() => [
                   v(G, null, {
                     default: L(() => [
-                      v(A, { value: "recipes" }, {
+                      v(B, { value: "recipes" }, {
                         default: L(() => [...e[7] || (e[7] = [
-                          I(
+                          N(
                             "Recipes",
                             -1
                             /* CACHED */
@@ -241,9 +241,9 @@ const ge = {
                         _: 1
                         /* STABLE */
                       }),
-                      v(A, { value: "shortlist" }, {
+                      v(B, { value: "shortlist" }, {
                         default: L(() => [...e[8] || (e[8] = [
-                          I(
+                          N(
                             "Shortlist",
                             -1
                             /* CACHED */
@@ -252,9 +252,9 @@ const ge = {
                         _: 1
                         /* STABLE */
                       }),
-                      v(A, { value: "note" }, {
+                      v(B, { value: "note" }, {
                         default: L(() => [...e[9] || (e[9] = [
-                          I(
+                          N(
                             "Note",
                             -1
                             /* CACHED */
@@ -285,9 +285,9 @@ const ge = {
                             onInput: j,
                             fluid: ""
                           }, null, 8, ["modelValue"]),
-                          t.value ? (f(), x("div", ge, [
+                          t.value ? (p(), S("div", ge, [
                             k("span", null, [
-                              e[10] || (e[10] = I(
+                              e[10] || (e[10] = N(
                                 "Selected: ",
                                 -1
                                 /* CACHED */
@@ -300,13 +300,13 @@ const ge = {
                                 /* TEXT */
                               )
                             ])
-                          ])) : U("v-if", !0),
-                          (f(!0), x(
+                          ])) : A("v-if", !0),
+                          (p(!0), S(
                             Q,
                             null,
                             Z(o.value, (r) => {
                               var P, H;
-                              return f(), x("div", {
+                              return p(), S("div", {
                                 key: r.id,
                                 class: "recipe-result"
                               }, [
@@ -317,7 +317,7 @@ const ge = {
                                   1
                                   /* TEXT */
                                 ),
-                                v(B, {
+                                v(U, {
                                   label: ((P = t.value) == null ? void 0 : P.id) === r.id ? "Selected" : "Select",
                                   severity: ((H = t.value) == null ? void 0 : H.id) === r.id ? "success" : "secondary",
                                   size: "small",
@@ -335,13 +335,13 @@ const ge = {
                       }),
                       v(F, { value: "shortlist" }, {
                         default: L(() => [
-                          d.value.length ? U("v-if", !0) : (f(), x("p", ye, "No recipes in shortlist")),
-                          (f(!0), x(
+                          d.value.length ? A("v-if", !0) : (p(), S("p", ye, "No recipes in shortlist")),
+                          (p(!0), S(
                             Q,
                             null,
                             Z(d.value, (r) => {
                               var P, H;
-                              return f(), x("div", {
+                              return p(), S("div", {
                                 key: r.recipe_id,
                                 class: "recipe-result"
                               }, [
@@ -352,7 +352,7 @@ const ge = {
                                   1
                                   /* TEXT */
                                 ),
-                                v(B, {
+                                v(U, {
                                   label: ((P = t.value) == null ? void 0 : P.id) === r.recipe_id ? "Selected" : "Select",
                                   severity: ((H = t.value) == null ? void 0 : H.id) === r.recipe_id ? "success" : "secondary",
                                   size: "small",
@@ -384,10 +384,10 @@ const ge = {
                             fluid: ""
                           }, null, 8, ["modelValue"]),
                           k("div", me, [
-                            (f(!0), x(
+                            (p(!0), S(
                               Q,
                               null,
-                              Z(E.value, (r) => (f(), q(B, {
+                              Z(E.value, (r) => (p(), q(U, {
                                 key: r,
                                 label: r,
                                 outlined: "",
@@ -411,7 +411,7 @@ const ge = {
                 _: 1
                 /* STABLE */
               }, 8, ["value"]),
-              v(B, {
+              v(U, {
                 label: c.rule ? "Save recurring meal" : "Add recurring meal",
                 type: "submit",
                 loading: R.value,
@@ -427,9 +427,9 @@ const ge = {
       }, 8, ["visible", "header"]);
     };
   }
-}), te = (c, p) => {
+}), te = (c, f) => {
   const g = c.__vccOpts || c;
-  for (const [l, s] of p)
+  for (const [l, s] of f)
     g[l] = s;
   return g;
 }, be = /* @__PURE__ */ te(_e, [["__scopeId", "data-v-96027c37"]]), ke = { class: "recurring-meals-widget" }, he = { key: 2 }, Se = {
@@ -438,10 +438,10 @@ const ge = {
 }, we = { class: "rule-summary" }, Ce = { class: "rule-actions" }, xe = /* @__PURE__ */ X({
   __name: "RecurringMealsWidget",
   setup(c) {
-    const p = Y(), g = ee(p), l = m([]), s = m(!0), n = m(!1), _ = m(""), S = m(!1), b = m(null), $ = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const f = Y(), g = ee(f), l = m([]), s = m(!0), n = m(!1), _ = m(""), w = m(!1), b = m(null), $ = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     function a(i) {
-      var w, V, E;
-      return ((E = (V = (w = p.store.household.value) == null ? void 0 : w.meal_types) == null ? void 0 : V.find((z) => z.id === i)) == null ? void 0 : E.label) || i;
+      var C, V, E;
+      return ((E = (V = (C = f.store.household.value) == null ? void 0 : C.meal_types) == null ? void 0 : V.find((z) => z.id === i)) == null ? void 0 : E.label) || i;
     }
     function u(i) {
       return i.title || i.recipe_title || "Recurring meal";
@@ -449,7 +449,7 @@ const ge = {
     async function o() {
       s.value = !0;
       try {
-        l.value = await p.api.get("/api/x/core-recurring/rules");
+        l.value = await f.api.get("/api/x/core-recurring/rules");
       } catch (i) {
         _.value = (i == null ? void 0 : i.message) || "Could not load recurring rules";
       } finally {
@@ -457,32 +457,32 @@ const ge = {
       }
     }
     function d() {
-      b.value = null, S.value = !0;
+      b.value = null, w.value = !0;
     }
     function t(i) {
-      b.value = i, S.value = !0;
+      b.value = i, w.value = !0;
     }
     async function h(i) {
       if (!n.value) {
         n.value = !0, _.value = "";
         try {
-          await p.api.delete(`/api/x/core-recurring/rules/${i}`), await o(), await g.refreshSuggestions();
-        } catch (w) {
-          _.value = (w == null ? void 0 : w.message) || "Could not delete rule";
+          await f.api.delete(`/api/x/core-recurring/rules/${i}`), await o(), await g.refreshSuggestions();
+        } catch (C) {
+          _.value = (C == null ? void 0 : C.message) || "Could not delete rule";
         } finally {
           n.value = !1;
         }
       }
     }
-    const R = p.on("core-recurring:changed", () => {
+    const R = f.on("core-recurring:changed", () => {
       o();
     });
     return fe(o), ie(() => {
       typeof R == "function" && R();
-    }), (i, w) => {
-      const V = C("Button"), E = C("Message"), z = C("ProgressSpinner");
-      return f(), x("section", ke, [
-        w[1] || (w[1] = k(
+    }), (i, C) => {
+      const V = x("Button"), E = x("Message"), z = x("ProgressSpinner");
+      return p(), S("section", ke, [
+        C[1] || (C[1] = k(
           "h3",
           null,
           [
@@ -490,7 +490,7 @@ const ge = {
               class: "pi pi-replay",
               "aria-hidden": "true"
             }),
-            I(" Recurring meals")
+            N(" Recurring meals")
           ],
           -1
           /* CACHED */
@@ -502,12 +502,12 @@ const ge = {
           disabled: n.value,
           onClick: d
         }, null, 8, ["disabled"]),
-        _.value ? (f(), q(E, {
+        _.value ? (p(), q(E, {
           key: 0,
           severity: "error"
         }, {
           default: L(() => [
-            I(
+            N(
               M(_.value),
               1
               /* TEXT */
@@ -515,15 +515,15 @@ const ge = {
           ]),
           _: 1
           /* STABLE */
-        })) : U("v-if", !0),
-        s.value ? (f(), q(z, {
+        })) : A("v-if", !0),
+        s.value ? (p(), q(z, {
           key: 1,
           "aria-label": "Loading recurring rules"
-        })) : l.value.length ? (f(), x("ul", Se, [
-          (f(!0), x(
+        })) : l.value.length ? (p(), S("ul", Se, [
+          (p(!0), S(
             Q,
             null,
-            Z(l.value, (T) => (f(), x("li", {
+            Z(l.value, (T) => (p(), S("li", {
               key: T.id,
               class: "recurring-rule-item"
             }, [
@@ -557,10 +557,10 @@ const ge = {
             128
             /* KEYED_FRAGMENT */
           ))
-        ])) : (f(), x("p", he, "No recurring rules configured.")),
+        ])) : (p(), S("p", he, "No recurring rules configured.")),
         v(be, {
-          visible: S.value,
-          "onUpdate:visible": w[0] || (w[0] = (T) => S.value = T),
+          visible: w.value,
+          "onUpdate:visible": C[0] || (C[0] = (T) => w.value = T),
           rule: b.value,
           onSaved: o
         }, null, 8, ["visible", "rule"])
@@ -572,19 +572,23 @@ const ge = {
   class: "recurring-slot-suggestions"
 }, Re = ["data-rule-id"], Ve = { class: "ghost-info" }, De = { class: "ghost-title" }, Le = {
   key: 0,
+  class: "pi pi-book recipe-entry-icon",
+  "aria-hidden": "true"
+}, Me = {
+  key: 0,
   class: "ghost-servings"
-}, Me = { class: "ghost-actions" }, Ne = /* @__PURE__ */ X({
+}, Ne = { class: "ghost-actions" }, Ie = /* @__PURE__ */ X({
   __name: "RecurringSlotSuggestions",
   props: {
     context: {}
   },
   setup(c) {
-    const p = c, g = Y(), l = ee(g), s = m(null), n = m("");
+    const f = c, g = Y(), l = ee(g), s = m(null), n = m("");
     let _ = null;
     re(
       () => {
         var a;
-        return (a = p.context) == null ? void 0 : a.date;
+        return (a = f.context) == null ? void 0 : a.date;
       },
       (a) => {
         _ && (_(), _ = null), a && (_ = l.registerDate(a));
@@ -593,9 +597,9 @@ const ge = {
     ), ie(() => {
       _ && (_(), _ = null);
     });
-    const S = J(() => {
+    const w = J(() => {
       var t, h;
-      const a = (t = p.context) == null ? void 0 : t.date, u = (h = p.context) == null ? void 0 : h.slot;
+      const a = (t = f.context) == null ? void 0 : t.date, u = (h = f.context) == null ? void 0 : h.slot;
       if (!a || !u || u.skipped) return [];
       const o = (u.id || "").toLowerCase(), d = (u.label || "").toLowerCase();
       return l.suggestions.value.filter((R) => {
@@ -611,7 +615,7 @@ const ge = {
         try {
           await g.api.post(`/api/x/core-recurring/rules/${a.rule_id}/approve`, {
             date: a.date
-          }), l.removeSuggestion(a.rule_id, a.date), (o = (u = p.context) == null ? void 0 : u.onChanged) == null || o.call(u);
+          }), l.removeSuggestion(a.rule_id, a.date), (o = (u = f.context) == null ? void 0 : u.onChanged) == null || o.call(u);
         } catch (d) {
           n.value = (d == null ? void 0 : d.message) || "Could not approve recurring meal";
         } finally {
@@ -634,14 +638,14 @@ const ge = {
       }
     }
     return (a, u) => {
-      const o = C("Message"), d = C("Button");
-      return S.value.length || n.value ? (f(), x("div", $e, [
-        n.value ? (f(), q(o, {
+      const o = x("Message"), d = x("Button");
+      return w.value.length || n.value ? (p(), S("div", $e, [
+        n.value ? (p(), q(o, {
           key: 0,
           severity: "error"
         }, {
           default: L(() => [
-            I(
+            N(
               M(n.value),
               1
               /* TEXT */
@@ -649,11 +653,11 @@ const ge = {
           ]),
           _: 1
           /* STABLE */
-        })) : U("v-if", !0),
-        (f(!0), x(
+        })) : A("v-if", !0),
+        (p(!0), S(
           Q,
           null,
-          Z(S.value, (t) => (f(), x("div", {
+          Z(w.value, (t) => (p(), S("div", {
             key: `${t.rule_id}-${t.date}`,
             class: "recurring-ghost-card",
             "data-rule-id": t.rule_id
@@ -669,22 +673,23 @@ const ge = {
                 -1
                 /* CACHED */
               )),
-              k(
+              k("span", De, [
+                t.recipe_id ? (p(), S("i", Le)) : A("v-if", !0),
+                N(
+                  M(t.title || t.recipe_title || "Recurring meal"),
+                  1
+                  /* TEXT */
+                )
+              ]),
+              t.servings ? (p(), S(
                 "span",
-                De,
-                M(t.title || t.recipe_title || "Recurring meal"),
-                1
-                /* TEXT */
-              ),
-              t.servings ? (f(), x(
-                "span",
-                Le,
+                Me,
                 M(t.servings) + " servings",
                 1
                 /* TEXT */
-              )) : U("v-if", !0)
+              )) : A("v-if", !0)
             ]),
-            k("div", Me, [
+            k("div", Ne, [
               v(d, {
                 label: "Approve",
                 icon: "pi pi-check",
@@ -710,15 +715,15 @@ const ge = {
           128
           /* KEYED_FRAGMENT */
         ))
-      ])) : U("v-if", !0);
+      ])) : A("v-if", !0);
     };
   }
-}), Ie = /* @__PURE__ */ te(Ne, [["__scopeId", "data-v-2eb8b51a"]]);
-function Ue(c) {
-  c.slot("timeline.sidebar", Te, { order: 20 }), c.slot("timeline.slot.suggestions", Ie, { order: 10 });
+}), Ae = /* @__PURE__ */ te(Ie, [["__scopeId", "data-v-cf21cf8a"]]);
+function Ee(c) {
+  c.slot("timeline.sidebar", Te, { order: 20 }), c.slot("timeline.slot.suggestions", Ae, { order: 10 });
 }
 export {
   Te as RecurringMealsWidget,
-  Ie as RecurringSlotSuggestions,
-  Ue as default
+  Ae as RecurringSlotSuggestions,
+  Ee as default
 };

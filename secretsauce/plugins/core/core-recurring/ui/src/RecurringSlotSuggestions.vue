@@ -97,7 +97,7 @@ async function dismiss(suggestion: RecurringSuggestion) {
     >
       <div class="ghost-info">
         <i class="pi pi-replay" aria-hidden="true" />
-        <span class="ghost-title">{{ suggestion.title || suggestion.recipe_title || 'Recurring meal' }}</span>
+        <span class="ghost-title"><i v-if="suggestion.recipe_id" class="pi pi-book recipe-entry-icon" aria-hidden="true" />{{ suggestion.title || suggestion.recipe_title || 'Recurring meal' }}</span>
         <span v-if="suggestion.servings" class="ghost-servings">{{ suggestion.servings }} servings</span>
       </div>
       <div class="ghost-actions">
@@ -129,8 +129,9 @@ async function dismiss(suggestion: RecurringSuggestion) {
 <style scoped>
 .recurring-slot-suggestions {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.2rem;
-  margin-bottom: 0.2rem;
+  min-width: 0;
 }
 .recurring-ghost-card {
   display: flex;
@@ -138,8 +139,8 @@ async function dismiss(suggestion: RecurringSuggestion) {
   align-items: center;
   justify-content: space-between;
   gap: 0.2rem 0.5rem;
-  padding: 0.2rem 0.5rem;
-  border: 1.5px dashed var(--p-content-border-color);
+  padding: 0.175rem 0.45rem;
+  border: 1px dashed var(--p-content-border-color);
   border-radius: var(--p-border-radius);
   background: var(--p-surface-50, transparent);
   color: var(--p-text-muted-color);
@@ -152,9 +153,15 @@ async function dismiss(suggestion: RecurringSuggestion) {
   flex: 1 1 8rem;
   min-width: 0;
 }
+.recipe-entry-icon {
+  font-size: 0.74rem;
+  margin-right: 0.3rem;
+  vertical-align: -0.04em;
+}
 .ghost-title {
   font-size: 0.82rem;
   font-weight: 500;
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 .ghost-servings {

@@ -8,7 +8,7 @@ import { defaultTimelineSettings, fetchTimelineSettings, normalizeTimelineSettin
 const ss=useSecretSauce()
 const today=ref(localToday()),settings=ref<TimelineSettings>(defaultTimelineSettings()),windowDates=ref<DateWindow>(windowForSettings(today.value,settings.value)),manuallyExpanded=ref(false)
 const entries=ref<TimelineEntry[]>([]),slots=ref<Record<string,ResolvedSlot[]>>({}),error=ref(''),expanded=ref(new Set<string>()),active=ref<{date:string;mealType:string}|null>(null)
-const phone=ref(window.innerWidth<768),widgetsOpen=ref<string[]>([])
+const phone=ref(window.innerWidth<1024),widgetsOpen=ref<string[]>([])
 const registry=inject<any>('__SS_SLOT_REGISTRY__')
 const widgets=computed(()=>registry?.getContributions('timeline.sidebar')||[])
 const days=computed(()=>buildDays(windowDates.value,slots.value,entries.value,today.value))
@@ -42,7 +42,7 @@ const stops=[
     }
   }),
 ]
-function resize(){phone.value=window.innerWidth<768}
+function resize(){phone.value=window.innerWidth<1024}
 function earlier(){manuallyExpanded.value=true;windowDates.value={...windowDates.value,from:shiftDate(windowDates.value.from,-4)};load()}
 function more(){manuallyExpanded.value=true;windowDates.value={...windowDates.value,to:shiftDate(windowDates.value.to,5)};load()}
 async function reset(){
@@ -87,7 +87,24 @@ onBeforeUnmount(()=>{disposed=true;++revision;clearTimeout(timer);stops.forEach(
   </div>
 </template>
 <style scoped>
-.timeline-page{padding:.625rem .75rem;max-width:75rem;margin:auto;display:grid;gap:.5rem}.timeline-toolbar{display:flex;align-items:center;justify-content:space-between;gap:.5rem}.timeline-toolbar h2{margin:0;font-size:1.15rem;line-height:1.2}.timeline-toolbar :deep(.p-button){padding:.25rem .5rem;font-size:.8125rem}.timeline-container{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:.625rem;align-items:start}.timeline-sidebar-wrapper{grid-column:2;grid-row:1;display:grid;gap:.5rem;min-width:0}.timeline-sidebar-wrapper :deep(.p-accordion){display:grid;grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));gap:.375rem}.timeline-sidebar-wrapper :deep(.p-accordionpanel){border:1px solid var(--p-content-border-color);border-radius:var(--p-border-radius);overflow:hidden}.timeline-sidebar-wrapper :deep(.p-accordionpanel:has([aria-expanded="true"])){grid-column:1/-1}.timeline-sidebar-wrapper :deep(.p-accordionheader){padding:.3rem .5rem;font-size:.78rem}.timeline-sidebar-wrapper :deep(.p-accordioncontent-content){padding:.375rem .5rem}.timeline-feed{grid-column:1;grid-row:1;display:grid;gap:.5rem;min-width:0}.timeline-feed > :deep(.p-button){padding:.2rem .5rem;font-size:.8rem}.past-days{padding:.2rem .375rem;border:1px solid var(--p-content-border-color);border-radius:var(--p-content-border-radius);background:var(--p-surface-50);display:grid;gap:.125rem}.past-day-line{width:100%;justify-content:flex-start;text-align:left;padding:.15rem .375rem;font-size:.78rem;line-height:1.2;min-height:0}.past-day-line :deep(.p-button-label){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.past-days .day-card{margin:.25rem 0}
-@media(max-width:1023px){.timeline-container{display:flex;flex-direction:column;gap:.375rem}.timeline-sidebar-wrapper,.timeline-feed{width:100%}}
+.timeline-page{padding:.625rem .75rem;max-width:75rem;width:100%;min-width:0;margin:auto;display:grid;grid-template-columns:minmax(0,1fr);gap:.5rem}
+.timeline-toolbar{display:flex;align-items:center;justify-content:space-between;gap:.5rem;min-width:0}
+.timeline-toolbar h2{margin:0;font-size:1.15rem;line-height:1.2;min-width:0}
+.timeline-toolbar :deep(.p-button){padding:.25rem .5rem;font-size:.8125rem;flex-shrink:0}
+.timeline-container{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:.625rem;align-items:start;min-width:0}
+.timeline-sidebar-wrapper{grid-column:2;grid-row:1;display:grid;grid-template-columns:minmax(0,1fr);gap:.5rem;min-width:0}
+.timeline-sidebar-wrapper :deep(.p-accordion){display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,10.5rem),1fr));gap:.375rem;min-width:0}
+.timeline-sidebar-wrapper :deep(.p-accordionpanel){border:1px solid var(--p-content-border-color);border-radius:var(--p-border-radius);overflow:hidden;min-width:0}
+.timeline-sidebar-wrapper :deep(.p-accordionpanel:has([aria-expanded="true"])){grid-column:1/-1}
+.timeline-sidebar-wrapper :deep(.p-accordionheader){padding:.3rem .5rem;font-size:.78rem;min-width:0;gap:.25rem}
+.timeline-sidebar-wrapper :deep(.p-accordioncontent-content){padding:.375rem .5rem;min-width:0}
+.timeline-feed{grid-column:1;grid-row:1;display:grid;grid-template-columns:minmax(0,1fr);gap:.5rem;min-width:0}
+.timeline-feed > :deep(.p-button){padding:.2rem .5rem;font-size:.8rem}
+.past-days{padding:.2rem .375rem;border:1px solid var(--p-content-border-color);border-radius:var(--p-content-border-radius);background:var(--p-surface-50);display:grid;grid-template-columns:minmax(0,1fr);gap:.125rem;min-width:0}
+.past-days > div{min-width:0}
+.past-day-line{width:100%;max-width:100%;min-width:0;justify-content:flex-start;text-align:left;padding:.15rem .375rem;font-size:.78rem;line-height:1.2;min-height:0}
+.past-day-line :deep(.p-button-label){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.past-days .day-card{margin:.25rem 0}
+@media(max-width:1023px){.timeline-container{grid-template-columns:minmax(0,1fr);gap:.375rem}.timeline-sidebar-wrapper{grid-column:1;grid-row:1}.timeline-feed{grid-column:1;grid-row:2}}
 @media(max-width:767px){.timeline-page{padding:.375rem .5rem;gap:.375rem}.timeline-feed{gap:.375rem}}
 </style>

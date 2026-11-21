@@ -16,6 +16,10 @@ _Avoid_: Date Range, Visible Horizon, Planning Horizon
 A single meal record placed in a Meal Slot on a given date, representing both the plan for that meal and what actually happened when it was prepared.
 _Avoid_: Schedule Entry, Journal Entry, Cook Log, Planned Meal, Meal Item
 
+**Meal Note**:
+A free-text Timeline Entry—such as "Leftovers", "Dining out", or a meal whose Recipe was later removed—that is not linked to a Recipe.
+_Avoid_: Free-Text Entry, Ad-Hoc Meal, Quick Meal
+
 **Meal Slot**:
 A named meal occasion on a specific calendar date (such as Breakfast, Lunch, Dinner, or a one-off occasion like Sunday Brunch) that holds Timeline Entries.
 _Avoid_: Meal Type, Time Slot

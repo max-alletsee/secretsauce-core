@@ -426,4 +426,160 @@ test('core-timeline plugin settings configure default past and planning days on 
   }
 })
 
+test('timeline uses iA Writer Quattro, fits mobile viewports with past meals, aligns inline slots without hover wiggle, and marks only linked recipes', async ({ page, request }) => {
+  await login(page)
+  expect((await request.patch('/api/household', {
+    data: { meal_types: [{ id: 'breakfast', label: 'Breakfast' }, { id: 'lunch', label: 'Lunch' }, { id: 'dinner', label: 'Dinner' }] },
+  })).ok()).toBe(true)
+
+  const recipeRes = await request.post('/api/recipes', {
+    data: {
+      language: 'en',
+      title: 'Slow-Roasted Honey Harissa Carrots with Whipped Tahini Yogurt',
+      ingredients: [{ name: 'Carrots', quantity: 500, unit: 'g' }],
+      steps: [{ instruction: 'Roast carrots until caramelized.' }],
+    },
+  })
+  expect(recipeRes.status()).toBe(201)
+  const recipe = await recipeRes.json()
+
+  const createdIds: string[] = []
+  try {
+    // Populate yesterday so collapsed past-day summary is wide
+    for (const [mealType, title] of [
+      ['breakfast', 'Blueberry Buttermilk Pancakes with Maple Syrup'],
+      ['lunch', 'Grilled Chicken Caesar Salad with Croutons'],
+      ['dinner', 'Creamy Garlic Parmesan Tuscan Pasta'],
+    ] as const) {
+      const res = await request.post('/api/timeline', {
+        data: { date: day(-1), meal_type: mealType, entry_type: 'note', title, status: 'cooked', servings_override: 4 },
+      })
+      expect(res.status()).toBe(201)
+      createdIds.push((await res.json()).id)
+    }
+
+    // Today: breakfast empty, lunch linked to recipe (planned), dinner Meal Note (cooked)
+    const lunchRes = await request.post('/api/timeline', {
+      data: { date: day(0), meal_type: 'lunch', entry_type: 'recipe', recipe_id: recipe.id, status: 'planned', servings_override: 2 },
+    })
+    expect(lunchRes.status()).toBe(201)
+    createdIds.push((await lunchRes.json()).id)
+
+    const dinnerRes = await request.post('/api/timeline', {
+      data: { date: day(0), meal_type: 'dinner', entry_type: 'note', title: 'Leftovers from Friday', note: 'Serve warm', status: 'cooked', servings_override: 2 },
+    })
+    expect(dinnerRes.status()).toBe(201)
+    createdIds.push((await dinnerRes.json()).id)
+
+    // 1. Mobile viewports (iPhone 13 390x844 and narrow 320x568) + tablet 900x800 accordion check
+    for (const width of [390, 320, 900]) {
+      await page.setViewportSize({ width, height: 844 })
+      await page.goto('/timeline')
+      await expect(page.locator('.day-card.is-today .timeline-card').first()).toBeVisible()
+      await expect(page.locator('.past-day-line').filter({ hasText: 'Blueberry' })).toBeVisible()
+      const dims = await page.evaluate(() => {
+        const content = document.querySelector('.ss-content')!
+        return {
+          docScroll: document.documentElement.scrollWidth,
+          viewportWidth: window.innerWidth,
+          contentScroll: content.scrollWidth,
+          contentClient: content.clientWidth,
+        }
+      })
+      expect(dims.docScroll, `docScroll at ${width}px`).toBeLessThanOrEqual(dims.viewportWidth)
+      expect(dims.contentScroll - dims.contentClient, `ss-content overflow at ${width}px`).toBeLessThanOrEqual(1)
+      await expect(page.locator('.timeline-sidebar-wrapper [data-pc-name="accordionheader"]').first()).toBeVisible()
+    }
+
+    // 2. Desktop viewport: font, inline slot alignment, inline cooked ratings, zero-wiggle hover, and recipe icon
+    await page.setViewportSize({ width: 1280, height: 844 })
+    await page.goto('/timeline')
+    const todayCard = page.locator('.day-card.is-today')
+    await expect(todayCard.locator('.card-note')).toBeVisible()
+
+    const fontCheck = await page.evaluate(async () => {
+      await document.fonts.ready
+      const bodyFont = getComputedStyle(document.body).fontFamily
+      const buttonFont = getComputedStyle(document.querySelector('button')!).fontFamily
+      return {
+        bodyFont,
+        buttonFont,
+        loadedRegular: document.fonts.check('400 16px "iA Writer Quattro"'),
+        loadedItalic: document.fonts.check('italic 600 16px "iA Writer Quattro"'),
+      }
+    })
+    expect(fontCheck.bodyFont).toContain('iA Writer Quattro')
+    expect(fontCheck.buttonFont).toContain('iA Writer Quattro')
+    expect(fontCheck.loadedRegular).toBe(true)
+    expect(fontCheck.loadedItalic).toBe(true)
+
+    const breakfastSlot = todayCard.locator('[data-slot-id="breakfast"]')
+    const lunchSlot = todayCard.locator('[data-slot-id="lunch"]')
+    const dinnerSlot = todayCard.locator('[data-slot-id="dinner"]')
+
+    const slotStyle = await breakfastSlot.locator('.slot-name').evaluate(el => {
+      const s = getComputedStyle(el)
+      return { textTransform: s.textTransform, fontSize: parseFloat(s.fontSize) }
+    })
+    expect(slotStyle.textTransform).toBe('none')
+    expect(slotStyle.fontSize).toBeGreaterThanOrEqual(13)
+
+    // Empty slot: label, + button, and slot actions sit on the same horizontal line
+    const bNameBox = (await breakfastSlot.locator('.slot-name').boundingBox())!
+    const bPlusBox = (await breakfastSlot.locator('.empty-slot-btn').boundingBox())!
+    const bActionsBox = (await breakfastSlot.getByRole('button', { name: 'Slot actions', exact: true }).boundingBox())!
+    expect(Math.abs((bNameBox.y + bNameBox.height / 2) - (bPlusBox.y + bPlusBox.height / 2))).toBeLessThanOrEqual(8)
+    expect(Math.abs((bPlusBox.y + bPlusBox.height / 2) - (bActionsBox.y + bActionsBox.height / 2))).toBeLessThanOrEqual(8)
+
+    // Occupied slot: label and card start on the same line, and + aligns horizontally with meal cards
+    const lNameBox = (await lunchSlot.locator('.slot-name').boundingBox())!
+    const lCard = lunchSlot.locator('.timeline-card').first()
+    const lCardBox = (await lCard.boundingBox())!
+    expect(Math.abs(lNameBox.y - lCardBox.y)).toBeLessThanOrEqual(10)
+    expect(Math.abs(bPlusBox.x - lCardBox.x)).toBeLessThanOrEqual(2)
+    await expect(lunchSlot.locator('.empty-slot-btn')).toHaveCount(0)
+
+    // Zero-wiggle hover on TimelineCard (subtle 1px border stays constant)
+    await page.mouse.move(5, 5)
+    const beforeCard = (await lCard.boundingBox())!
+    const beforeMain = (await lCard.locator('.timeline-card-main').boundingBox())!
+    const borderBefore = await lCard.evaluate(el => getComputedStyle(el).borderTopWidth)
+    expect(borderBefore).toBe('1px')
+
+    await lCard.hover()
+    const afterCard = (await lCard.boundingBox())!
+    const afterMain = (await lCard.locator('.timeline-card-main').boundingBox())!
+    expect(afterCard.height).toBe(beforeCard.height)
+    expect(afterCard.width).toBe(beforeCard.width)
+    expect(afterMain.height).toBe(beforeMain.height)
+    expect(afterMain.width).toBe(beforeMain.width)
+
+    // Cooked entry ratings sit inline on wide screens without a top divider
+    const dCard = dinnerSlot.locator('.timeline-card').first()
+    await expect(dCard.locator('.vote-rating')).toBeVisible()
+    const dTitleBox = (await dCard.locator('.card-title').boundingBox())!
+    const dRatingBox = (await dCard.locator('.vote-rating').boundingBox())!
+    expect(Math.abs((dTitleBox.y + dTitleBox.height / 2) - (dRatingBox.y + dRatingBox.height / 2))).toBeLessThanOrEqual(10)
+
+    // Subtle recipe icon: present on recipe-backed entry, absent on Meal Note, and disappears if recipe is deleted
+    await expect(lCard.locator('.recipe-entry-icon.pi-book')).toBeVisible()
+    await expect(dCard.locator('.recipe-entry-icon')).toHaveCount(0)
+
+    expect((await request.delete(`/api/recipes/${recipe.group_id}`)).status()).toBe(204)
+    await expect(lCard.locator('.recipe-entry-icon')).toHaveCount(0)
+    await expect(lCard).toContainText('Slow-Roasted Honey Harissa Carrots with Whipped Tahini Yogurt')
+  } finally {
+    for (const id of createdIds) {
+      const current = await request.get(`/api/timeline/${id}`)
+      if (current.ok()) {
+        const row = await current.json()
+        await request.delete(`/api/timeline/${id}?revision=${row.revision}`)
+      }
+    }
+    const recCheck = await request.get(`/api/recipes/${recipe.group_id}`)
+    if (recCheck.ok()) await request.delete(`/api/recipes/${recipe.group_id}`)
+  }
+})
+
+
 

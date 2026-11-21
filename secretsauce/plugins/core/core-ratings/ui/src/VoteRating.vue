@@ -43,6 +43,8 @@ async function castVote(score: number) {
   </div>
 </template>
 <style scoped>
-.vote-rating { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
-.net-score { color: var(--p-text-muted-color); min-width: 1.5rem; text-align: center; }
+.vote-rating { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .25rem; }
+.vote-rating :deep(.p-button) { width: 1.375rem; height: 1.375rem; padding: 0; }
+.vote-rating :deep(.p-button-icon) { font-size: .72rem; }
+.net-score { color: var(--p-text-muted-color); min-width: 1.15rem; font-size: .75rem; line-height: 1; text-align: center; }
 </style>

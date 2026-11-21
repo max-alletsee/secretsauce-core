@@ -270,4 +270,31 @@ describe('registered Timeline route (API boundary double)', () => {
     expect(saved).toBeNull()
     expect(wrapper.text()).toContain('Default past days must be between 0 and 30.')
   })
+
+  it('shows the recipe book icon only when recipe_id is present, omitting it for Meal Notes and unlinked deleted recipes', async () => {
+    const now = new Date()
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    const { wrapper } = await registeredRoute(activate, 'core-timeline', {
+      get: async (path: string, query: any) => {
+        if (path === '/api/x/core-timeline/slots') return resolved(query.from, query.to)
+        if (path.startsWith('/api/timeline')) {
+          return [
+            { id: 'linked-1', revision: 1, date: today, meal_type: 'dinner', entry_type: 'recipe', recipe_id: savedRecipe.id, recipe: savedRecipe, title: savedRecipe.title, status: 'planned' },
+            { id: 'note-1', revision: 1, date: today, meal_type: 'dinner', entry_type: 'note', recipe_id: null, title: 'Leftovers', status: 'planned' },
+            { id: 'unlinked-1', revision: 2, date: today, meal_type: 'dinner', entry_type: 'recipe', recipe_id: null, title: 'Deleted Recipe Dish', status: 'cooked' },
+          ]
+        }
+        return []
+      },
+    } as any, '/timeline')
+    wrappers.push(wrapper)
+
+    const slot = wrapper.find('.is-today [data-slot-id=dinner]')
+    expect(slot.find('.empty-slot-btn').exists()).toBe(false)
+    const cards = slot.findAll('.timeline-card')
+    expect(cards).toHaveLength(3)
+    expect(cards[0].find('.recipe-entry-icon.pi-book').exists()).toBe(true)
+    expect(cards[1].find('.recipe-entry-icon').exists()).toBe(false)
+    expect(cards[2].find('.recipe-entry-icon').exists()).toBe(false)
+  })
 })

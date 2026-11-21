@@ -44,11 +44,32 @@ const routes = computed(() => (routeRegistry ? routeRegistry.getRoutes() : []))
 </template>
 
 <style>
+@font-face {
+  font-family: "iA Writer Quattro";
+  src: url("./assets/fonts/iAWriterQuattroV.ttf") format("truetype");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "iA Writer Quattro";
+  src: url("./assets/fonts/iAWriterQuattroV-Italic.ttf") format("truetype");
+  font-weight: 400 700;
+  font-style: italic;
+  font-display: swap;
+}
+html,
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: "iA Writer Quattro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--p-surface-50);
   color: var(--p-text-color);
+}
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
 }
 .ss-layout {
   display: flex;

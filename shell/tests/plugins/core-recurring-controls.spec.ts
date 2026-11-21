@@ -116,6 +116,8 @@ describe('registered recurring controls (API boundary double)', () => {
     expect(wrapper.text()).toContain('2.5 servings')
     expect(wrapper.text()).toContain('Garlic bread')
     expect(wrapper.text()).toContain('4 servings')
+    expect(wrapper.find('[data-rule-id="rule-1"] .recipe-entry-icon.pi-book').exists()).toBe(true)
+    expect(wrapper.find('[data-rule-id="rule-2"] .recipe-entry-icon').exists()).toBe(false)
 
     await clickButton('Approve', wrapper.element)
     expect(posts[0]).toEqual(['/api/x/core-recurring/rules/rule-1/approve', { date: '2026-09-30' }])
