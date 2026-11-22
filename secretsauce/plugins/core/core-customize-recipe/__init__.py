@@ -266,6 +266,7 @@ async def customize_recipe(
         "Guidelines:\n"
         "- Maintain the culinary soul, flavor balance, and texture of the dish.\n"
         "- Return precise quantities, standard units, and clear instructions.\n"
+        "- Make the minimal amount of edits necessary. The UI shows them as character-by-character diff, you need to keep this focused on essential changes.\n"
         "- Provide a concise 'adaptation_summary' explaining what substitutions, unit conversions, or technique changes you made.\n\n"
         f"Original Recipe Title: {recipe_data.get('title', 'Recipe')}\n"
         f"Description: {recipe_data.get('description') or ''}\n"
